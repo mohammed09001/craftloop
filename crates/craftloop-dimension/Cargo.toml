@@ -12,6 +12,7 @@ serde.workspace = true
 craftloop-errors = { path = "../craftloop-errors" }
 craftloop-ids = { path = "../craftloop-ids" }
 craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-recognition = { path = "../craftloop-recognition" }
 
 [dev-dependencies]
 serde_json.workspace = true

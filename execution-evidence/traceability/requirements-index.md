@@ -349,3 +349,18 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
 - Tests: 544/544 passing workspace-wide (19 new). No RED-GREEN surprises.
 - Lint/format: both clean (2 clippy findings fixed:
   `cloned_ref_to_slice_refs`).
+
+### Phase 18 — closed 2026-09-13
+- Evidence: `20-phase-18-dimension-association.md`;
+  `test-reports/phase-18-cargo-test.txt`;
+  `test-reports/phase-18-cargo-clippy.txt`;
+  `test-reports/phase-18-cargo-fmt.txt`.
+- Code: `crates/craftloop-dimension` gained `association.rs`
+  (`associate`, `AssociationCandidate`, `AssociationResult`,
+  `AssociationSource`, evidence tiers for selection/guide/proximity/
+  orientation, `ViewId` scoping) and `store.rs` gained
+  `reassign_target`; new `tests/wrong_target_regression.rs`.
+- Tests: 561/561 passing workspace-wide (17 new). No RED-GREEN surprises
+  (one geometric test's expected confidence values were hand-computed and
+  verified before writing the assertion).
+- Lint/format: both clean, no clippy findings.

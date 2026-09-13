@@ -697,6 +697,7 @@ dependencies = [
  "craftloop-errors",
  "craftloop-geometry",
  "craftloop-ids",
+ "craftloop-recognition",
  "serde",
  "serde_json",
 ]

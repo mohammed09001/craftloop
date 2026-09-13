@@ -7,6 +7,7 @@
 //! `craftloop-ids`, `craftloop-geometry`.
 
 pub mod annotation;
+pub mod association;
 pub mod dimension;
 pub mod feasible_range;
 pub mod kind;
@@ -15,6 +16,7 @@ pub mod store;
 pub mod target;
 
 pub use annotation::DimensionAnnotation;
+pub use association::{associate, AssociationCandidate, AssociationResult, AssociationSource};
 pub use dimension::SemanticDimension;
 pub use feasible_range::{triangle_third_side_is_feasible, TriangleSideRange};
 pub use kind::DimensionKind;

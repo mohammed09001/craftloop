@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::annotation::DimensionAnnotation;
 use crate::dimension::SemanticDimension;
+use crate::target::DimensionTarget;
 
 /// Semantic dimensions and their presentation annotations, kept as two
 /// independent maps (Task 077: "persist semantic and presentation state
@@ -103,6 +104,33 @@ impl DimensionStore {
 
         let previous = dimension.value();
         dimension.set_value_unchecked(new_value)?;
+        Ok(previous)
+    }
+
+    /// Task 131: move a dimension to a new target without deleting and
+    /// recreating it -- the dimension keeps its identity, value, role,
+    /// kind, and every annotation pointing at it. Atomic: fails (with
+    /// nothing changed) only if the dimension does not exist. Returns
+    /// the previous target, matching `edit_driving_value`'s own
+    /// "give the caller undo-history for free" convention. Task 132's
+    /// regression suite exists because a correct number bound to the
+    /// wrong entity is a critical-class error this operation is the
+    /// intended fix for -- it must never require destroying and
+    /// re-entering the value to correct a wrong association.
+    pub fn reassign_target(
+        &mut self,
+        id: DimensionId,
+        new_target: DimensionTarget,
+    ) -> DomainResult<DimensionTarget> {
+        let dimension = self
+            .dimensions
+            .get_mut(&id)
+            .ok_or_else(|| DomainError::Dimension {
+                kind: DimensionErrorKind::UnknownDimension,
+                detail: format!("no dimension with id {id:?}"),
+            })?;
+        let previous = dimension.target;
+        dimension.target = new_target;
         Ok(previous)
     }
 
@@ -345,6 +373,51 @@ mod tests {
             Point2::ORIGIN,
         );
         assert!(store.add_annotation(annotation).is_err());
+    }
+
+    #[test]
+    fn reassigning_a_targets_moves_it_without_touching_value_role_or_annotations() {
+        let mut store = DimensionStore::new();
+        let dim = driving_dimension();
+        let id = dim.id;
+        let original_target = dim.target;
+        store.insert_dimension(dim).unwrap();
+        store
+            .add_annotation(DimensionAnnotation::new(
+                DimensionAnnotationId::new(),
+                id,
+                Point2::ORIGIN,
+            ))
+            .unwrap();
+
+        let new_target = DimensionTarget::Single(PrimitiveId::new());
+        let previous = store.reassign_target(id, new_target).unwrap();
+
+        assert_eq!(previous, original_target);
+        assert_eq!(store.dimension(id).unwrap().target, new_target);
+        assert_eq!(store.dimension(id).unwrap().value(), 25.0);
+        assert_eq!(store.dimension(id).unwrap().role, DimensionRole::Driving);
+        assert_eq!(
+            store.annotations_for(id).len(),
+            1,
+            "annotations must survive a retarget"
+        );
+    }
+
+    #[test]
+    fn reassigning_an_unknown_dimensions_target_is_a_structured_error() {
+        let mut store = DimensionStore::new();
+        let result = store.reassign_target(
+            DimensionId::new(),
+            DimensionTarget::Single(PrimitiveId::new()),
+        );
+        assert!(matches!(
+            result,
+            Err(DomainError::Dimension {
+                kind: DimensionErrorKind::UnknownDimension,
+                ..
+            })
+        ));
     }
 
     #[test]
