@@ -20,6 +20,7 @@ members = [
     "crates/craftloop-handwriting",
     "crates/craftloop-command",
     "crates/craftloop-standards",
+    "crates/craftloop-export",
     "apps/windows-harness",
 ]
 

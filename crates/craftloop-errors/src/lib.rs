@@ -179,6 +179,17 @@ pub enum DimensionErrorKind {
     DuplicateId,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ExportErrorKind {
+    /// The requested export target is not implemented for this execution
+    /// (e.g. DXF, deliberately deferred per Execution 01, Phase 26, Task
+    /// 191, rather than shipped as a misleading partial implementation).
+    UnsupportedTarget,
+    /// A value could not be rendered without losing or misrepresenting
+    /// engineering truth (e.g. a non-finite coordinate).
+    UnrepresentableValue,
+}
+
 /// A structured domain error. Every variant is namespaced by subsystem and
 /// carries a typed `kind`; `detail` is supplementary human-readable context
 /// only, per the forbidden-shortcut rule above.
@@ -242,6 +253,11 @@ pub enum DomainError {
         kind: CommandErrorKind,
         detail: String,
     },
+    #[error("export error ({kind:?}): {detail}")]
+    Export {
+        kind: ExportErrorKind,
+        detail: String,
+    },
 }
 
 impl DomainError {
@@ -271,6 +287,7 @@ impl DomainError {
             DomainError::Dimension { .. } => Severity::Error,
             DomainError::Sketch { .. } => Severity::Error,
             DomainError::Command { .. } => Severity::Error,
+            DomainError::Export { .. } => Severity::Error,
         }
     }
 }

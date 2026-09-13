@@ -1,0 +1,27 @@
+[package]
+name = "craftloop-export"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Export and Diagnostic Interoperability for the Craft Loop shared engineering core (Execution 01, Phase 26): semantic JSON diagnostic export, SVG export, a bounded single-page PDF prototype, and an explicit, documented deferral of DXF."
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-ink = { path = "../craftloop-ink" }
+craftloop-recognition = { path = "../craftloop-recognition" }
+craftloop-dimension = { path = "../craftloop-dimension" }
+craftloop-document = { path = "../craftloop-document" }
+craftloop-units = { path = "../craftloop-units" }
+craftloop-standards = { path = "../craftloop-standards" }
+craftloop-serialization = { path = "../craftloop-serialization" }
+
+[dev-dependencies]
+craftloop-consistency = { path = "../craftloop-consistency" }
+craftloop-input = { path = "../craftloop-input" }
+craftloop-command = { path = "../craftloop-command" }

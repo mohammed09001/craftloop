@@ -744,6 +744,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-export"
+version = "0.1.0"
+dependencies = [
+ "craftloop-command",
+ "craftloop-consistency",
+ "craftloop-dimension",
+ "craftloop-document",
+ "craftloop-errors",
+ "craftloop-geometry",
+ "craftloop-ids",
+ "craftloop-ink",
+ "craftloop-input",
+ "craftloop-recognition",
+ "craftloop-serialization",
+ "craftloop-standards",
+ "craftloop-units",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "craftloop-geometry"
 version = "0.1.0"
 dependencies = [

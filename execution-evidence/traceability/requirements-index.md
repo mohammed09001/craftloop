@@ -462,3 +462,19 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   `&'static [f64]`, which cannot derive `Deserialize`; changed to owned
   `Vec<f64>`.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 26 — closed 2026-09-13
+- Evidence: `28-phase-26-export-interoperability.md`;
+  `test-reports/phase-26-cargo-test.txt`;
+  `test-reports/phase-26-cargo-clippy.txt`;
+  `test-reports/phase-26-cargo-fmt.txt`.
+- Code: new crate `crates/craftloop-export` (`diagnostic_json.rs` --
+  `export_diagnostic_json`; `svg.rs` -- `export_svg`; `pdf.rs` --
+  `export_pdf_bounded`, hand-written minimal PDF writer;
+  `visible_entities.rs` -- shared ephemeral/diagnostic filter; `lib.rs` --
+  `UNSUPPORTED_EXPORT_TARGETS`); `craftloop-errors` gained
+  `DomainError::Export`/`ExportErrorKind`.
+- Tests: 710/710 passing workspace-wide (24 new). No test-correctness
+  bugs found; two import-path errors and four mechanical clippy findings
+  (all test code) fixed before first green run.
+- Lint/format: both clean, no clippy findings.
