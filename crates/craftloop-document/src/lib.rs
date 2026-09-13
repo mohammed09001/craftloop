@@ -20,6 +20,7 @@ pub mod persistence;
 pub mod provenance;
 pub mod stale_result;
 pub mod units;
+pub mod view;
 
 pub use autosave::AutosaveJournal;
 pub use document::Document;
@@ -34,3 +35,4 @@ pub use persistence::{load_document, save_document_atomically};
 pub use provenance::ProvenanceState;
 pub use stale_result::AsyncResult;
 pub use units::DocumentUnits;
+pub use view::{OrthographicSet, PrincipalViewIdentity, ViewBlock};

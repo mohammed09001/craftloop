@@ -136,6 +136,10 @@ pub enum DocumentErrorKind {
     /// A reference (e.g. a page ID) does not resolve to anything in the
     /// document.
     UnknownReference,
+    /// An orthographic set would end up with two views sharing the same
+    /// established principal identity (e.g. two `Front` views), per
+    /// Execution 01, Phase 20, Task 147.
+    DuplicateViewIdentity,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

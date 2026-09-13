@@ -381,3 +381,14 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   unordered pair. Confirmed stable across several repeated full-suite
   runs afterward.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 20 — closed 2026-09-13
+- Evidence: `22-phase-20-view-blocks.md`;
+  `test-reports/phase-20-cargo-test.txt`;
+  `test-reports/phase-20-cargo-clippy.txt`;
+  `test-reports/phase-20-cargo-fmt.txt`.
+- Code: `crates/craftloop-document` gained `view.rs` (`ViewBlock`,
+  `PrincipalViewIdentity`, `OrthographicSet`); `craftloop-errors` gained
+  `DocumentErrorKind::DuplicateViewIdentity`.
+- Tests: 611/611 passing workspace-wide (13 new). No RED-GREEN surprises.
+- Lint/format: both clean, no clippy findings.
