@@ -117,3 +117,13 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   34 from Phase 01). One real bug (sign error in
   `Circle2::intersect_segment`) caught by tests and fixed in-loop.
 - Lint/format: both clean.
+
+### Phase 03 — closed 2026-09-13
+- Evidence: `05-phase-03-input.md`; `test-reports/phase-03-cargo-test.txt`;
+  `test-reports/phase-03-cargo-clippy.txt`.
+- Code: `crates/craftloop-input` (`sample.rs`, `capabilities.rs`,
+  `mouse_simulator.rs`, `lifecycle.rs`, `trace.rs`, `disclaimer.rs`); added
+  `DomainError::Input`/`InputErrorKind` to `craftloop-errors`.
+- Tests: 139/139 passing workspace-wide (32 new). No bugs found on first
+  run for this phase's own code.
+- Lint/format: both clean (1 clippy finding fixed: `clone_on_copy`).

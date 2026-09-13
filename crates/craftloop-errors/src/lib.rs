@@ -100,6 +100,15 @@ pub enum TransactionErrorKind {
     NoMatchingHistoryEntry,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum InputErrorKind {
+    /// A numeric field (pressure, tilt, ...) was outside its valid range.
+    OutOfRange,
+    /// An event arrived that is not valid in the current stroke lifecycle
+    /// state (e.g. `Move` before any `Down`).
+    InvalidLifecycleSequence,
+}
+
 /// A structured domain error. Every variant is namespaced by subsystem and
 /// carries a typed `kind`; `detail` is supplementary human-readable context
 /// only, per the forbidden-shortcut rule above.
@@ -136,6 +145,11 @@ pub enum DomainError {
         kind: TransactionErrorKind,
         detail: String,
     },
+    #[error("input error ({kind:?}): {detail}")]
+    Input {
+        kind: InputErrorKind,
+        detail: String,
+    },
 }
 
 impl DomainError {
@@ -159,6 +173,7 @@ impl DomainError {
             } => Severity::Blocker,
             DomainError::Persistence { .. } => Severity::Error,
             DomainError::Transaction { .. } => Severity::Error,
+            DomainError::Input { .. } => Severity::Error,
         }
     }
 }

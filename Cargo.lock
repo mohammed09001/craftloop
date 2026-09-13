@@ -70,6 +70,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-input"
+version = "0.1.0"
+dependencies = [
+ "craftloop-errors",
+ "craftloop-geometry",
+ "craftloop-serialization",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "craftloop-serialization"
 version = "0.1.0"
 dependencies = [

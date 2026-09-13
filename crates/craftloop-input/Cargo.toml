@@ -1,0 +1,15 @@
+[package]
+name = "craftloop-input"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Normalized pointer input, capability descriptors, and stroke lifecycle events for the Craft Loop shared engineering core."
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-serialization = { path = "../craftloop-serialization" }
