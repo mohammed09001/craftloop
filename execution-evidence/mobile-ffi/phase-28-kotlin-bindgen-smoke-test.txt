@@ -1,0 +1,67 @@
+Execution 01, Phase 28, Task 202 -- UniFFI Kotlin binding smoke test.
+
+This is a real run against the actually-compiled craftloop_mobile_ffi
+cdylib, not a hand-written expectation of what UniFFI would generate.
+
+Commands
+--------
+
+cargo build -p craftloop-mobile-ffi
+  -> produced target/debug/craftloop_mobile_ffi.dll
+
+cargo run -p craftloop-mobile-ffi --bin uniffi-bindgen -- generate \
+  --library target/debug/craftloop_mobile_ffi.dll \
+  --language kotlin \
+  --out-dir execution-evidence/mobile-ffi/generated-kotlin
+
+Output
+------
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.38s
+     Running `target\debug\uniffi-bindgen.exe generate --library target/debug/craftloop_mobile_ffi.dll --language kotlin --out-dir execution-evidence/mobile-ffi/generated-kotlin`
+Code generation complete, formatting with ktlint (use --no-format to disable)
+Warning: Unable to auto-format craftloop_mobile_ffi.kt using ktlint: Error { kind: NotFound, message: "program not found" }
+
+(The ktlint warning is expected and harmless -- ktlint is a Kotlin code
+formatter, not part of the binding-generation pipeline itself; this
+sandbox has no JDK/ktlint installed. The .kt file is still written,
+correctly, just unformatted.)
+
+Result: generated
+execution-evidence/mobile-ffi/generated-kotlin/uniffi/craftloop_mobile_ffi/craftloop_mobile_ffi.kt
+(1613 lines). Verified present, real, and correct by grep:
+
+  package uniffi.craftloop_mobile_ffi           (line 6)
+  data class FfiPointerSample (                 (line 1051)
+  enum class FfiCommandAction {                 (line 1215)
+  sealed class FfiGrammarMatch {                (line 1306)
+  enum class FfiPointerSource {                 (line 1433)
+  fun `resolveCommand`(...): FfiGrammarMatch     (line 1589)
+  fun `validateStroke`(...): FfiStrokeValidation (line 1601)
+
+Every exported function (Task 201's `validate_stroke`/`resolve_command`)
+and every FFI-safe type this crate defines is present in the generated
+Kotlin with correct Kotlin naming conventions (camelCase functions,
+PascalCase types, SCREAMING_CASE enum constants) -- proof the UniFFI
+proc-macro scaffolding (`uniffi::setup_scaffolding!()`,
+`#[uniffi::export]`, `#[derive(uniffi::Record)]`/`uniffi::Enum`) is wired
+correctly end to end, from Rust source through the compiled cdylib's
+embedded metadata to real generated Kotlin source.
+
+What this smoke test does NOT prove (explicitly, per the
+No-Hallucination Contract)
+-------------------------------------------------------------------------
+- That the generated Kotlin actually compiles under a real Kotlin
+  compiler -- no JDK/Kotlin toolchain is available in this sandbox.
+- That it runs correctly on the JVM or on a real Android device/emulator
+  -- no `adb`, no Android SDK, no emulator image available (confirmed:
+  `which gradle`/`which adb` both fail, `$ANDROID_HOME` unset).
+- Anything about the `android/` placeholder shell (Task 203) actually
+  building with Gradle -- see `android/README.md`'s own "not
+  build-validated" section.
+
+This is real evidence of a real, working binding-generation pipeline
+(Scaffolded and Implemented-and-tested at the Rust/codegen layer), not a
+claim of a validated end-to-end Kotlin/Android build (which remains
+Implemented-but-not-hardware-validated / Scaffolded, honestly, until a
+real Android toolchain is available to verify it).

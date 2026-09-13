@@ -501,3 +501,26 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
 - Lint/format: both clean, no clippy findings -- and now self-enforcing
   via `[workspace.lints]`, not dependent on an external `-D warnings`
   flag.
+
+### Phase 28 — closed 2026-09-13
+- Evidence: `30-phase-28-android-adapter-readiness.md`;
+  `test-reports/phase-28-cargo-{test,clippy,fmt}.txt`;
+  `mobile-ffi/phase-28-kotlin-bindgen-smoke-test.txt`;
+  `mobile-ffi/jetpack-ink-mapping.md`;
+  `mobile-ffi/samsung-device-validation-plan.md`.
+- Code: new crate `crates/craftloop-mobile-ffi` (UniFFI 0.32.1 FFI
+  boundary: `FfiPointerSample`/`validate_stroke`,
+  `FfiCommandNamespace`/`FfiGrammarMatch`/`resolve_command`); new
+  non-Rust scaffold `android/` (placeholder Gradle/Kotlin shell, not
+  build-validated -- no Android SDK/Gradle/adb/NDK in this sandbox,
+  confirmed directly).
+- Tests: 729/729 passing workspace-wide (6 new). Real UniFFI Kotlin
+  binding smoke test run against the actually-compiled cdylib (not a
+  hand-written expectation) -- see the transcript file above. One real
+  bug found and fixed via validation: an invalid `--` inside an XML
+  comment in `AndroidManifest.xml`, caught by
+  `python -c "xml.etree.ElementTree.parse(...)"`.
+- Lint/format: both clean, no clippy findings.
+- First expected true blocker of this execution: Android SDK/Gradle/adb/
+  NDK unavailable in this sandbox, documented per the governing plan's
+  own anticipated category, not silently skipped.

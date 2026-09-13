@@ -1,0 +1,33 @@
+[package]
+name = "craftloop-mobile-ffi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Android/iPad FFI boundary for the Craft Loop shared engineering core (Execution 01, Phase 28 Task 201, Phase 29 Task 207): normalized input/command/data types plus UniFFI-generated Kotlin and Swift bindings. Keeps Jetpack Ink/SwiftUI/PencilKit concepts entirely out of the domain crates -- this crate is the only place that knows a mobile platform exists."
+
+[lib]
+name = "craftloop_mobile_ffi"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+serde.workspace = true
+# Execution 01, Phase 28, Task 202: pinned to an exact version, not a
+# caret range, per the task's own "pin a tested version" instruction --
+# the same convention Phase 11's solver decision record established for
+# `ezpz`. Proc-macro-only scaffolding mode (no separate .udl file), the
+# modern (0.25+) UniFFI approach.
+uniffi = { version = "=0.32.1", features = ["cli"] }
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-input = { path = "../craftloop-input" }
+craftloop-ink = { path = "../craftloop-ink" }
+craftloop-command = { path = "../craftloop-command" }
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+
+[lints]
+workspace = true
