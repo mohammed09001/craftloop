@@ -1,0 +1,16 @@
+[package]
+name = "craftloop-command"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Ink Command Language and the shared Command Bus for the Craft Loop shared engineering core (MCP Articles 46, 236-239)."
+
+[dependencies]
+serde.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-ids = { path = "../craftloop-ids" }
+
+[dev-dependencies]
+serde_json.workspace = true

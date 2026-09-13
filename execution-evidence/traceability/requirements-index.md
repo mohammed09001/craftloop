@@ -364,3 +364,20 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   (one geometric test's expected confidence values were hand-computed and
   verified before writing the assertion).
 - Lint/format: both clean, no clippy findings.
+
+### Phase 19 — closed 2026-09-13
+- Evidence: `21-phase-19-ink-command-language.md`;
+  `test-reports/phase-19-cargo-test.txt`;
+  `test-reports/phase-19-cargo-clippy.txt`;
+  `test-reports/phase-19-cargo-fmt.txt`.
+- Code: new crate `crates/craftloop-command` (`command.rs`, `grammar.rs`,
+  `confirmation.rs`, `ephemeral.rs`, `risk.rs`, `bus.rs`);
+  `craftloop-ids` gained `CommandId`; `craftloop-errors` gained
+  `DomainError::Command`/`CommandErrorKind`.
+- Tests: 598/598 passing workspace-wide (37 new). One genuine flaky-test
+  finding: a Phase 15 test in `craftloop-sketch` asserted a fixed tuple
+  order for a pair of randomly-generated `PrimitiveId`s, failing
+  intermittently depending on UUID sort order; fixed to assert the
+  unordered pair. Confirmed stable across several repeated full-suite
+  runs afterward.
+- Lint/format: both clean, no clippy findings.

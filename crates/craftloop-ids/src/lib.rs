@@ -153,6 +153,13 @@ define_id!(
      one never implies anything about the semantic dimension or its other \
      annotations. Added in Phase 10 alongside the dimension model."
 );
+define_id!(
+    CommandId,
+    "Identifies one command object dispatched through the shared Command \
+     Bus (MCP Article 239), regardless of source channel (toolbar, Ink \
+     Command Engine, keyboard, accessibility, future voice/gesture). \
+     Added in Phase 19 alongside the Ink Command Language."
+);
 
 #[cfg(test)]
 mod tests {

@@ -1,0 +1,2 @@
+    Checking craftloop-sketch v0.1.0 (C:\projects\craftloop\crates\craftloop-sketch)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.18s

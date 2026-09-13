@@ -87,6 +87,16 @@ pub enum ConsistencyErrorKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CommandErrorKind {
+    /// The command's action is not part of its declared namespace's
+    /// grammar (Execution 01, Phase 19, MCP Article 237).
+    InvalidForNamespace,
+    /// The command's risk level requires stronger confirmation evidence
+    /// than was actually provided (Article 238).
+    NotConfirmed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PersistenceErrorKind {
     /// On-disk schema version is newer or incompatible with this build.
     SchemaVersionMismatch,
@@ -223,6 +233,11 @@ pub enum DomainError {
         kind: SketchErrorKind,
         detail: String,
     },
+    #[error("command error ({kind:?}): {detail}")]
+    Command {
+        kind: CommandErrorKind,
+        detail: String,
+    },
 }
 
 impl DomainError {
@@ -251,6 +266,7 @@ impl DomainError {
             DomainError::Document { .. } => Severity::Error,
             DomainError::Dimension { .. } => Severity::Error,
             DomainError::Sketch { .. } => Severity::Error,
+            DomainError::Command { .. } => Severity::Error,
         }
     }
 }
@@ -385,6 +401,22 @@ mod tests {
             err,
             DomainError::Sketch {
                 kind: SketchErrorKind::WrongPrimitiveKind,
+                ..
+            }
+        ));
+        assert_eq!(err.default_severity(), Severity::Error);
+    }
+
+    #[test]
+    fn command_error_carries_its_typed_kind_and_matches_without_string_parsing() {
+        let err = DomainError::Command {
+            kind: CommandErrorKind::NotConfirmed,
+            detail: "high-risk command needs Execute-level confirmation".to_string(),
+        };
+        assert!(matches!(
+            err,
+            DomainError::Command {
+                kind: CommandErrorKind::NotConfirmed,
                 ..
             }
         ));

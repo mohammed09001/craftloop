@@ -252,8 +252,17 @@ mod tests {
         sketch.insert_primitive(a, line(Point2::ORIGIN, Point2::new(5.0, 0.0)));
         sketch.insert_primitive(b, line(Point2::new(0.0, 2.0), Point2::new(5.001, 2.0)));
 
+        // `observed_length_coincidences` iterates primitives in
+        // `PrimitiveId`'s own (UUID) order, which is random per run --
+        // the pair can legitimately come back as `(a, b)` or `(b, a)`.
+        // Assert the unordered pair, not a fixed position.
         let observed = sketch.observed_length_coincidences();
-        assert_eq!(observed, vec![(a, b)]);
+        assert_eq!(observed.len(), 1);
+        let (first, second) = observed[0];
+        assert_eq!(
+            std::collections::BTreeSet::from([first, second]),
+            std::collections::BTreeSet::from([a, b])
+        );
 
         // Task 108's core assertion: merely observing the coincidence must
         // never itself create a constraint. The lines stay independent.

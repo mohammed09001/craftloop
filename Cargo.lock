@@ -667,6 +667,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-command"
+version = "0.1.0"
+dependencies = [
+ "craftloop-errors",
+ "craftloop-ids",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "craftloop-consistency"
 version = "0.1.0"
 dependencies = [
