@@ -8,6 +8,7 @@
 //! `craftloop-ink`, `craftloop-recognition`.
 
 pub mod autosave;
+pub mod correspondence;
 pub mod document;
 pub mod entity;
 pub mod history;
@@ -26,6 +27,10 @@ pub mod units;
 pub mod view;
 
 pub use autosave::AutosaveJournal;
+pub use correspondence::{
+    evaluate_correspondence, smallest_missing_fact, CorrespondenceCandidate, CorrespondenceRanker,
+    CorrespondenceStore, DeterministicRanker, Evidence, EvidenceKind, MissingFact,
+};
 pub use document::Document;
 pub use entity::{EntityId, SemanticEntity};
 pub use history::{DocumentChange, DocumentHistory};

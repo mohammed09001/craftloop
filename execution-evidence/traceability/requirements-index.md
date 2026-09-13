@@ -432,3 +432,16 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   `craftloop-consistency` gained `ConflictKind::CrossViewMismatch`.
 - Tests: 654/654 passing workspace-wide (15 new). No RED-GREEN surprises.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 24 — closed 2026-09-13
+- Evidence: `26-phase-24-cross-view-correspondence.md`;
+  `test-reports/phase-24-cargo-test.txt`;
+  `test-reports/phase-24-cargo-clippy.txt`;
+  `test-reports/phase-24-cargo-fmt.txt`.
+- Code: `crates/craftloop-document` gained `correspondence.rs`
+  (`CorrespondenceStore`, `evaluate_correspondence`,
+  `smallest_missing_fact`, `CorrespondenceRanker`/`DeterministicRanker`).
+- Tests: 667/667 passing workspace-wide (13 new). One test-construction
+  bug (a zero-value `SemanticDimension` violating its own positive-value
+  invariant) caught and fixed immediately.
+- Lint/format: both clean, no clippy findings.
