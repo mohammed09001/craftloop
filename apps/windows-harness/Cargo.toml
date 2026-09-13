@@ -1,0 +1,19 @@
+[package]
+name = "windows-harness"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Disposable native Rust engineering test harness for Craft Loop Execution 01 (Engine Contract 27). Never production UI."
+
+[dependencies]
+eframe = "0.32"
+egui = "0.32"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+craftloop-errors = { path = "../../crates/craftloop-errors" }
+craftloop-geometry = { path = "../../crates/craftloop-geometry" }
+craftloop-input = { path = "../../crates/craftloop-input" }
+craftloop-serialization = { path = "../../crates/craftloop-serialization" }

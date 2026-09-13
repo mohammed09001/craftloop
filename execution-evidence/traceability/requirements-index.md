@@ -127,3 +127,16 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
 - Tests: 139/139 passing workspace-wide (32 new). No bugs found on first
   run for this phase's own code.
 - Lint/format: both clean (1 clippy finding fixed: `clone_on_copy`).
+
+### Phase 04 — closed 2026-09-13
+- Evidence: `06-phase-04-windows-harness.md`;
+  `test-reports/phase-04-cargo-test.txt`;
+  `test-reports/phase-04-cargo-clippy.txt`;
+  `test-reports/phase-04-harness-launch.log`.
+- Code: `apps/windows-harness` (`main.rs`, `app.rs`, `viewport.rs`,
+  `tool.rs`, `state.rs`, `scenario.rs`, `diagnostic_export.rs`,
+  `examples/generate_scenario.rs`, `scenarios/example-line.json`).
+- Tests: 165/165 passing workspace-wide (26 new). App launches without
+  panicking under a timeout; interactive/visual verification explicitly
+  deferred to a human (no display in this environment).
+- Lint/format: both clean.

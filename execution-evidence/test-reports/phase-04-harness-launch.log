@@ -1,0 +1,4 @@
+   Compiling windows-harness v0.1.0 (C:\projects\craftloop\apps\windows-harness)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.61s
+     Running `target\debug\windows-harness.exe`
+error: process didn't exit successfully: `target\debug\windows-harness.exe` (exit code: 143)
