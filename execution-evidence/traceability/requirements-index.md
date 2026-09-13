@@ -303,3 +303,20 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
 - Tests: 500/500 passing workspace-wide (26 new). No RED-GREEN surprises
   this phase -- every validator's first test run matched its design.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 15 — closed 2026-09-13
+- Evidence: `17-phase-15-design-intent.md`;
+  `test-reports/phase-15-cargo-test.txt`;
+  `test-reports/phase-15-cargo-clippy.txt`;
+  `test-reports/phase-15-cargo-fmt.txt`.
+- Design decision: no new "intent relation" type -- `Sketch`'s existing
+  constraint store (`SketchConstraintKind` + `ConstraintProvenance`,
+  Phase 12) already *is* the design-intent graph; Phase 15 adds a
+  query/curation layer on top of it (`crates/craftloop-sketch/src/
+  intent.rs`), not a parallel model.
+- Code: `Sketch` gained `rejected_suggestions`; new methods
+  `constraints_touching`, `affected_primitives`, `accept_suggestion`,
+  `reject_suggestion`, `is_suggestion_rejected`,
+  `observed_length_coincidences`.
+- Tests: 514/514 passing workspace-wide (14 new). No RED-GREEN surprises.
+- Lint/format: both clean, no clippy findings.

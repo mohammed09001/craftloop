@@ -23,6 +23,7 @@
 
 pub mod constraint_kind;
 pub mod ezpz_adapter;
+pub mod intent;
 pub mod point_ref;
 pub mod provenance;
 pub mod sketch;

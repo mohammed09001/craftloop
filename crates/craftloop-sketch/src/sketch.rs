@@ -78,6 +78,10 @@ impl ConstraintOutcome {
 pub struct Sketch {
     pub(crate) primitives: PrimitiveMap,
     pub(crate) constraints: BTreeMap<ConstraintId, ConstraintEntry>,
+    /// Task 110: declined suggestions, kept only well enough to recognize
+    /// "already asked and declined" -- never enforced like a real
+    /// constraint (see `intent.rs`).
+    pub(crate) rejected_suggestions: Vec<SketchConstraintKind>,
 }
 
 impl Sketch {
