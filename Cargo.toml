@@ -13,6 +13,7 @@ members = [
     "crates/craftloop-document",
     "crates/craftloop-units",
     "crates/craftloop-dimension",
+    "crates/craftloop-constraint",
     "apps/windows-harness",
 ]
 

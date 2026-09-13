@@ -661,6 +661,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-constraint"
+version = "0.1.0"
+dependencies = [
+ "craftloop-ids",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "craftloop-dimension"
 version = "0.1.0"
 dependencies = [

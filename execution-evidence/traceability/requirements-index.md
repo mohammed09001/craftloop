@@ -218,3 +218,24 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
 - Tests: 378/378 passing workspace-wide (30 new). All passed on first run
   this phase.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 11 — closed 2026-09-13
+- Evidence: `13-phase-11-solver-spike.md`;
+  `test-reports/phase-11-cargo-test.txt`;
+  `test-reports/phase-11-cargo-clippy.txt`;
+  `solver-evaluations/solver-decision-record.md`;
+  `solver-evaluations/ezpz-spike-output.txt`;
+  `solver-evaluations/naive-baseline-output.txt`.
+- Code: `crates/craftloop-constraint` (`variable.rs`, `constraint.rs`,
+  `residual.rs`, `result.rs`, `solver.rs`,
+  `examples/naive_gradient_descent_baseline.rs`);
+  `execution-evidence/solver-evaluations/ezpz-spike/` (standalone spike
+  project, not a workspace member).
+- Decision: adopt `ezpz` v0.2.29 (MIT, KittyCAD/ezpz), pinned exactly, for
+  Phase 12 integration. Full rationale, license notes, and fallback plan in
+  the decision record.
+- Tests: 401/401 passing workspace-wide (23 new in craftloop-constraint).
+  Real spike programs built and run (not simulated); one genuine spike
+  finding (a sign-convention bug in the spike's own test data, which ezpz
+  correctly flagged) investigated and corrected.
+- Lint/format: both clean, no clippy findings.

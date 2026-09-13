@@ -1,0 +1,25 @@
+    Finished `release` profile [optimized] target(s) in 0.16s
+     Running `target\release\ezpz-spike.exe`
+
+=== Small graph: 2 points, Fixed + Distance (Task 079/081) ===
+last run satisfied: true
+solve latency (ms) over 200 runs: min=0.0120 median=0.0126 max=0.1793
+
+=== Medium graph: 4-point rectangle, 8 constraints (Task 079/081) ===
+last run satisfied: true
+solve latency (ms) over 200 runs: min=0.0165 median=0.0171 max=0.0605
+
+=== Conflict diagnostics: two contradictory Fixed constraints (Task 082) ===
+converged: true
+is_satisfied: false
+unsatisfied constraint indices: [0, 1]
+iterations: 0
+warnings: []
+final P = (5, 0)
+recomputed residual for constraint 0 (Fixed x=0.0): 5
+recomputed residual for constraint 1 (Fixed x=10.0): 5
+
+=== Redundant-but-consistent system (Task 079) ===
+is_satisfied: true, iterations: 1
+unsatisfied: []
+final P=(0.000000000020000168188261114, 0.0000000001000000082740371) Q=(4.99999999998, 0.0000000001000000082740371)

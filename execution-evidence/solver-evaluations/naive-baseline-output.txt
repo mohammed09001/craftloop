@@ -1,0 +1,9 @@
+    Finished `release` profile [optimized] target(s) in 0.20s
+     Running `target\release\examples\naive_gradient_descent_baseline.exe`
+
+=== In-house baseline: 2 points, Fixed + Distance ===
+first run: converged=true iterations_used=338
+converged 50/50 runs
+solve latency (ms) over 50 runs: min=0.1134 median=0.1170 max=0.1635
+
+See execution-evidence/solver-evaluations/solver-decision-record.md for the side-by-side comparison against ezpz.

@@ -1,0 +1,13 @@
+[workspace]
+# Deliberately its own workspace root: this is throwaway Phase 11 spike
+# code, not a member of the main Craft Loop workspace.
+
+[package]
+name = "ezpz-spike"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Execution 01 Phase 11 technical spike evaluating the ezpz constraint solver. NOT part of the Craft Loop workspace -- evaluation-only, run manually, evidence captured under execution-evidence/solver-evaluations/."
+
+[dependencies]
+ezpz = "0.2.29"
