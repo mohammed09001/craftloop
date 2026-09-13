@@ -1,0 +1,45 @@
+# Execution 01, Phase 27, Task 200.
+#
+# "Prepare future iOS-binding build checks in a macOS runner once the
+# binding layer exists" -- no iOS/iPad binding layer exists yet (Phase 29
+# is the phase that will add one, and is an expected true blocker for
+# hardware-specific verification in this execution). Until it does, there
+# is nothing iOS-specific to build or test; this job is deliberately
+# scoped to a **compile-only** gate for the platform-independent shared
+# core on macOS, so a real cross-platform compile regression (an
+# accidental Windows-only API creeping into a shared crate, for instance)
+# is caught even without an iOS target. `windows-harness` is excluded
+# (Windows-only by design, not a portability target -- see ci.yml).
+#
+# This workflow is intentionally separate from ci.yml rather than a third
+# job in it: it is a narrower, forward-looking gate (compile only, no
+# test/clippy/fmt requirement), not a full parity requirement with the
+# Windows/Linux jobs.
+
+name: macOS Compile Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  macos-compile:
+    name: macOS (shared core, compile only)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Compile shared core (no windows-harness)
+        run: cargo build --workspace --exclude windows-harness

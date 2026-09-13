@@ -10,3 +10,6 @@ description = "Atomic domain transaction boundary and undo/redo history primitiv
 [dependencies]
 craftloop-ids = { path = "../craftloop-ids" }
 craftloop-errors = { path = "../craftloop-errors" }
+
+[lints]
+workspace = true

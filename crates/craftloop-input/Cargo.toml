@@ -13,3 +13,6 @@ serde_json.workspace = true
 craftloop-errors = { path = "../craftloop-errors" }
 craftloop-geometry = { path = "../craftloop-geometry" }
 craftloop-serialization = { path = "../craftloop-serialization" }
+
+[lints]
+workspace = true

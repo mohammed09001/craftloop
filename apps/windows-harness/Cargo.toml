@@ -17,3 +17,6 @@ craftloop-errors = { path = "../../crates/craftloop-errors" }
 craftloop-geometry = { path = "../../crates/craftloop-geometry" }
 craftloop-input = { path = "../../crates/craftloop-input" }
 craftloop-serialization = { path = "../../crates/craftloop-serialization" }
+
+[lints]
+workspace = true

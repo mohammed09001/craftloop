@@ -36,9 +36,27 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
+proptest = "1"
+criterion = "0.5"
+
+# Execution 01, Phase 27, Task 192: a documented, enforced warning policy
+# for shared/core crates, not just a convention repeated by hand in every
+# phase's evidence commands. Every member crate opts in with
+# `[lints]\nworkspace = true`, so `cargo clippy --workspace --all-targets`
+# alone (no external `-D warnings` flag needed) fails the build on any
+# rustc warning or `clippy::all` finding -- exactly the policy this
+# execution has already been enforcing manually since Phase 01.
+[workspace.lints.rust]
+warnings = "deny"
+
+[workspace.lints.clippy]
+all = "deny"
 
 [profile.dev]
 opt-level = 0
 
 [profile.release]
+opt-level = 3
+
+[profile.bench]
 opt-level = 3

@@ -294,6 +294,65 @@ mod tests {
     }
 
     #[test]
+    fn a_beautified_circle_becomes_an_svg_circle_element() {
+        let mut page = Page::new(PageId::new(), "Page 1");
+        let circle = craftloop_geometry::Circle2::new(Point2::new(5.0, 5.0), 3.0).unwrap();
+        page.insert(SemanticEntity::Primitive {
+            id: PrimitiveId::new(),
+            beautified: Beautified {
+                primitive: BeautifiedPrimitive::Circle(circle),
+                displacement: 0.0,
+            },
+        })
+        .unwrap();
+        let svg = export_svg(&page, DocumentUnits::Millimeters, &[], &BTreeSet::new());
+        assert!(svg.contains("<circle"));
+    }
+
+    #[test]
+    fn a_beautified_arc_becomes_an_svg_path_element() {
+        let mut page = Page::new(PageId::new(), "Page 1");
+        let arc = craftloop_geometry::Arc2::new(
+            Point2::new(0.0, 0.0),
+            4.0,
+            0.0,
+            std::f64::consts::FRAC_PI_2,
+        )
+        .unwrap();
+        page.insert(SemanticEntity::Primitive {
+            id: PrimitiveId::new(),
+            beautified: Beautified {
+                primitive: BeautifiedPrimitive::Arc(arc),
+                displacement: 0.0,
+            },
+        })
+        .unwrap();
+        let svg = export_svg(&page, DocumentUnits::Millimeters, &[], &BTreeSet::new());
+        assert!(svg.contains("<path"));
+        assert!(svg.contains(" A "));
+    }
+
+    #[test]
+    fn a_beautified_rectangle_becomes_an_svg_polygon_element() {
+        let mut page = Page::new(PageId::new(), "Page 1");
+        let rectangle = craftloop_geometry::RelationalRectangle::from_axis_aligned(
+            Point2::new(0.0, 0.0),
+            Point2::new(10.0, 5.0),
+        )
+        .unwrap();
+        page.insert(SemanticEntity::Primitive {
+            id: PrimitiveId::new(),
+            beautified: Beautified {
+                primitive: BeautifiedPrimitive::Rectangle(rectangle),
+                displacement: 0.0,
+            },
+        })
+        .unwrap();
+        let svg = export_svg(&page, DocumentUnits::Millimeters, &[], &BTreeSet::new());
+        assert!(svg.contains("<polygon"));
+    }
+
+    #[test]
     fn ephemeral_command_ink_never_appears_in_svg_output() {
         let mut page = Page::new(PageId::new(), "Page 1");
         let ephemeral_id = StrokeId::new();

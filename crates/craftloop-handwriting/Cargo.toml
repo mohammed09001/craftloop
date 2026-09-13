@@ -19,3 +19,6 @@ craftloop-units = { path = "../craftloop-units" }
 craftloop-geometry = { path = "../craftloop-geometry" }
 craftloop-input = { path = "../craftloop-input" }
 serde_json.workspace = true
+
+[lints]
+workspace = true

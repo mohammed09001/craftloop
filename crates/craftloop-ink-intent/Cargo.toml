@@ -17,3 +17,6 @@ craftloop-recognition = { path = "../craftloop-recognition" }
 [dev-dependencies]
 craftloop-input = { path = "../craftloop-input" }
 craftloop-ids = { path = "../craftloop-ids" }
+
+[lints]
+workspace = true

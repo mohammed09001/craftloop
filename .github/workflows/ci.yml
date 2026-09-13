@@ -1,0 +1,79 @@
+# Execution 01, Phase 27, Tasks 192/193/198/199.
+#
+# Two required jobs: Windows (the shared core plus the disposable
+# `windows-harness` test app it was built to exercise -- Task 198) and
+# Linux (the shared core only, since `windows-harness` is a Windows-only
+# native test harness by design, not a portability target -- Task 199).
+# `cargo test --workspace` is the authoritative command both jobs run,
+# matching the exact commands every phase's evidence has been captured
+# with since Phase 01; `cargo nextest` is used only as a faster local
+# runner (Task 193) and is not required for this gate to pass.
+#
+# `cargo fmt --check` and `cargo clippy --all-targets` (Task 192) are
+# additionally required to pass with zero output: since Cargo.toml now
+# declares `[workspace.lints] warnings = "deny"` / `clippy.all = "deny"`
+# and every member crate opts in via `[lints]\nworkspace = true`, a plain
+# `cargo clippy --workspace --all-targets` already fails the build on any
+# finding -- no separate `-D warnings` flag is required here, though it is
+# passed anyway for explicitness and to match every phase's own evidence
+# commands exactly.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows:
+    name: Windows (shared core + windows-harness)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --workspace
+      - name: Test
+        run: cargo test --workspace
+
+  linux:
+    name: Linux (shared core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Clippy (shared core only)
+        run: cargo clippy --workspace --exclude windows-harness --all-targets -- -D warnings
+      - name: Build (shared core only)
+        run: cargo build --workspace --exclude windows-harness
+      - name: Test (shared core only)
+        run: cargo test --workspace --exclude windows-harness

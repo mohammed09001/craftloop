@@ -9,3 +9,6 @@ description = "Reusable test fixture builders for the Craft Loop shared engineer
 
 [dependencies]
 craftloop-ids = { path = "../craftloop-ids" }
+
+[lints]
+workspace = true

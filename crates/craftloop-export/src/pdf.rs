@@ -356,6 +356,77 @@ mod tests {
     }
 
     #[test]
+    fn a_beautified_circle_produces_a_closed_polygon_path() {
+        let mut page = Page::new(PageId::new(), "Page 1");
+        let circle = craftloop_geometry::Circle2::new(Point2::new(5.0, 5.0), 3.0).unwrap();
+        page.insert(SemanticEntity::Primitive {
+            id: PrimitiveId::new(),
+            beautified: Beautified {
+                primitive: BeautifiedPrimitive::Circle(circle),
+                displacement: 0.0,
+            },
+        })
+        .unwrap();
+        let bytes = export_pdf_bounded(&page, DocumentUnits::Millimeters, &[], &BTreeSet::new());
+        let text = bytes_to_ascii(&bytes);
+        assert!(text.contains(" m\n"));
+        assert!(
+            text.contains("\nh\n"),
+            "a circle path must close (h operator)"
+        );
+        assert!(text.contains("\nS\n"));
+    }
+
+    #[test]
+    fn a_beautified_arc_produces_an_open_polyline_path() {
+        let mut page = Page::new(PageId::new(), "Page 1");
+        let arc = craftloop_geometry::Arc2::new(
+            Point2::new(0.0, 0.0),
+            4.0,
+            0.0,
+            std::f64::consts::FRAC_PI_2,
+        )
+        .unwrap();
+        page.insert(SemanticEntity::Primitive {
+            id: PrimitiveId::new(),
+            beautified: Beautified {
+                primitive: BeautifiedPrimitive::Arc(arc),
+                displacement: 0.0,
+            },
+        })
+        .unwrap();
+        let bytes = export_pdf_bounded(&page, DocumentUnits::Millimeters, &[], &BTreeSet::new());
+        let text = bytes_to_ascii(&bytes);
+        assert!(text.contains(" m\n"));
+        assert!(text.contains(" l\n"));
+        assert!(text.contains("\nS\n"));
+    }
+
+    #[test]
+    fn a_beautified_rectangle_produces_a_closed_four_sided_path() {
+        let mut page = Page::new(PageId::new(), "Page 1");
+        let rectangle = craftloop_geometry::RelationalRectangle::from_axis_aligned(
+            Point2::new(0.0, 0.0),
+            Point2::new(10.0, 5.0),
+        )
+        .unwrap();
+        page.insert(SemanticEntity::Primitive {
+            id: PrimitiveId::new(),
+            beautified: Beautified {
+                primitive: BeautifiedPrimitive::Rectangle(rectangle),
+                displacement: 0.0,
+            },
+        })
+        .unwrap();
+        let bytes = export_pdf_bounded(&page, DocumentUnits::Millimeters, &[], &BTreeSet::new());
+        let text = bytes_to_ascii(&bytes);
+        assert!(
+            text.contains("\nh\n"),
+            "a rectangle path must close (h operator)"
+        );
+    }
+
+    #[test]
     fn ephemeral_command_ink_never_appears_in_pdf_content() {
         let mut page = Page::new(PageId::new(), "Page 1");
         let ephemeral_id = StrokeId::new();

@@ -25,3 +25,6 @@ craftloop-serialization = { path = "../craftloop-serialization" }
 craftloop-consistency = { path = "../craftloop-consistency" }
 craftloop-input = { path = "../craftloop-input" }
 craftloop-command = { path = "../craftloop-command" }
+
+[lints]
+workspace = true

@@ -1,0 +1,50 @@
+Execution 01, Phase 27, Task 196 -- benchmark suite results.
+
+Commands run (each with a short 1s warm-up/measurement window for
+evidence capture; default criterion settings for real local runs):
+
+  cargo bench -p craftloop-recognition --bench recognition_bench
+  cargo bench -p craftloop-sketch --bench solve_bench
+  cargo bench -p craftloop-document --bench propagation_bench --bench large_document_bench
+
+Recognition (craftloop-recognition/benches/recognition_bench.rs)
+------------------------------------------------------------------
+recognize/32             time:   [3.3030 us 3.5281 us 3.7899 us]
+  Found 2 outliers among 100 measurements (2.00%)
+recognize/256            time:   [17.462 us 18.703 us 19.931 us]
+  Found 1 outliers among 100 measurements (1.00%)
+
+Constraint solving (craftloop-sketch/benches/solve_bench.rs, real ezpz backend)
+------------------------------------------------------------------
+ezpz_solve/chain_5       time:   [54.330 us 58.722 us 63.937 us]
+  Found 9 outliers among 100 measurements (9.00%)
+ezpz_solve/chain_20      time:   [267.23 us 284.85 us 304.67 us]
+  Found 3 outliers among 100 measurements (3.00%)
+
+Multiview propagation (craftloop-document/benches/propagation_bench.rs)
+------------------------------------------------------------------
+propagate_confirmed_value/views_4    time:   [304.17 ns 314.93 ns 327.85 ns]
+  Found 8 outliers among 100 measurements (8.00%)
+propagate_confirmed_value/views_64   time:   [2.2478 us 2.3818 us 2.5330 us]
+  Found 15 outliers among 100 measurements (15.00%)
+
+Serialization / large-document (craftloop-document/benches/large_document_bench.rs)
+------------------------------------------------------------------
+to_canonical_json_large_document/notes_100     time:   [271.68 us 288.29 us 307.87 us]
+  Found 3 outliers among 100 measurements (3.00%)
+to_canonical_json_large_document/notes_1000    time:   [3.1151 ms 3.3077 ms 3.5051 ms]
+
+Notes
+-----
+- Every number above is from a real local run on this machine's hardware
+  in this session, not an estimate or a placeholder -- captured directly
+  from criterion's own terminal output.
+- Outlier counts are criterion's own statistical detection (a normal
+  property of wall-clock benchmarking on a shared, non-isolated machine),
+  not a correctness signal; none of the four suites failed or panicked.
+- These are baseline measurements, not a pass/fail gate: no phase task
+  asks for a performance budget, and none is invented here. Their value
+  is as a regression baseline for Phase 31 (Performance, Reliability, and
+  Hardening) to compare against, and as evidence the five named operation
+  classes (recognition, solving, propagation, serialization, large-document)
+  are each independently measurable, not just "fast in practice."

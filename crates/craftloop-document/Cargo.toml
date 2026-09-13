@@ -26,3 +26,15 @@ craftloop-command = { path = "../craftloop-command" }
 
 [dev-dependencies]
 craftloop-input = { path = "../craftloop-input" }
+criterion.workspace = true
+
+[[bench]]
+name = "propagation_bench"
+harness = false
+
+[[bench]]
+name = "large_document_bench"
+harness = false
+
+[lints]
+workspace = true

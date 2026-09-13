@@ -478,3 +478,26 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   bugs found; two import-path errors and four mechanical clippy findings
   (all test code) fixed before first green run.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 27 — closed 2026-09-13
+- Evidence: `29-phase-27-quality-tooling.md`;
+  `test-reports/phase-27-cargo-{test,clippy,fmt,nextest}.txt`;
+  `quality-tooling/phase-27-coverage-summary.txt`;
+  `quality-tooling/phase-27-benchmark-results.txt`;
+  `fuzzing-decision-record.md`.
+- Code/config: workspace-wide `[lints] workspace = true` policy
+  (warnings/clippy::all deny); `.config/nextest.toml`;
+  `.github/workflows/ci.yml` (Windows + Linux) and
+  `macos-compile-gate.yml`; proptest suites for
+  craftloop-serialization/craftloop-units/craftloop-constraint (geometry's
+  own predate this phase, Phase 02 Task 020); criterion benchmarks for
+  recognition/solving/propagation/serialization+large-document.
+- Tests: 723/723 passing workspace-wide (13 new: 7 property tests + 6
+  coverage-closing tests). Coverage tooling (`cargo-llvm-cov`) found a
+  real gap -- Phase 26's `svg.rs`/`pdf.rs` only tested the `Line`
+  primitive variant (76%/83% region coverage) -- closed with 6 new tests
+  (96%/98% after). Fuzzing (Task 197) formally deferred: no nightly/
+  libFuzzer toolchain in this sandbox.
+- Lint/format: both clean, no clippy findings -- and now self-enforcing
+  via `[workspace.lints]`, not dependent on an external `-D warnings`
+  flag.

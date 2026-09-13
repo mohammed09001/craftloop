@@ -1,0 +1,729 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.69s
+────────────
+ Nextest run ID 9c0f899c-e019-4bdc-b628-8fce3a4be539 with nextest profile: default
+    Starting 723 tests across 37 binaries
+        PASS [   0.025s] (  1/723) craftloop-command confirmation::tests::a_barely_touching_enclosure_stays_ink
+        PASS [   0.027s] (  2/723) craftloop-command bus::tests::a_valid_low_risk_command_is_accepted_without_confirmation
+        PASS [   0.032s] (  3/723) craftloop-command bus::tests::a_high_risk_command_without_confirmation_is_rejected_and_not_recorded
+        PASS [   0.037s] (  4/723) craftloop-command bus::tests::history_preserves_submission_order
+        PASS [   0.045s] (  5/723) craftloop-command confirmation::tests::a_context_that_would_read_this_as_geometry_takes_priority_over_a_perfect_enclosure
+        PASS [   0.056s] (  6/723) craftloop-command bus::tests::a_high_risk_command_with_a_full_confirmation_is_accepted
+        PASS [   0.062s] (  7/723) craftloop-command bus::tests::every_source_channel_shares_the_same_history_task_142
+        PASS [   0.072s] (  8/723) craftloop-command bus::tests::an_action_not_valid_in_its_declared_namespace_is_rejected_and_not_recorded
+        PASS [   0.053s] (  9/723) craftloop-command confirmation::tests::a_gesture_around_much_older_content_is_never_treated_as_confirmation
+        PASS [   0.059s] ( 10/723) craftloop-command confirmation::tests::a_gesture_before_the_command_is_never_recent
+        PASS [   0.062s] ( 11/723) craftloop-command confirmation::tests::a_gesture_immediately_after_the_command_is_recent
+        PASS [   0.062s] ( 12/723) craftloop-command confirmation::tests::a_gesture_long_after_the_command_is_not_recent
+        PASS [   0.063s] ( 13/723) craftloop-command confirmation::tests::a_partial_but_deliberate_enclosure_only_previews
+        PASS [   0.058s] ( 14/723) craftloop-command confirmation::tests::a_user_disabled_setting_is_respected_regardless_of_evidence_quality
+        PASS [   0.058s] ( 15/723) craftloop-command confirmation::tests::content_that_is_not_a_valid_command_never_executes
+        PASS [   0.056s] ( 16/723) craftloop-command confirmation::tests::high_confidence_evidence_executes
+        PASS [   0.055s] ( 17/723) craftloop-command confirmation::tests::stale_content_never_executes_even_with_a_perfect_enclosure
+        PASS [   0.054s] ( 18/723) craftloop-command ephemeral::tests::a_command_with_no_separate_confirmation_stroke_only_removes_its_own_text
+        PASS [   0.053s] ( 19/723) craftloop-command ephemeral::tests::both_the_command_text_and_the_confirmation_gesture_are_marked_for_removal
+        PASS [   0.052s] ( 20/723) craftloop-command ephemeral::tests::the_undo_record_survives_independent_of_which_strokes_are_removed
+        PASS [   0.051s] ( 21/723) craftloop-command grammar::tests::a_curated_synonym_resolves_to_the_same_action_as_the_full_word
+        PASS [   0.051s] ( 22/723) craftloop-command grammar::tests::a_full_word_match_is_exact_even_when_it_is_also_a_prefix_of_something_else
+        PASS [   0.052s] ( 23/723) craftloop-command grammar::tests::a_prefix_of_exactly_one_word_is_unique_not_ambiguous
+        PASS [   0.050s] ( 24/723) craftloop-command grammar::tests::a_word_from_a_different_namespace_does_not_match
+        PASS [   0.049s] ( 25/723) craftloop-command grammar::tests::an_ambiguous_prefix_never_guesses_and_names_every_candidate
+        PASS [   0.052s] ( 26/723) craftloop-command grammar::tests::an_unambiguous_prefix_resolves_via_shortest_unique_prefix
+        PASS [   0.051s] ( 27/723) craftloop-command grammar::tests::dimension_is_valid_in_both_sketch_and_orthographic_as_the_same_action
+        PASS [   0.052s] ( 28/723) craftloop-command grammar::tests::empty_input_never_matches_anything
+        PASS [   0.052s] ( 29/723) craftloop-command grammar::tests::every_namespaces_vocabulary_has_no_internal_duplicate_words
+        PASS [   0.051s] ( 30/723) craftloop-command grammar::tests::matching_is_case_insensitive
+        PASS [   0.053s] ( 31/723) craftloop-command risk::tests::high_risk_destructive_commands_require_full_execute_confidence
+        PASS [   0.053s] ( 32/723) craftloop-command risk::tests::low_risk_executes_on_a_preview_level_result_too
+        PASS [   0.055s] ( 33/723) craftloop-command risk::tests::low_risk_still_never_executes_ink_that_was_never_a_command
+        PASS [   0.055s] ( 34/723) craftloop-command risk::tests::medium_risk_accepts_a_preview_level_confirmation
+        PASS [   0.054s] ( 35/723) craftloop-command risk::tests::no_risk_level_ever_executes_from_remains_ink
+        PASS [   0.054s] ( 36/723) craftloop-command risk::tests::only_low_risk_skips_the_confirmation_requirement
+        PASS [   0.055s] ( 37/723) craftloop-consistency conflict::tests::a_resolved_conflict_is_not_unresolved_but_still_exists
+        PASS [   0.064s] ( 38/723) craftloop-consistency conflict::tests::a_fresh_conflict_is_unresolved
+        PASS [   0.054s] ( 39/723) craftloop-consistency conflict::tests::a_resolved_status_round_trips_with_its_choice
+        PASS [   0.055s] ( 40/723) craftloop-consistency conflict::tests::serialization_round_trips
+        PASS [   0.053s] ( 41/723) craftloop-consistency dimension_validation::tests::a_driving_dimension_whose_constraint_is_satisfied_has_no_conflict
+        PASS [   0.051s] ( 42/723) craftloop-consistency dimension_validation::tests::a_driving_dimension_whose_constraint_is_unsatisfied_is_a_conflict
+        PASS [   0.051s] ( 43/723) craftloop-consistency dimension_validation::tests::an_unsatisfied_constraint_for_a_different_dimension_does_not_leak_into_this_one
+        PASS [   0.051s] ( 44/723) craftloop-consistency dimension_validation::tests::non_driving_roles_never_produce_a_conflict_here_task_105
+        PASS [   0.044s] ( 45/723) craftloop-consistency geometry_validation::tests::a_collapsed_flat_rectangle_is_flagged_degenerate
+        PASS [   0.047s] ( 46/723) craftloop-consistency geometry_validation::tests::a_line_barely_below_committed_tolerance_is_still_flagged
+        PASS [   0.050s] ( 47/723) craftloop-consistency geometry_validation::tests::a_normal_length_line_has_no_conflict
+        PASS [   0.051s] ( 48/723) craftloop-consistency geometry_validation::tests::a_normal_rectangle_has_no_conflict
+        PASS [   0.050s] ( 49/723) craftloop-consistency geometry_validation::tests::a_valid_circle_can_never_be_flagged_it_cannot_be_constructed_degenerate
+        PASS [   0.049s] ( 50/723) craftloop-consistency geometry_validation::tests::a_zero_length_line_is_flagged_degenerate
+        PASS [   0.050s] ( 51/723) craftloop-consistency resolution::tests::resolving_twice_is_rejected_and_the_first_resolution_survives
+        PASS [   0.049s] ( 52/723) craftloop-consistency resolution::tests::resolving_with_a_choice_the_conflict_never_offered_is_rejected
+        PASS [   0.048s] ( 53/723) craftloop-consistency resolution::tests::resolving_with_an_offered_choice_succeeds
+        PASS [   0.048s] ( 54/723) craftloop-consistency unit_validation::tests::a_bare_number_relies_on_the_default_unit_both_times_consistently
+        PASS [   0.048s] ( 55/723) craftloop-consistency unit_validation::tests::a_stored_value_that_drifted_from_its_own_raw_input_is_flagged
+        PASS [   0.048s] ( 56/723) craftloop-consistency unit_validation::tests::a_value_matching_its_own_raw_input_has_no_conflict
+        PASS [   0.049s] ( 57/723) craftloop-consistency unit_validation::tests::an_unparseable_raw_input_surfaces_the_parser_error_not_a_panic
+        PASS [   0.052s] ( 58/723) craftloop-consistency unit_validation::tests::differences_within_tolerance_are_not_flagged
+        PASS [   0.059s] ( 59/723) craftloop-constraint constraint::tests::distance_reports_all_four_underlying_scalar_variables
+        PASS [   0.067s] ( 60/723) craftloop-constraint constraint::tests::circle_tangent_to_circle_reports_all_eight_underlying_scalar_variables
+        PASS [   0.060s] ( 61/723) craftloop-constraint constraint::tests::equal_length_reports_all_eight_underlying_scalar_variables
+        PASS [   0.062s] ( 62/723) craftloop-constraint constraint::tests::fixed_value_reports_exactly_one_variable
+        PASS [   0.064s] ( 63/723) craftloop-constraint constraint::tests::line_tangent_to_circle_reports_all_eight_underlying_scalar_variables
+        PASS [   0.063s] ( 64/723) craftloop-constraint constraint::tests::new_variants_serialize_and_round_trip
+        PASS [   0.066s] ( 65/723) craftloop-constraint constraint::tests::parallel_reports_all_eight_underlying_scalar_variables
+        PASS [   0.065s] ( 66/723) craftloop-constraint constraint::tests::serialization_round_trips
+        PASS [   0.056s] ( 67/723) craftloop-constraint constraint::tests::symmetric_reports_all_eight_underlying_scalar_variables
+        PASS [   0.063s] ( 68/723) craftloop-constraint residual::tests::all_residuals_are_nonnegative
+        PASS [   0.063s] ( 69/723) craftloop-constraint residual::tests::angle_residual_is_zero_for_a_matching_right_angle
+        PASS [   0.060s] ( 70/723) craftloop-constraint residual::tests::circle_tangent_to_circle_residual_is_zero_for_externally_tangent_circles
+        PASS [   0.060s] ( 71/723) craftloop-constraint residual::tests::coincident_residual_is_the_distance_between_the_two_points
+        PASS [   0.059s] ( 72/723) craftloop-constraint residual::tests::distance_residual_matches_actual_euclidean_distance_minus_target
+        PASS [   0.058s] ( 73/723) craftloop-constraint residual::tests::equal_length_residual_is_positive_for_unequal_lengths
+        PASS [   0.058s] ( 74/723) craftloop-constraint residual::tests::equal_length_residual_is_zero_for_two_segments_of_equal_length
+        PASS [   0.055s] ( 75/723) craftloop-constraint residual::tests::fixed_value_residual_is_positive_when_unsatisfied
+        PASS [   0.053s] ( 76/723) craftloop-constraint residual::tests::fixed_value_residual_is_zero_when_satisfied
+        PASS [   0.057s] ( 77/723) craftloop-constraint residual::tests::line_tangent_to_circle_residual_is_positive_when_the_line_crosses_the_circle
+        PASS [   0.056s] ( 78/723) craftloop-constraint residual::tests::line_tangent_to_circle_residual_is_zero_when_tangent
+        PASS [   0.059s] ( 79/723) craftloop-constraint residual::tests::parallel_residual_is_zero_for_two_parallel_segments
+        PASS [   0.062s] ( 80/723) craftloop-constraint residual::tests::perpendicular_residual_is_zero_for_a_right_angle
+        PASS [   0.060s] ( 81/723) craftloop-constraint residual::tests::symmetric_residual_is_positive_for_a_non_mirrored_pair
+        PASS [   0.060s] ( 82/723) craftloop-constraint residual::tests::symmetric_residual_is_zero_for_a_true_mirror_pair
+        PASS [   0.061s] ( 83/723) craftloop-constraint result::tests::is_solved_is_true_only_for_the_solved_status
+        PASS [   0.060s] ( 84/723) craftloop-constraint result::tests::serialization_round_trips_including_diagnostics
+        PASS [   0.058s] ( 85/723) craftloop-constraint result::tests::value_of_reads_back_a_stored_variable
+        PASS [   0.058s] ( 86/723) craftloop-constraint solver::tests::a_satisfied_system_reports_solved_with_no_diagnostics
+        PASS [   0.055s] ( 87/723) craftloop-constraint solver::tests::an_unsatisfied_constraint_is_named_in_diagnostics_with_its_residual
+        PASS [   0.051s] ( 88/723) craftloop-constraint solver::tests::distance_and_coincident_together_reflect_a_realistic_two_point_system
+        PASS [   0.057s] ( 89/723) craftloop-constraint solver::tests::resolve_incremental_reflects_updated_variable_values
+        PASS [   0.056s] ( 90/723) craftloop-constraint solver::tests::the_default_underconstrained_variables_implementation_reports_nothing
+        PASS [   0.055s] ( 91/723) craftloop-constraint solver::tests::tolerance_controls_what_counts_as_satisfied
+        PASS [   0.055s] ( 92/723) craftloop-constraint variable::tests::point_variables_group_two_distinct_ids
+        PASS [   0.055s] ( 93/723) craftloop-constraint variable::tests::serialization_round_trips
+        PASS [   0.056s] ( 94/723) craftloop-constraint variable::tests::variable_id_supports_equality_and_ordering_for_deterministic_output
+        PASS [   0.066s] ( 95/723) craftloop-constraint::residual_properties equal_values_residual_is_nonnegative_and_zero_when_equal
+        PASS [   0.078s] ( 96/723) craftloop-constraint::residual_properties coincident_residual_is_nonnegative_and_zero_for_the_same_point
+        PASS [   0.064s] ( 97/723) craftloop-constraint::residual_properties fixed_value_residual_is_nonnegative_and_zero_when_satisfied
+        PASS [   0.055s] ( 98/723) craftloop-dimension annotation::tests::serialization_round_trips
+        PASS [   0.067s] ( 99/723) craftloop-dimension annotation::tests::a_new_annotation_is_visible_by_default
+        PASS [   0.057s] (100/723) craftloop-dimension association::tests::a_candidate_in_a_different_view_never_wins_even_if_it_is_closer
+        PASS [   0.057s] (101/723) craftloop-dimension association::tests::a_candidate_with_no_view_at_all_is_excluded_once_a_view_is_active
+        PASS [   0.058s] (102/723) craftloop-dimension association::tests::a_dimension_guide_target_wins_over_plain_proximity_when_nothing_is_explicitly_selected
+        PASS [   0.042s] (103/723) craftloop-dimension association::tests::a_far_ambiguous_candidate_needs_preview_rather_than_auto_committing
+        PASS [   0.044s] (104/723) craftloop-dimension association::tests::a_perpendicular_offset_can_outrank_a_closer_but_in_line_offset
+        PASS [   0.045s] (105/723) craftloop-dimension association::tests::explicit_selection_still_wins_over_a_dimension_guide_when_both_are_present
+        PASS [   0.049s] (106/723) craftloop-dimension association::tests::explicit_selection_wins_even_when_a_different_candidate_is_geometrically_closer
+        PASS [   0.050s] (107/723) craftloop-dimension association::tests::no_eligible_candidates_returns_an_empty_not_fabricated_result
+        PASS [   0.055s] (108/723) craftloop-dimension association::tests::proximity_alone_never_produces_a_result_the_engine_cannot_also_explain_with_orientation
+        PASS [   0.053s] (109/723) craftloop-dimension association::tests::the_closer_of_two_unselected_candidates_ranks_higher
+        PASS [   0.052s] (110/723) craftloop-dimension association::tests::two_nearly_equidistant_candidates_are_both_surfaced_not_silently_collapsed_to_one
+        PASS [   0.052s] (111/723) craftloop-dimension association::tests::with_no_active_view_scoping_is_a_no_op
+        PASS [   0.050s] (112/723) craftloop-dimension dimension::tests::a_non_positive_linear_value_is_rejected
+        PASS [   0.053s] (113/723) craftloop-dimension dimension::tests::a_positive_linear_value_is_accepted
+        PASS [   0.052s] (114/723) craftloop-dimension dimension::tests::angular_dimensions_may_be_negative_or_zero
+        PASS [   0.051s] (115/723) craftloop-dimension dimension::tests::feasible_range_accepts_a_current_value_inside_it
+        PASS [   0.051s] (116/723) craftloop-dimension dimension::tests::feasible_range_rejects_a_current_value_outside_it
+        PASS [   0.053s] (117/723) craftloop-dimension dimension::tests::non_finite_values_are_always_rejected
+        PASS [   0.053s] (118/723) craftloop-dimension dimension::tests::set_value_unchecked_enforces_the_feasible_range_too
+        PASS [   0.054s] (119/723) craftloop-dimension feasible_range::tests::a_non_finite_candidate_is_never_feasible
+        PASS [   0.056s] (120/723) craftloop-dimension feasible_range::tests::a_side_length_equal_to_one_of_the_fixed_sides_is_ordinarily_feasible
+        PASS [   0.055s] (121/723) craftloop-dimension feasible_range::tests::boundary_values_are_infeasible_not_feasible
+        PASS [   0.058s] (122/723) craftloop-dimension feasible_range::tests::equal_fixed_sides_have_a_range_starting_at_zero
+        PASS [   0.057s] (123/723) craftloop-dimension feasible_range::tests::non_positive_or_non_finite_side_lengths_are_rejected
+        PASS [   0.056s] (124/723) craftloop-dimension feasible_range::tests::the_30_50_300_example_from_mcp_article_27_is_infeasible
+        PASS [   0.056s] (125/723) craftloop-dimension feasible_range::tests::the_30_50_range_is_exactly_20_to_80
+        PASS [   0.057s] (126/723) craftloop-dimension feasible_range::tests::values_just_inside_the_boundary_are_feasible
+        PASS [   0.058s] (127/723) craftloop-dimension kind::tests::only_angular_reports_itself_as_angular
+        PASS [   0.058s] (128/723) craftloop-dimension kind::tests::serialization_round_trips_for_every_kind
+        PASS [   0.057s] (129/723) craftloop-dimension role::tests::every_role_has_a_jargon_free_explanation
+        PASS [   0.055s] (130/723) craftloop-dimension role::tests::only_driving_is_directly_editable
+        PASS [   0.056s] (131/723) craftloop-dimension role::tests::serialization_round_trips_for_every_role
+        PASS [   0.055s] (132/723) craftloop-dimension store::tests::a_dimension_can_have_zero_one_or_many_annotations
+        PASS [   0.055s] (133/723) craftloop-dimension store::tests::an_annotation_cannot_reference_an_unknown_dimension
+        PASS [   0.054s] (134/723) craftloop-dimension store::tests::an_invalid_new_value_is_rejected_and_leaves_the_dimension_unchanged
+        PASS [   0.053s] (135/723) craftloop-dimension store::tests::deleting_an_annotation_does_not_delete_the_dimension
+        PASS [   0.053s] (136/723) craftloop-dimension store::tests::editing_a_driving_dimension_succeeds_and_returns_the_previous_value
+        PASS [   0.051s] (137/723) craftloop-dimension store::tests::editing_a_reference_dimension_is_rejected_and_leaves_it_unchanged
+        PASS [   0.050s] (138/723) craftloop-dimension store::tests::editing_an_unknown_dimension_is_a_structured_error
+        PASS [   0.049s] (139/723) craftloop-dimension store::tests::explicitly_removing_a_dimension_cascades_to_its_annotations
+        PASS [   0.051s] (140/723) craftloop-dimension store::tests::hiding_an_annotation_does_not_touch_the_dimension_or_other_annotations
+        PASS [   0.051s] (141/723) craftloop-dimension store::tests::inserting_a_dimension_with_a_duplicate_id_is_rejected
+        PASS [   0.052s] (142/723) craftloop-dimension store::tests::reassigning_a_targets_moves_it_without_touching_value_role_or_annotations
+        PASS [   0.052s] (143/723) craftloop-dimension store::tests::reassigning_an_unknown_dimensions_target_is_a_structured_error
+        PASS [   0.051s] (144/723) craftloop-dimension target::tests::pair_target_reports_both_primitives_in_order
+        PASS [   0.052s] (145/723) craftloop-dimension target::tests::serialization_round_trips
+        PASS [   0.054s] (146/723) craftloop-dimension target::tests::single_target_reports_exactly_one_primitive
+        PASS [   0.056s] (147/723) craftloop-dimension::serialization a_semantic_dimension_serializes_and_reloads_with_no_annotation_present_anywhere
+        PASS [   0.069s] (148/723) craftloop-dimension::serialization a_dimension_store_round_trips_with_dimensions_and_annotations_as_separate_top_level_maps
+        PASS [   0.056s] (149/723) craftloop-dimension::serialization an_annotation_serializes_and_reloads_referencing_its_dimension_only_by_id
+        PASS [   0.056s] (150/723) craftloop-dimension::serialization semantic_state_is_unaffected_by_an_annotation_round_trip_and_vice_versa
+        PASS [   0.058s] (151/723) craftloop-dimension::wrong_target_regression a_wrong_association_that_already_committed_is_corrected_without_losing_the_dimensions_value_or_annotations
+        PASS [   0.067s] (152/723) craftloop-dimension::wrong_target_regression a_value_written_near_two_similarly_plausible_lines_never_silently_locks_onto_one
+        PASS [   0.056s] (153/723) craftloop-dimension::wrong_target_regression explicit_selection_prevents_the_wrong_target_from_ever_being_proposed
+        PASS [   0.053s] (154/723) craftloop-document autosave::tests::append_then_read_all_returns_records_in_order
+        PASS [   0.071s] (155/723) craftloop-document autosave::tests::a_dangling_incomplete_final_line_is_not_returned_as_a_record
+        PASS [   0.054s] (156/723) craftloop-document autosave::tests::clear_removes_the_journal_file
+        PASS [   0.057s] (157/723) craftloop-document autosave::tests::reading_a_nonexistent_journal_returns_an_empty_list_not_an_error
+        PASS [   0.057s] (158/723) craftloop-document correspondence::tests::a_confirmed_link_is_distinguishable_from_a_mere_suggestion
+        PASS [   0.050s] (159/723) craftloop-document correspondence::tests::a_confirmed_pair_dimension_is_strong_evidence
+        PASS [   0.054s] (160/723) craftloop-document correspondence::tests::a_rejected_pair_never_produces_a_candidate_again
+        PASS [   0.056s] (161/723) craftloop-document correspondence::tests::a_top_right_pair_gets_no_coordinate_evidence_extent_only
+        PASS [   0.043s] (162/723) craftloop-document correspondence::tests::an_already_confirmed_candidate_is_not_a_missing_fact
+        PASS [   0.046s] (163/723) craftloop-document correspondence::tests::deliberately_independent_geometry_produces_no_candidate_at_all
+        PASS [   0.049s] (164/723) craftloop-document correspondence::tests::manual_confirm_and_unlink_work_with_zero_evidence_machinery_involved
+        PASS [   0.051s] (165/723) craftloop-document correspondence::tests::no_candidates_means_no_missing_fact
+        PASS [   0.050s] (166/723) craftloop-document correspondence::tests::repeated_holes_of_identical_size_both_produce_plausible_but_unconfirmed_candidates
+        PASS [   0.050s] (167/723) craftloop-document correspondence::tests::similar_length_edges_produce_extent_evidence
+        PASS [   0.054s] (168/723) craftloop-document correspondence::tests::smallest_missing_fact_picks_the_single_highest_confidence_unconfirmed_candidate
+        PASS [   0.055s] (169/723) craftloop-document correspondence::tests::the_deterministic_ranker_sorts_by_confidence_without_confirming_anything
+        PASS [   0.056s] (170/723) craftloop-document correspondence::tests::two_circles_aligned_on_the_shared_front_top_axis_get_coordinate_evidence
+        PASS [   0.058s] (171/723) craftloop-document document::tests::a_freshly_constructed_document_always_validates
+        PASS [   0.058s] (172/723) craftloop-document document::tests::a_future_schema_version_fails_validation
+        PASS [   0.058s] (173/723) craftloop-document document::tests::a_new_document_starts_at_revision_zero
+        PASS [   0.058s] (174/723) craftloop-document document::tests::add_page_increases_page_count_and_keeps_the_original_active_page
+        PASS [   0.057s] (175/723) craftloop-document document::tests::bump_revision_increments_monotonically
+        PASS [   0.053s] (176/723) craftloop-document document::tests::new_document_has_one_page_and_it_is_active
+        PASS [   0.053s] (177/723) craftloop-document document::tests::page_mut_returns_a_structured_error_for_an_unknown_page
+        PASS [   0.054s] (178/723) craftloop-document document::tests::provenance_defaults_to_none_and_can_be_set_and_cleared
+        PASS [   0.051s] (179/723) craftloop-document document::tests::set_active_page_rejects_an_unknown_page_id
+        PASS [   0.051s] (180/723) craftloop-document entity::tests::a_conflict_entity_id_round_trips_like_every_other_kind
+        PASS [   0.052s] (181/723) craftloop-document entity::tests::a_dimension_entity_id_round_trips_like_every_other_kind
+        PASS [   0.051s] (182/723) craftloop-document entity::tests::a_map_keyed_by_entity_id_serializes_and_round_trips
+        PASS [   0.050s] (183/723) craftloop-document entity::tests::entity_id_display_and_from_str_round_trip
+        PASS [   0.050s] (184/723) craftloop-document entity::tests::entity_id_matches_the_wrapped_entitys_own_id
+        PASS [   0.049s] (185/723) craftloop-document entity::tests::entity_id_ordering_is_deterministic_for_btreemap_use
+        PASS [   0.048s] (186/723) craftloop-document entity::tests::entity_id_serializes_as_a_plain_json_string_not_an_object
+        PASS [   0.050s] (187/723) craftloop-document entity::tests::serialization_round_trips_for_each_variant
+        PASS [   0.051s] (188/723) craftloop-document history::tests::a_multi_entity_commit_is_one_transaction_and_applies_all_changes
+        PASS [   0.049s] (189/723) craftloop-document history::tests::a_new_commit_after_undo_clears_the_redo_branch
+        PASS [   0.052s] (190/723) craftloop-document history::tests::a_transaction_spanning_two_pages_undoes_and_redoes_as_one_action
+        PASS [   0.056s] (191/723) craftloop-document history::tests::commit_increments_revision_and_undo_redo_also_change_it
+        PASS [   0.058s] (192/723) craftloop-document history::tests::redo_restores_the_same_semantic_state_via_pure_replay
+        PASS [   0.060s] (193/723) craftloop-document history::tests::set_provenance_undoes_to_the_prior_state_including_none
+        PASS [   0.059s] (194/723) craftloop-document history::tests::undo_reverses_every_change_in_the_transaction_as_one_unit
+        PASS [   0.058s] (195/723) craftloop-document history::tests::undoing_with_no_history_is_a_structured_error_not_a_panic
+        PASS [   0.057s] (196/723) craftloop-document metadata::tests::new_sets_created_and_modified_to_the_same_timestamp
+        PASS [   0.058s] (197/723) craftloop-document metadata::tests::touch_updates_modified_but_not_created
+        PASS [   0.055s] (198/723) craftloop-document migration::tests::a_document_already_at_the_target_version_passes_through_unchanged
+        PASS [   0.052s] (199/723) craftloop-document migration::tests::a_document_newer_than_the_target_is_rejected_rather_than_downgraded
+        PASS [   0.050s] (200/723) craftloop-document migration::tests::a_registered_migration_upgrades_an_old_document
+        PASS [   0.049s] (201/723) craftloop-document migration::tests::an_unregistered_old_version_fails_with_a_structured_error_not_a_guess
+        PASS [   0.048s] (202/723) craftloop-document migration::tests::missing_schema_version_field_is_a_corrupted_document_error
+        PASS [   0.049s] (203/723) craftloop-document multiview::tests::a_freshly_identified_view_reports_every_consumed_axis_as_unresolved
+        PASS [   0.048s] (204/723) craftloop-document multiview::tests::affected_views_finds_every_view_sharing_a_dimension
+        PASS [   0.050s] (205/723) craftloop-document multiview::tests::an_empty_graph_round_trips_too
+        PASS [   0.050s] (206/723) craftloop-document multiview::tests::an_unidentified_view_has_no_unresolved_axes_reported_identity_is_the_prior_blocker
+        PASS [   0.051s] (207/723) craftloop-document multiview::tests::binding_a_dimension_to_one_view_never_touches_an_unrelated_views_bindings
+        PASS [   0.050s] (208/723) craftloop-document multiview::tests::binding_an_axis_on_a_view_with_no_identity_is_rejected
+        PASS [   0.051s] (209/723) craftloop-document multiview::tests::binding_an_axis_the_views_identity_does_not_consume_is_rejected
+        PASS [   0.051s] (210/723) craftloop-document multiview::tests::binding_one_axis_leaves_the_others_reported_as_unresolved
+        PASS [   0.051s] (211/723) craftloop-document multiview::tests::bindings_for_view_lists_every_axis_that_view_controls
+        PASS [   0.051s] (212/723) craftloop-document multiview::tests::front_and_top_can_share_the_exact_same_width_dimension
+        PASS [   0.050s] (213/723) craftloop-document multiview::tests::front_consumes_width_and_height_top_consumes_width_and_depth
+        PASS [   0.052s] (214/723) craftloop-document multiview::tests::the_graph_serializes_and_reloads_with_every_shared_link_intact
+        PASS [   0.051s] (215/723) craftloop-document multiview::tests::unlinking_an_unbound_axis_is_a_harmless_no_op
+        PASS [   0.059s] (216/723) craftloop-document multiview::tests::unlinking_one_view_from_a_shared_dimension_leaves_other_views_still_linked
+        PASS [   0.057s] (217/723) craftloop-document note::tests::serialization_round_trips
+        PASS [   0.059s] (218/723) craftloop-document orthographic::tests::a_labeled_view_with_real_geometry_and_zero_dimensions_reaches_link_ready_task_156
+        PASS [   0.058s] (219/723) craftloop-document orthographic::tests::a_non_orthographic_command_is_rejected
+        PASS [   0.060s] (220/723) craftloop-document orthographic::tests::a_toolbar_and_an_ink_command_orthographic_transition_produce_the_identical_layout
+        PASS [   0.061s] (221/723) craftloop-document orthographic::tests::an_empty_view_is_only_draft_ready
+        PASS [   0.059s] (222/723) craftloop-document orthographic::tests::an_unresolved_dimension_is_classified_as_incompleteness_not_a_blocker
+        PASS [   0.059s] (223/723) craftloop-document orthographic::tests::default_orthographic_layout_never_repositions_the_source_view
+        PASS [   0.052s] (224/723) craftloop-document orthographic::tests::degenerate_geometry_is_classified_as_a_blocker
+        PASS [   0.056s] (225/723) craftloop-document orthographic::tests::degenerate_member_geometry_prevents_link_ready_even_with_an_identity
+        PASS [   0.055s] (226/723) craftloop-document orthographic::tests::front_never_moves_under_either_convention
+        PASS [   0.056s] (227/723) craftloop-document orthographic::tests::geometry_without_an_identity_is_draft_ready_with_a_blocker
+        PASS [   0.055s] (228/723) craftloop-document orthographic::tests::missing_view_identity_is_classified_as_a_blocker
+        PASS [   0.056s] (229/723) craftloop-document orthographic::tests::switching_convention_changes_the_layout_task_666
+        PASS [   0.054s] (230/723) craftloop-document orthographic::tests::the_computed_layout_is_positioned_relative_to_the_sources_actual_position
+        PASS [   0.054s] (231/723) craftloop-document orthographic::tests::third_angle_places_top_above_and_right_to_the_right
+        PASS [   0.054s] (232/723) craftloop-document page::tests::duplicate_id_insert_is_rejected_and_does_not_overwrite
+        PASS [   0.052s] (233/723) craftloop-document page::tests::entities_iterates_in_deterministic_id_order
+        PASS [   0.053s] (234/723) craftloop-document page::tests::insert_then_get_round_trips
+        PASS [   0.053s] (235/723) craftloop-document page::tests::remove_takes_an_entity_out_of_the_page
+        PASS [   0.051s] (236/723) craftloop-document page_layout::tests::apply_maps_engineering_points_to_page_space_without_mutating_the_input
+        PASS [   0.060s] (237/723) craftloop-document page_layout::tests::identity_transform_is_a_no_op
+        PASS [   0.060s] (238/723) craftloop-document page_layout::tests::moving_the_page_layout_transform_never_touches_stored_entity_coordinates
+        PASS [   0.072s] (239/723) craftloop-document persistence::tests::both_primary_and_backup_corrupted_is_a_real_error_not_a_silent_default
+        PASS [   0.071s] (240/723) craftloop-document persistence::tests::missing_file_is_a_clean_io_error
+        PASS [   0.091s] (241/723) craftloop-document persistence::tests::a_second_save_creates_a_backup_of_the_first
+        PASS [   0.072s] (242/723) craftloop-document propagation::tests::a_first_time_value_with_no_existing_binding_is_not_a_conflict
+        PASS [   0.108s] (243/723) craftloop-document persistence::tests::a_corrupted_primary_file_recovers_from_backup
+        PASS [   0.066s] (244/723) craftloop-document propagation::tests::a_matching_re_confirmation_produces_no_conflict
+        PASS [   0.087s] (245/723) craftloop-document persistence::tests::save_then_load_round_trips_an_equal_document
+        PASS [   0.068s] (246/723) craftloop-document propagation::tests::a_shared_binding_produces_a_projection_guide_between_the_two_views
+        PASS [   0.044s] (247/723) craftloop-document propagation::tests::article_37s_exact_scenario_100mm_then_130mm_is_a_conflict_not_a_second_truth
+        PASS [   0.046s] (248/723) craftloop-document propagation::tests::back_can_share_an_extent_front_has_already_resolved
+        PASS [   0.046s] (249/723) craftloop-document propagation::tests::back_cannot_share_an_extent_front_has_not_resolved_yet
+        PASS [   0.046s] (250/723) craftloop-document propagation::tests::back_cannot_share_depth_which_back_views_do_not_consume
+        PASS [   0.050s] (251/723) craftloop-document propagation::tests::binding_order_across_views_does_not_matter_no_view_is_privileged
+        PASS [   0.049s] (252/723) craftloop-document propagation::tests::projection_guides_are_purely_computed_and_never_mutate_the_graph
+        PASS [   0.056s] (253/723) craftloop-document propagation::tests::propagating_depth_reaches_top_and_right
+        PASS [   0.054s] (254/723) craftloop-document propagation::tests::propagating_height_reaches_front_and_right
+        PASS [   0.053s] (255/723) craftloop-document propagation::tests::propagating_width_reaches_every_view_bound_to_it_front_and_top
+        PASS [   0.052s] (256/723) craftloop-document propagation::tests::propagation_never_touches_a_view_bound_to_a_different_dimension
+        PASS [   0.052s] (257/723) craftloop-document propagation::tests::views_with_no_shared_binding_produce_no_guide
+        PASS [   0.051s] (258/723) craftloop-document propagation::tests::visually_identical_geometry_in_two_views_is_never_auto_linked
+        PASS [   0.051s] (259/723) craftloop-document provenance::tests::every_state_serializes_and_round_trips
+        PASS [   0.050s] (260/723) craftloop-document stale_result::tests::a_result_computed_and_accepted_with_no_intervening_change_is_fresh
+        PASS [   0.049s] (261/723) craftloop-document stale_result::tests::a_result_is_discarded_if_the_document_changed_before_it_completed
+        PASS [   0.050s] (262/723) craftloop-document stale_result::tests::source_revision_reflects_the_revision_at_capture_time
+        PASS [   0.051s] (263/723) craftloop-document units::tests::default_unit_is_millimeters
+        PASS [   0.049s] (264/723) craftloop-document units::tests::serialization_round_trips
+        PASS [   0.049s] (265/723) craftloop-document view::tests::a_linked_duplicate_shares_the_exact_same_membership_and_identity
+        PASS [   0.050s] (266/723) craftloop-document view::tests::a_new_view_block_starts_with_no_identity_and_empty_membership
+        PASS [   0.048s] (267/723) craftloop-document view::tests::a_second_front_in_the_same_set_is_rejected
+        PASS [   0.049s] (268/723) craftloop-document view::tests::an_independent_duplicate_starts_with_no_membership_and_no_identity
+        PASS [   0.050s] (269/723) craftloop-document view::tests::every_initial_principal_identity_can_be_set_and_read_back
+        PASS [   0.049s] (270/723) craftloop-document view::tests::geometry_and_annotation_membership_are_tracked_independently
+        PASS [   0.052s] (271/723) craftloop-document view::tests::hiding_the_label_never_erases_the_identity
+        PASS [   0.054s] (272/723) craftloop-document view::tests::linked_and_independent_duplication_are_visibly_different_outcomes
+        PASS [   0.055s] (273/723) craftloop-document view::tests::moving_a_view_block_changes_only_its_layout_not_its_membership
+        PASS [   0.057s] (274/723) craftloop-document view::tests::multiple_unidentified_views_never_collide_with_each_other
+        PASS [   0.057s] (275/723) craftloop-document view::tests::showing_the_label_again_does_not_change_identity_either
+        PASS [   0.058s] (276/723) craftloop-document view::tests::two_different_sets_may_each_have_their_own_front_view_task_146
+        PASS [   0.058s] (277/723) craftloop-document view::tests::two_views_with_different_identities_join_the_same_set_freely
+        PASS [   0.060s] (278/723) craftloop-document::crash_safe_transactions a_transaction_interrupted_partway_through_leaves_no_partial_changes
+        PASS [   0.078s] (279/723) craftloop-document::conflict_persistence an_unresolved_conflict_survives_save_and_reopen_without_corrupting_the_geometry_it_references
+        PASS [   0.090s] (280/723) craftloop-document::conflict_persistence a_resolved_conflict_survives_save_and_reopen_with_its_resolution_choice_intact
+        PASS [   0.061s] (281/723) craftloop-document::crash_safe_transactions a_transaction_that_fails_after_a_successful_one_does_not_corrupt_prior_committed_state
+        PASS [   0.063s] (282/723) craftloop-document::crash_safe_transactions undo_after_a_failed_transaction_still_correctly_reverts_the_last_real_commit
+        PASS [   0.085s] (283/723) craftloop-document::conflict_persistence repeated_round_trips_of_an_unresolved_conflict_do_not_drift
+        PASS [   0.085s] (284/723) craftloop-document::save_reopen_golden an_empty_document_also_round_trips
+        PASS [   0.103s] (285/723) craftloop-document::save_reopen_golden a_representative_document_survives_save_and_reopen_exactly
+        PASS [   0.064s] (286/723) craftloop-document::save_reopen_golden every_semantic_entity_kind_is_individually_recoverable_after_reopen
+        PASS [   0.068s] (287/723) craftloop-document::save_reopen_golden persisted_stroke_capabilities_still_honestly_report_simulated_input_after_reopen
+        PASS [   0.064s] (288/723) craftloop-errors tests::corrupted_document_defaults_to_blocker_severity
+        PASS [   0.077s] (289/723) craftloop-errors tests::callers_can_match_on_kind_without_string_parsing
+        PASS [   0.071s] (290/723) craftloop-errors tests::command_error_carries_its_typed_kind_and_matches_without_string_parsing
+        PASS [   0.044s] (291/723) craftloop-errors tests::diagnostic_builder_attaches_related_entities
+        PASS [   0.097s] (292/723) craftloop-document::save_reopen_golden reopening_twice_in_a_row_is_stable_no_drift_across_repeated_round_trips
+        PASS [   0.041s] (293/723) craftloop-errors tests::diagnostic_round_trips_through_json
+        PASS [   0.048s] (294/723) craftloop-errors tests::error_display_never_loses_the_typed_kind
+        PASS [   0.046s] (295/723) craftloop-errors tests::severity_can_be_overridden_for_context_the_default_cannot_know
+        PASS [   0.043s] (296/723) craftloop-errors tests::severity_ordering_supports_finding_the_worst_diagnostic
+        PASS [   0.044s] (297/723) craftloop-errors tests::sketch_error_carries_its_typed_kind_and_matches_without_string_parsing
+        PASS [   0.050s] (298/723) craftloop-export diagnostic_json::tests::every_page_and_entity_appears_in_the_export
+        PASS [   0.063s] (299/723) craftloop-export diagnostic_json::tests::an_entity_never_explicitly_classified_has_no_provenance_not_a_fabricated_default
+        PASS [   0.050s] (300/723) craftloop-export diagnostic_json::tests::provenance_is_inlined_next_to_its_entity
+        PASS [   0.054s] (301/723) craftloop-export diagnostic_json::tests::the_export_serializes_to_valid_json
+        PASS [   0.053s] (302/723) craftloop-export pdf::tests::a_beautified_arc_produces_an_open_polyline_path
+        PASS [   0.054s] (303/723) craftloop-export pdf::tests::a_beautified_circle_produces_a_closed_polygon_path
+        PASS [   0.055s] (304/723) craftloop-export pdf::tests::a_beautified_line_produces_path_drawing_operators
+        PASS [   0.055s] (305/723) craftloop-export pdf::tests::a_beautified_rectangle_produces_a_closed_four_sided_path
+        PASS [   0.046s] (306/723) craftloop-export pdf::tests::a_dimension_value_is_converted_to_the_documents_display_unit_in_pdf_text
+        PASS [   0.050s] (307/723) craftloop-export pdf::tests::ephemeral_command_ink_never_appears_in_pdf_content
+        PASS [   0.054s] (308/723) craftloop-export pdf::tests::every_xref_offset_points_at_the_real_start_of_its_object
+        PASS [   0.058s] (309/723) craftloop-export pdf::tests::output_starts_with_the_pdf_header_and_ends_with_eof
+        PASS [   0.062s] (310/723) craftloop-export pdf::tests::the_stream_length_matches_the_actual_content_byte_count
+        PASS [   0.066s] (311/723) craftloop-export svg::tests::a_beautified_arc_becomes_an_svg_path_element
+        PASS [   0.066s] (312/723) craftloop-export svg::tests::a_beautified_circle_becomes_an_svg_circle_element
+        PASS [   0.068s] (313/723) craftloop-export svg::tests::a_beautified_line_becomes_an_svg_line_element
+        PASS [   0.067s] (314/723) craftloop-export svg::tests::a_beautified_rectangle_becomes_an_svg_polygon_element
+        PASS [   0.068s] (315/723) craftloop-export svg::tests::a_dimension_value_renders_converted_to_the_documents_display_unit
+        PASS [   0.069s] (316/723) craftloop-export svg::tests::a_hidden_annotation_is_not_rendered
+        PASS [   0.068s] (317/723) craftloop-export svg::tests::a_note_becomes_visible_svg_text
+        PASS [   0.066s] (318/723) craftloop-export svg::tests::an_empty_page_still_produces_a_well_formed_svg
+        PASS [   0.063s] (319/723) craftloop-export svg::tests::ephemeral_command_ink_never_appears_in_svg_output
+        PASS [   0.063s] (320/723) craftloop-export tests::no_dxf_export_function_exists_in_this_crate
+        PASS [   0.062s] (321/723) craftloop-export tests::the_dxf_gap_is_documented_not_silently_missing
+        PASS [   0.064s] (322/723) craftloop-export visible_entities::tests::a_conflict_entity_is_always_excluded_from_visual_export
+        PASS [   0.062s] (323/723) craftloop-export visible_entities::tests::a_note_is_visible_and_unaffected_by_the_ephemeral_set
+        PASS [   0.061s] (324/723) craftloop-export visible_entities::tests::a_stroke_named_as_ephemeral_command_ink_is_excluded
+        PASS [   0.060s] (325/723) craftloop-export visible_entities::tests::an_ordinary_stroke_is_visible
+        PASS [   0.059s] (326/723) craftloop-export visible_entities::tests::visible_entities_filters_a_real_page
+        PASS [   0.074s] (327/723) craftloop-export::export_integration a_mixed_document_exports_consistently_across_every_target
+        PASS [   0.061s] (328/723) craftloop-geometry arc::tests::bounds_of_a_half_circle_spans_the_full_diameter_on_the_swept_axis
+        PASS [   0.074s] (329/723) craftloop-geometry arc::tests::arc_length_is_nonnegative_and_matches_radius_times_sweep_magnitude
+        PASS [   0.058s] (330/723) craftloop-geometry arc::tests::bounds_of_a_quarter_circle_touching_an_axis_extreme_includes_that_extreme
+        PASS [   0.059s] (331/723) craftloop-geometry arc::tests::contains_angle_handles_wraparound_past_two_pi
+        PASS [   0.059s] (332/723) craftloop-geometry arc::tests::contains_angle_is_true_for_points_strictly_inside_the_sweep
+        PASS [   0.057s] (333/723) craftloop-geometry arc::tests::evaluate_at_zero_and_one_matches_start_and_end_points
+        PASS [   0.057s] (334/723) craftloop-geometry arc::tests::is_full_circle_detects_a_two_pi_sweep
+        PASS [   0.040s] (335/723) craftloop-geometry arc::tests::negative_sweep_goes_clockwise
+        PASS [   0.045s] (336/723) craftloop-geometry arc::tests::non_positive_radius_is_rejected
+        PASS [   0.045s] (337/723) craftloop-geometry arc::tests::quarter_circle_from_zero_sweeps_to_the_expected_point
+        PASS [   0.050s] (338/723) craftloop-geometry arc::tests::zero_sweep_is_rejected
+        PASS [   0.051s] (339/723) craftloop-geometry bounds::tests::empty_slice_has_no_bounds
+        PASS [   0.052s] (340/723) craftloop-geometry bounds::tests::union_of_points_is_the_smallest_enclosing_box
+        PASS [   0.053s] (341/723) craftloop-geometry bounds::tests::width_height_and_contains_are_consistent
+        PASS [   0.053s] (342/723) craftloop-geometry circle::tests::contains_point_is_true_on_and_inside_the_boundary
+        PASS [   0.053s] (343/723) craftloop-geometry circle::tests::distance_to_boundary_is_nonnegative_and_zero_on_boundary
+        PASS [   0.052s] (344/723) craftloop-geometry circle::tests::externally_tangent_circles_touch_at_one_point
+        PASS [   0.053s] (345/723) craftloop-geometry circle::tests::identical_circles_are_coincident
+        PASS [   0.053s] (346/723) craftloop-geometry circle::tests::intersect_circle_is_symmetric
+        PASS [   0.051s] (347/723) craftloop-geometry circle::tests::non_positive_radius_is_rejected
+        PASS [   0.050s] (348/723) craftloop-geometry circle::tests::overlapping_circles_intersect_at_two_points_equidistant_from_both_centers
+        PASS [   0.050s] (349/723) craftloop-geometry circle::tests::positive_radius_is_accepted
+        PASS [   0.051s] (350/723) craftloop-geometry circle::tests::segment_entirely_outside_circle_does_not_intersect
+        PASS [   0.052s] (351/723) craftloop-geometry circle::tests::segment_that_would_intersect_the_infinite_line_but_stops_short_does_not_intersect
+        PASS [   0.054s] (352/723) craftloop-geometry circle::tests::segment_through_circle_center_intersects_at_two_diametrically_opposed_points
+        PASS [   0.054s] (353/723) craftloop-geometry circle::tests::separate_circles_do_not_intersect
+        PASS [   0.057s] (354/723) craftloop-geometry ellipse::tests::evaluate_at_t_zero_lands_on_the_major_axis_vertex
+        PASS [   0.068s] (355/723) craftloop-geometry ellipse::tests::evaluate_is_periodic_in_t
+        PASS [   0.063s] (356/723) craftloop-geometry ellipse::tests::is_circle_detects_equal_axes_within_tolerance
+        PASS [   0.064s] (357/723) craftloop-geometry ellipse::tests::non_positive_axis_is_rejected
+        PASS [   0.065s] (358/723) craftloop-geometry ellipse::tests::quarter_turn_rotation_swaps_the_effective_extents
+        PASS [   0.067s] (359/723) craftloop-geometry ellipse::tests::unrotated_bounds_match_center_plus_minus_axes
+        PASS [   0.067s] (360/723) craftloop-geometry point::tests::coincidence_respects_the_supplied_tolerance_profile
+        PASS [   0.068s] (361/723) craftloop-geometry point::tests::cross_product_sign_encodes_rotation_direction
+        PASS [   0.067s] (362/723) craftloop-geometry point::tests::distance_is_symmetric_and_nonnegative
+        PASS [   0.056s] (363/723) craftloop-geometry point::tests::lerp_at_t_zero_and_one_returns_the_endpoints
+        PASS [   0.062s] (364/723) craftloop-geometry point::tests::normalized_rejects_a_degenerate_vector
+        PASS [   0.061s] (365/723) craftloop-geometry point::tests::perpendicular_vectors_have_zero_dot_product
+        PASS [   0.059s] (366/723) craftloop-geometry point::tests::translate_and_inverse_translate_round_trips
+        PASS [   0.057s] (367/723) craftloop-geometry rectangle::tests::axis_aligned_constructor_always_produces_a_verified_rectangle
+        PASS [   0.057s] (368/723) craftloop-geometry rectangle::tests::axis_aligned_rectangle_has_four_edges_of_the_expected_lengths
+        PASS [   0.056s] (369/723) craftloop-geometry rectangle::tests::bounds_matches_the_corner_extremes
+        PASS [   0.054s] (370/723) craftloop-geometry rectangle::tests::degenerate_axis_aligned_corners_are_rejected
+        PASS [   0.056s] (371/723) craftloop-geometry rectangle::tests::edges_form_a_closed_loop
+        PASS [   0.056s] (372/723) craftloop-geometry rectangle::tests::from_corners_rejects_a_coincident_edge_but_not_a_non_rectangular_quadrilateral
+        PASS [   0.056s] (373/723) craftloop-geometry segment::tests::bounds_matches_the_endpoint_extremes
+        PASS [   0.064s] (374/723) craftloop-geometry segment::tests::closest_point_on_segment_clamps_to_endpoints
+        PASS [   0.065s] (375/723) craftloop-geometry segment::tests::collinear_segments_are_detected
+        PASS [   0.064s] (376/723) craftloop-geometry segment::tests::crossing_segments_intersect_at_one_point
+        PASS [   0.063s] (377/723) craftloop-geometry segment::tests::direction_is_unit_length_and_none_for_degenerate_segment
+        PASS [   0.063s] (378/723) craftloop-geometry segment::tests::distance_to_point_is_nonnegative
+        PASS [   0.059s] (379/723) craftloop-geometry segment::tests::hit_test_respects_max_distance
+        PASS [   0.059s] (380/723) craftloop-geometry segment::tests::intersection_is_symmetric_regardless_of_argument_order
+        PASS [   0.060s] (381/723) craftloop-geometry segment::tests::length_is_nonnegative_and_symmetric_under_reversal
+        PASS [   0.051s] (382/723) craftloop-geometry segment::tests::non_crossing_segments_that_would_cross_if_extended_do_not_intersect
+        PASS [   0.049s] (383/723) craftloop-geometry segment::tests::parallel_non_collinear_segments_report_parallel
+        PASS [   0.050s] (384/723) craftloop-geometry tolerance::tests::committed_snap_distance_is_zero_because_committed_geometry_never_snaps
+        PASS [   0.050s] (385/723) craftloop-geometry tolerance::tests::default_is_the_strict_profile_not_the_loose_one
+        PASS [   0.052s] (386/723) craftloop-geometry tolerance::tests::recognition_profile_is_strictly_looser_than_committed
+        PASS [   0.073s] (387/723) craftloop-geometry::property_tests circle_distance_to_boundary_is_always_nonnegative
+        PASS [   0.069s] (388/723) craftloop-geometry::property_tests circle_intersection_discriminant_is_order_independent
+        PASS [   0.067s] (389/723) craftloop-geometry::property_tests negating_a_vector_twice_returns_the_original
+        PASS [   0.065s] (390/723) craftloop-geometry::property_tests point_distance_is_always_nonnegative
+        PASS [   0.068s] (391/723) craftloop-geometry::property_tests point_distance_is_symmetric
+        PASS [   0.064s] (392/723) craftloop-geometry::property_tests points_beyond_the_coincidence_tolerance_are_not_coincident
+        PASS [   0.069s] (393/723) craftloop-geometry::property_tests points_within_the_coincidence_tolerance_are_coincident
+        PASS [   0.067s] (394/723) craftloop-geometry::property_tests recognition_tolerance_accepts_everything_committed_tolerance_accepts
+        PASS [   0.050s] (395/723) craftloop-geometry::property_tests reversing_a_segment_preserves_its_length
+        PASS [   0.058s] (396/723) craftloop-geometry::property_tests segment_intersection_discriminant_is_order_independent
+        PASS [   0.057s] (397/723) craftloop-geometry::property_tests segment_length_is_always_nonnegative
+        PASS [   0.058s] (398/723) craftloop-geometry::property_tests segment_reversed_twice_is_the_original_segment
+        PASS [   0.063s] (399/723) craftloop-geometry::property_tests translate_then_inverse_translate_returns_the_original_point
+        PASS [   0.064s] (400/723) craftloop-geometry::property_tests vector_length_is_always_nonnegative
+        PASS [   0.054s] (401/723) craftloop-handwriting provenance::tests::a_result_remains_traceable_to_its_exact_source_strokes
+        PASS [   0.063s] (402/723) craftloop-handwriting provenance::tests::a_result_is_not_traceable_to_a_different_stroke_set
+        PASS [   0.053s] (403/723) craftloop-handwriting provenance::tests::serialization_round_trips_including_source_strokes
+        PASS [   0.048s] (404/723) craftloop-handwriting routing::tests::a_length_candidate_routes_to_a_parsed_length
+        PASS [   0.051s] (405/723) craftloop-handwriting routing::tests::angle_notation_routes_correctly
+        PASS [   0.053s] (406/723) craftloop-handwriting routing::tests::every_candidate_gets_its_own_independent_outcome
+        PASS [   0.048s] (407/723) craftloop-handwriting routing::tests::radial_notation_routes_correctly
+        PASS [   0.049s] (408/723) craftloop-handwriting stub::tests::a_registered_fixture_is_returned_exactly
+        PASS [   0.049s] (409/723) craftloop-handwriting stub::tests::an_unregistered_stroke_sequence_returns_an_empty_result_not_a_guess
+        PASS [   0.052s] (410/723) craftloop-handwriting stub::tests::different_stroke_sequences_never_share_a_fixture
+        PASS [   0.056s] (411/723) craftloop-handwriting::ambiguity a_genuinely_ambiguous_decimal_separator_in_recognized_text_is_never_silently_resolved
+        PASS [   0.069s] (412/723) craftloop-handwriting::ambiguity a_degree_symbol_candidate_and_a_bare_number_candidate_both_route_to_the_same_angle
+        PASS [   0.057s] (413/723) craftloop-handwriting::ambiguity a_one_versus_seven_ambiguity_preserves_both_candidates_as_distinct_valid_lengths
+        PASS [   0.056s] (414/723) craftloop-handwriting::ambiguity a_three_versus_eight_ambiguity_preserves_both_candidates_as_distinct_valid_lengths
+        PASS [   0.056s] (415/723) craftloop-handwriting::ambiguity an_ambiguous_recognition_result_still_names_its_exact_source_stroke
+        PASS [   0.055s] (416/723) craftloop-handwriting::ambiguity an_r_prefixed_candidate_routes_as_a_radius_but_a_bare_r_is_rejected_not_guessed
+        PASS [   0.055s] (417/723) craftloop-handwriting::ambiguity diameter_notation_variants_all_route_to_the_same_diameter_reading
+        PASS [   0.053s] (418/723) craftloop-handwriting::ambiguity once_a_locale_is_established_route_as_length_resolves_the_same_recognized_text_consistently
+        PASS [   0.045s] (419/723) craftloop-handwriting::ambiguity radius_and_diameter_notation_are_never_confused_with_each_other
+        PASS [   0.051s] (420/723) craftloop-ids tests::deterministic_construction_is_reproducible
+        PASS [   0.053s] (421/723) craftloop-ids tests::debug_format_includes_type_name_for_diagnostics
+        PASS [   0.049s] (422/723) craftloop-ids tests::distinct_id_types_do_not_implicitly_convert
+        PASS [   0.053s] (423/723) craftloop-ids tests::nil_is_the_all_zero_sentinel
+        PASS [   0.066s] (424/723) craftloop-ids tests::new_ids_are_unique_across_many_calls
+        PASS [   0.054s] (425/723) craftloop-ids tests::ordering_is_total_and_stable_for_canonical_output
+        PASS [   0.057s] (426/723) craftloop-ids tests::serialization_round_trips_and_is_transparent
+        PASS [   0.052s] (427/723) craftloop-ink grouping::tests::grouping_does_not_depend_on_input_order
+        PASS [   0.070s] (428/723) craftloop-ink grouping::tests::empty_input_produces_no_groups
+        PASS [   0.058s] (429/723) craftloop-ink grouping::tests::grouping_is_purely_an_id_partition_and_never_touches_stroke_content
+        PASS [   0.059s] (430/723) craftloop-ink grouping::tests::strokes_close_in_time_and_space_form_one_group
+        PASS [   0.049s] (431/723) craftloop-ink grouping::tests::strokes_far_apart_in_space_form_separate_groups_even_if_close_in_time
+        PASS [   0.048s] (432/723) craftloop-ink provenance::tests::created_seeds_exactly_one_event
+        PASS [   0.054s] (433/723) craftloop-ink grouping::tests::strokes_far_apart_in_time_form_separate_groups
+        PASS [   0.052s] (434/723) craftloop-ink provenance::tests::record_appends_without_disturbing_earlier_events
+        PASS [   0.043s] (435/723) craftloop-ink provenance::tests::serialization_round_trips
+        PASS [   0.045s] (436/723) craftloop-ink smoothing::tests::a_straight_line_is_unchanged_by_smoothing
+        PASS [   0.049s] (437/723) craftloop-ink smoothing::tests::smoothing_preserves_endpoints_exactly
+        PASS [   0.050s] (438/723) craftloop-ink smoothing::tests::smoothing_preserves_the_number_of_points
+        PASS [   0.049s] (439/723) craftloop-ink smoothing::tests::smoothing_reduces_a_single_spike
+        PASS [   0.051s] (440/723) craftloop-ink smoothing::tests::very_short_paths_are_returned_unchanged
+        PASS [   0.051s] (441/723) craftloop-ink smoothing::tests::zero_window_returns_the_input_unchanged
+        PASS [   0.053s] (442/723) craftloop-ink spatial::tests::empty_index_returns_no_hits
+        PASS [   0.053s] (443/723) craftloop-ink spatial::tests::query_bounds_finds_intersecting_strokes_only
+        PASS [   0.052s] (444/723) craftloop-ink spatial::tests::query_point_finds_a_stroke_under_the_point
+        PASS [   0.052s] (445/723) craftloop-ink spatial::tests::query_point_respects_radius
+        PASS [   0.051s] (446/723) craftloop-ink spatial::tests::remove_takes_a_stroke_out_of_future_queries
+        PASS [   0.052s] (447/723) craftloop-ink stroke::tests::a_single_sample_stroke_is_valid_and_flagged_as_single_point
+        PASS [   0.050s] (448/723) craftloop-ink stroke::tests::a_valid_stroke_reports_source_and_timestamps
+        PASS [   0.050s] (449/723) craftloop-ink stroke::tests::bounds_spans_all_sample_positions
+        PASS [   0.049s] (450/723) craftloop-ink stroke::tests::empty_samples_are_rejected
+        PASS [   0.050s] (451/723) craftloop-ink stroke::tests::from_events_extracts_samples_in_order_and_skips_capture_lost
+        PASS [   0.049s] (452/723) craftloop-ink stroke::tests::mixed_source_samples_are_rejected
+        PASS [   0.049s] (453/723) craftloop-ink stroke::tests::serialization_round_trips
+        PASS [   0.051s] (454/723) craftloop-ink::replay_and_serialization a_reloaded_stroke_replays_the_same_smoothed_path_as_the_original
+        PASS [   0.060s] (455/723) craftloop-ink::replay_and_serialization a_malformed_trace_never_produces_a_stroke_even_after_a_round_trip_attempt
+        PASS [   0.051s] (456/723) craftloop-ink::replay_and_serialization a_stroke_built_from_a_trace_round_trips_through_json_byte_identically
+        PASS [   0.051s] (457/723) craftloop-ink::replay_and_serialization capabilities_on_a_replayed_simulated_stroke_never_claim_real_hardware
+        PASS [   0.052s] (458/723) craftloop-ink::replay_and_serialization deterministic_ids_make_a_recorded_bug_reproducible_across_runs
+        PASS [   0.052s] (459/723) craftloop-ink::replay_and_serialization provenance_created_from_a_stroke_matches_its_first_sample
+        PASS [   0.054s] (460/723) craftloop-ink-intent context::tests::a_straight_short_stroke_has_a_low_path_to_diagonal_ratio
+        PASS [   0.067s] (461/723) craftloop-ink-intent context::tests::a_scribble_confined_to_a_small_area_has_a_high_ratio
+        PASS [   0.048s] (462/723) craftloop-ink-intent context::tests::duration_reflects_the_strokes_own_timestamps
+        PASS [   0.051s] (463/723) craftloop-ink-intent context::tests::unknown_tool_context_is_never_silently_upgraded_to_pen
+        PASS [   0.056s] (464/723) craftloop-ink-intent::mixed_content candidates_are_ranked_by_descending_confidence
+        PASS [   0.064s] (465/723) craftloop-ink-intent::mixed_content a_clean_loop_drawn_with_the_pen_tool_is_offered_as_a_geometry_candidate_not_selection
+        PASS [   0.055s] (466/723) craftloop-ink-intent::mixed_content command_words_in_notes_never_yield_a_committable_command_claim
+        PASS [   0.055s] (467/723) craftloop-ink-intent::mixed_content commit_threshold_matches_the_established_recognition_engine_convention
+        PASS [   0.048s] (468/723) craftloop-ink-intent::mixed_content every_returned_candidate_list_always_includes_raw_ink
+        PASS [   0.046s] (469/723) craftloop-ink-intent::mixed_content numbers_in_sentences_never_yield_a_committable_numeric_dimension_claim
+        PASS [   0.052s] (470/723) craftloop-ink-intent::mixed_content the_same_clean_loop_drawn_with_the_selector_tool_is_a_selection_gesture_not_geometry
+        PASS [   0.046s] (471/723) craftloop-input capabilities::tests::none_reports_no_capabilities
+        PASS [   0.063s] (472/723) craftloop-input capabilities::tests::has_any_is_true_if_a_single_capability_is_set
+        PASS [   0.050s] (473/723) craftloop-input disclaimer::tests::disclaimer_explicitly_names_apple_pencil_and_stylus_so_it_cannot_be_mistaken_for_them
+        PASS [   0.054s] (474/723) craftloop-input disclaimer::tests::limitations_list_is_nonempty_and_mentions_pressure_and_tilt
+        PASS [   0.055s] (475/723) craftloop-input lifecycle::tests::a_new_stroke_can_start_after_a_clean_end
+        PASS [   0.055s] (476/723) craftloop-input lifecycle::tests::cancel_ends_a_stroke_just_like_up
+        PASS [   0.058s] (477/723) craftloop-input lifecycle::tests::capture_lost_ends_a_stroke_and_needs_no_sample
+        PASS [   0.059s] (478/723) craftloop-input lifecycle::tests::double_down_without_up_is_rejected
+        PASS [   0.052s] (479/723) craftloop-input lifecycle::tests::down_move_up_is_a_valid_sequence
+        PASS [   0.057s] (480/723) craftloop-input lifecycle::tests::hover_is_valid_both_before_and_during_a_stroke
+        PASS [   0.060s] (481/723) craftloop-input lifecycle::tests::move_without_down_is_rejected
+        PASS [   0.060s] (482/723) craftloop-input lifecycle::tests::up_without_down_is_rejected
+        PASS [   0.059s] (483/723) craftloop-input lifecycle::tests::validator_reports_active_state_correctly
+        PASS [   0.062s] (484/723) craftloop-input mouse_simulator::tests::position_and_timestamp_pass_through_unchanged
+        PASS [   0.060s] (485/723) craftloop-input mouse_simulator::tests::simulated_sample_capabilities_never_claim_real_hardware_support
+        PASS [   0.057s] (486/723) craftloop-input mouse_simulator::tests::simulated_sample_has_constant_pressure_and_no_tilt
+        PASS [   0.057s] (487/723) craftloop-input mouse_simulator::tests::simulated_sample_is_tagged_with_the_simulated_source
+        PASS [   0.056s] (488/723) craftloop-input sample::tests::negative_pressure_is_rejected
+        PASS [   0.054s] (489/723) craftloop-input sample::tests::non_finite_timestamp_is_rejected
+        PASS [   0.052s] (490/723) craftloop-input sample::tests::pressure_out_of_range_is_rejected
+        PASS [   0.052s] (491/723) craftloop-input sample::tests::real_stylus_pressure_with_matching_capability_is_authoritative
+        PASS [   0.048s] (492/723) craftloop-input sample::tests::serialization_round_trips
+        PASS [   0.049s] (493/723) craftloop-input sample::tests::simulated_mouse_pressure_is_not_authoritative_even_when_present
+        PASS [   0.051s] (494/723) craftloop-input sample::tests::simulated_source_label_always_says_simulated
+        PASS [   0.049s] (495/723) craftloop-input sample::tests::tilt_out_of_range_is_rejected
+        PASS [   0.049s] (496/723) craftloop-input sample::tests::valid_sample_constructs_successfully
+        PASS [   0.049s] (497/723) craftloop-input trace::tests::a_malformed_trace_fails_validation
+        PASS [   0.050s] (498/723) craftloop-input trace::tests::a_well_formed_trace_validates
+        PASS [   0.053s] (499/723) craftloop-input trace::tests::canonical_json_is_byte_identical_across_repeated_serializations
+        PASS [   0.053s] (500/723) craftloop-input trace::tests::canonical_json_round_trips_to_an_equal_trace
+        PASS [   0.054s] (501/723) craftloop-input trace::tests::replay_visits_every_event_in_recorded_order
+        PASS [   0.054s] (502/723) craftloop-input trace::tests::replaying_twice_produces_the_same_visited_sequence
+        PASS [   0.057s] (503/723) craftloop-recognition beautify::tests::a_line_candidate_beautifies_to_a_segment_using_the_fitted_endpoints
+        PASS [   0.066s] (504/723) craftloop-recognition beautify::tests::a_circle_candidate_beautifies_to_a_valid_circle2
+        PASS [   0.058s] (505/723) craftloop-recognition beautify::tests::beautified_displacement_equals_the_original_candidates_residual
+        PASS [   0.058s] (506/723) craftloop-recognition beautify::tests::keep_as_ink_has_nothing_to_beautify
+        PASS [   0.056s] (507/723) craftloop-recognition candidate::tests::a_clean_line_ranks_above_keep_as_ink
+        PASS [   0.056s] (508/723) craftloop-recognition candidate::tests::a_short_two_point_stroke_only_offers_keep_as_ink
+        PASS [   0.055s] (509/723) craftloop-recognition candidate::tests::keep_as_ink_is_always_present
+        PASS [   0.054s] (510/723) craftloop-recognition candidate::tests::low_confidence_fits_are_not_offered_at_all
+        PASS [   0.045s] (511/723) craftloop-recognition candidate::tests::ranking_is_sorted_descending_by_confidence
+        PASS [   0.049s] (512/723) craftloop-recognition confidence::tests::confidence_clamps_out_of_range_inputs
+        PASS [   0.050s] (513/723) craftloop-recognition confidence::tests::nonpositive_scale_is_zero_confidence_not_a_division_panic
+        PASS [   0.049s] (514/723) craftloop-recognition confidence::tests::residual_beyond_scale_stays_clamped_at_zero
+        PASS [   0.050s] (515/723) craftloop-recognition confidence::tests::residual_equal_to_scale_is_zero_confidence
+        PASS [   0.050s] (516/723) craftloop-recognition confidence::tests::zero_residual_is_full_confidence
+        PASS [   0.050s] (517/723) craftloop-recognition fit::arc::tests::a_half_circle_arc_is_unambiguous
+        PASS [   0.051s] (518/723) craftloop-recognition fit::arc::tests::a_near_full_sweep_is_flagged_ambiguous_with_circle
+        PASS [   0.052s] (519/723) craftloop-recognition fit::arc::tests::a_short_but_clean_sweep_is_not_flagged_ambiguous_with_freehand
+        PASS [   0.051s] (520/723) craftloop-recognition fit::arc::tests::a_short_noisy_sweep_is_flagged_ambiguous_with_freehand
+        PASS [   0.052s] (521/723) craftloop-recognition fit::arc::tests::sweep_direction_sign_matches_traversal_direction
+        PASS [   0.061s] (522/723) craftloop-recognition fit::arc::tests::too_few_points_has_no_fit
+        PASS [   0.059s] (523/723) craftloop-recognition fit::circle::tests::a_perfect_circle_fits_with_near_zero_residual_and_high_confidence
+        PASS [   0.059s] (524/723) craftloop-recognition fit::circle::tests::a_square_shaped_stroke_is_a_poor_circle_fit
+        PASS [   0.059s] (525/723) craftloop-recognition fit::circle::tests::collinear_points_have_no_defined_circle
+        PASS [   0.058s] (526/723) craftloop-recognition fit::circle::tests::fewer_than_three_points_has_no_fit
+        PASS [   0.057s] (527/723) craftloop-recognition fit::circle::tests::residual_is_nonnegative
+        PASS [   0.057s] (528/723) craftloop-recognition fit::line::tests::a_perfectly_straight_line_fits_with_near_zero_residual_and_high_confidence
+        PASS [   0.055s] (529/723) craftloop-recognition fit::line::tests::a_vertical_line_is_fit_correctly_unlike_ordinary_y_on_x_regression
+        PASS [   0.048s] (530/723) craftloop-recognition fit::line::tests::a_zigzag_path_has_high_residual_and_low_confidence
+        PASS [   0.048s] (531/723) craftloop-recognition fit::line::tests::coincident_points_have_no_defined_direction
+        PASS [   0.047s] (532/723) craftloop-recognition fit::line::tests::fewer_than_two_points_has_no_fit
+        PASS [   0.049s] (533/723) craftloop-recognition fit::line::tests::fitted_endpoints_span_the_extent_of_the_input_along_the_fitted_direction
+        PASS [   0.048s] (534/723) craftloop-recognition fit::rectangle::tests::a_clean_closed_rectangle_outline_is_recognized
+        PASS [   0.049s] (535/723) craftloop-recognition fit::rectangle::tests::a_degenerate_flat_box_is_not_a_candidate
+        PASS [   0.049s] (536/723) craftloop-recognition fit::rectangle::tests::a_rough_closed_scribble_is_not_forced_into_a_rectangle
+        PASS [   0.051s] (537/723) craftloop-recognition fit::rectangle::tests::an_open_stroke_that_never_closes_is_not_a_rectangle_candidate
+        PASS [   0.050s] (538/723) craftloop-recognition fit::rectangle::tests::too_few_points_is_not_a_candidate
+        PASS [   0.051s] (539/723) craftloop-recognition rejection_memory::tests::a_materially_different_refit_after_new_evidence_is_not_suppressed
+        PASS [   0.051s] (540/723) craftloop-recognition rejection_memory::tests::a_rejected_candidate_is_filtered_out_of_future_recognition_results
+        PASS [   0.050s] (541/723) craftloop-recognition rejection_memory::tests::clear_stroke_forgets_all_rejections_for_that_stroke
+        PASS [   0.051s] (542/723) craftloop-recognition rejection_memory::tests::keep_as_ink_can_never_be_suppressed
+        PASS [   0.051s] (543/723) craftloop-recognition rejection_memory::tests::rejection_is_scoped_per_stroke
+        PASS [   0.051s] (544/723) craftloop-recognition rejection_memory::tests::tiny_refit_jitter_of_the_same_shape_stays_suppressed
+        PASS [   0.052s] (545/723) craftloop-recognition::false_positive_benchmark noisy_handwriting_and_scrawls_are_never_forced_into_a_high_confidence_primitive
+        PASS [   0.061s] (546/723) craftloop-recognition::false_positive_benchmark benchmark_report_covers_both_accuracy_and_forced_conversion_error
+        PASS [   0.052s] (547/723) craftloop-recognition::false_positive_benchmark ordinary_shapes_are_recognized_as_their_correct_kind
+        PASS [   0.055s] (548/723) craftloop-serialization tests::canonical_json_sorts_object_keys_but_preserves_array_order
+        PASS [   0.063s] (549/723) craftloop-serialization tests::canonical_json_is_identical_for_structurally_equal_values_regardless_of_field_order
+        PASS [   0.055s] (550/723) craftloop-serialization tests::future_schema_version_is_not_readable_by_an_older_build
+        PASS [   0.053s] (551/723) craftloop-serialization tests::older_schema_version_is_readable_by_current
+        PASS [   0.053s] (552/723) craftloop-serialization tests::ordered_f64_rejects_nan_and_infinity
+        PASS [   0.046s] (553/723) craftloop-serialization tests::ordered_f64_sorts_deterministically
+        PASS [   0.050s] (554/723) craftloop-serialization tests::schema_version_current_is_readable_by_itself
+        PASS [   0.064s] (555/723) craftloop-sketch constraint_kind::tests::concentric_lowers_to_coincident_on_the_centers_not_a_duplicated_variant
+        PASS [   0.071s] (556/723) craftloop-sketch constraint_kind::tests::a_well_formed_constraint_validates_and_lowers_without_error
+        PASS [   0.067s] (557/723) craftloop-sketch constraint_kind::tests::concentric_requires_two_circles
+        PASS [   0.067s] (558/723) craftloop-sketch constraint_kind::tests::different_relationship_kinds_over_the_same_primitives_are_not_equivalent
+        PASS [   0.069s] (559/723) craftloop-sketch constraint_kind::tests::equal_radius_lowers_to_equal_length_over_center_and_point_on_circle
+        PASS [   0.070s] (560/723) craftloop-sketch constraint_kind::tests::fixed_constraints_with_different_target_values_are_not_equivalent
+        PASS [   0.041s] (561/723) craftloop-sketch constraint_kind::tests::fixed_lowers_to_two_fixed_value_constraints_one_per_axis
+        PASS [   0.045s] (562/723) craftloop-sketch constraint_kind::tests::horizontal_requires_a_line_primitive
+        PASS [   0.049s] (563/723) craftloop-sketch constraint_kind::tests::line_tangent_to_circle_is_not_symmetric_line_and_circle_are_distinct_roles
+        PASS [   0.051s] (564/723) craftloop-sketch constraint_kind::tests::parallel_between_different_primitives_is_not_equivalent
+        PASS [   0.052s] (565/723) craftloop-sketch constraint_kind::tests::parallel_is_equivalent_to_itself_with_arguments_swapped
+        PASS [   0.051s] (566/723) craftloop-sketch constraint_kind::tests::symmetric_constraints_on_the_same_axis_with_swapped_points_are_equivalent
+        PASS [   0.052s] (567/723) craftloop-sketch ezpz_adapter::tests::a_genuinely_contradictory_system_is_reported_unsatisfied_not_solved
+        PASS [   0.057s] (568/723) craftloop-sketch ezpz_adapter::tests::a_simple_two_point_distance_system_solves
+        PASS [   0.058s] (569/723) craftloop-sketch ezpz_adapter::tests::circle_tangent_to_circle_solves_through_the_synthetic_radius_translation
+        PASS [   0.201s] (570/723) craftloop-serialization::canonical_json_properties canonical_json_round_trips_to_an_equal_value
+        PASS [   0.187s] (571/723) craftloop-serialization::canonical_json_properties serializing_the_same_value_twice_is_byte_identical
+        PASS [   0.058s] (572/723) craftloop-sketch ezpz_adapter::tests::line_tangent_to_circle_solves_through_the_synthetic_radius_translation
+        PASS [   0.054s] (573/723) craftloop-sketch ezpz_adapter::tests::resolve_incremental_warm_starts_from_the_previous_solution
+        PASS [   0.052s] (574/723) craftloop-sketch ezpz_adapter::tests::symmetric_points_solve_through_the_direct_translation
+        PASS [   0.048s] (575/723) craftloop-sketch ezpz_adapter::tests::underconstrained_variables_reports_a_point_only_bound_by_distance_as_free
+        PASS [   0.043s] (576/723) craftloop-sketch intent::tests::a_confirmed_relation_survives_repeated_solves_and_is_never_silently_dropped
+        PASS [   0.038s] (577/723) craftloop-sketch intent::tests::a_pair_already_linked_by_equal_length_is_not_reported_as_merely_observed
+        PASS [   0.043s] (578/723) craftloop-sketch intent::tests::a_rejected_suggestion_is_remembered_without_becoming_a_constraint
+        PASS [   0.050s] (579/723) craftloop-sketch intent::tests::accepted_suggestion_provenance_is_recorded_as_accepted_not_user_created
+        PASS [   0.050s] (580/723) craftloop-sketch intent::tests::accepting_a_suggestion_clears_any_prior_rejection_of_the_same_relationship
+        PASS [   0.051s] (581/723) craftloop-sketch intent::tests::affected_primitives_follows_transitive_chains_of_shared_constraints
+        PASS [   0.052s] (582/723) craftloop-sketch intent::tests::an_accepted_suggestion_is_enforced_by_solve_exactly_like_a_user_created_constraint
+        PASS [   0.051s] (583/723) craftloop-sketch intent::tests::an_unconstrained_primitive_affects_nothing
+        PASS [   0.051s] (584/723) craftloop-sketch intent::tests::constraints_touching_finds_every_relation_that_references_a_primitive
+        PASS [   0.052s] (585/723) craftloop-sketch intent::tests::inserting_an_unrelated_primitive_does_not_disturb_an_existing_relation
+        PASS [   0.054s] (586/723) craftloop-sketch intent::tests::lines_with_clearly_different_lengths_are_never_reported
+        PASS [   0.053s] (587/723) craftloop-sketch intent::tests::near_equal_length_lines_with_no_constraint_are_reported_as_observed_only
+        PASS [   0.053s] (588/723) craftloop-sketch intent::tests::rejecting_the_same_suggestion_twice_does_not_duplicate_it
+        PASS [   0.053s] (589/723) craftloop-sketch intent::tests::removing_one_constraint_never_removes_a_different_ones_intent
+        PASS [   0.052s] (590/723) craftloop-sketch point_ref::tests::circle_point_on_circle_is_radius_away_from_center
+        PASS [   0.052s] (591/723) craftloop-sketch point_ref::tests::line_start_and_end_resolve_to_the_segments_endpoints
+        PASS [   0.053s] (592/723) craftloop-sketch point_ref::tests::resolving_against_an_unknown_primitive_is_a_structured_error
+        PASS [   0.051s] (593/723) craftloop-sketch point_ref::tests::resolving_the_wrong_point_kind_for_a_primitive_is_a_structured_error
+        PASS [   0.052s] (594/723) craftloop-sketch provenance::tests::serialization_round_trips_for_every_variant
+        PASS [   0.052s] (595/723) craftloop-sketch provenance::tests::the_three_origins_are_distinguishable_by_equality
+        PASS [   0.050s] (596/723) craftloop-sketch sketch::tests::a_different_relationship_between_the_same_primitives_is_not_redundant
+        PASS [   0.051s] (597/723) craftloop-sketch sketch::tests::a_genuinely_contradictory_sketch_reports_unsatisfied_not_a_crash
+        PASS [   0.051s] (598/723) craftloop-sketch sketch::tests::adding_a_constraint_that_references_an_unknown_primitive_is_rejected
+        PASS [   0.051s] (599/723) craftloop-sketch sketch::tests::adding_a_constraint_under_a_duplicate_id_is_rejected
+        PASS [   0.053s] (600/723) craftloop-sketch sketch::tests::adding_the_same_relationship_twice_is_recognized_as_redundant_not_an_error
+        PASS [   0.055s] (601/723) craftloop-sketch sketch::tests::circle_tangent_to_circle_moves_the_second_circle_to_touch_the_first
+        PASS [   0.053s] (602/723) craftloop-sketch sketch::tests::coincident_pulls_two_line_endpoints_to_the_same_point
+        PASS [   0.055s] (603/723) craftloop-sketch sketch::tests::concentric_moves_the_second_circles_center_onto_the_first_but_leaves_radii_independent
+        PASS [   0.056s] (604/723) craftloop-sketch sketch::tests::equal_length_matches_a_second_lines_length_to_the_first
+        PASS [   0.055s] (605/723) craftloop-sketch sketch::tests::equal_radius_matches_a_second_circles_radius_without_moving_its_center
+        PASS [   0.055s] (606/723) craftloop-sketch sketch::tests::horizontal_and_vertical_together_are_not_a_contradiction_they_collapse_the_line_to_a_point
+        PASS [   0.057s] (607/723) craftloop-sketch sketch::tests::horizontal_levels_a_tilted_line
+        PASS [   0.055s] (608/723) craftloop-sketch sketch::tests::line_tangent_to_circle_moves_the_line_to_touch_the_circle
+        PASS [   0.055s] (609/723) craftloop-sketch sketch::tests::parallel_aligns_a_second_line_to_the_first
+        PASS [   0.057s] (610/723) craftloop-sketch sketch::tests::perpendicular_rotates_a_second_line_to_a_right_angle
+        PASS [   0.055s] (611/723) craftloop-sketch sketch::tests::provenance_is_stored_and_retrievable_per_constraint
+        PASS [   0.055s] (612/723) craftloop-sketch sketch::tests::removing_a_constraint_and_re_solving_releases_the_relation
+        PASS [   0.054s] (613/723) craftloop-sketch sketch::tests::removing_an_unknown_constraint_is_rejected
+        PASS [   0.057s] (614/723) craftloop-sketch sketch::tests::symmetric_reflects_one_lines_endpoint_across_an_axis
+        PASS [   0.056s] (615/723) craftloop-sketch sketch::tests::vertical_straightens_a_tilted_line
+        PASS [   0.057s] (616/723) craftloop-sketch state::tests::a_fully_anchored_primitive_is_fully_determined
+        PASS [   0.062s] (617/723) craftloop-sketch state::tests::a_primitive_in_a_contradictory_system_is_conflicting_and_unhealthy
+        PASS [   0.058s] (618/723) craftloop-sketch state::tests::a_primitive_touched_only_by_a_relative_constraint_is_free_or_partially_constrained
+        PASS [   0.056s] (619/723) craftloop-sketch state::tests::a_primitive_with_no_constraints_is_unknown
+        PASS [   0.056s] (620/723) craftloop-sketch state::tests::every_state_has_a_jargon_free_explanation
+        PASS [   0.059s] (621/723) craftloop-standards dimension_presentation::tests::presenting_the_same_dimension_twice_after_an_edit_reflects_the_new_value
+        PASS [   0.068s] (622/723) craftloop-standards dimension_presentation::tests::presenting_a_dimension_reads_its_real_current_value
+        PASS [   0.059s] (623/723) craftloop-standards guardrail::tests::compliance_claims_are_caught_case_insensitively
+        PASS [   0.059s] (624/723) craftloop-standards guardrail::tests::plain_standards_aware_wording_is_allowed
+        PASS [   0.055s] (625/723) craftloop-standards guardrail::tests::the_word_standard_alone_is_not_forbidden
+        PASS [   0.058s] (626/723) craftloop-standards line_role::tests::every_role_is_distinct
+        PASS [   0.063s] (627/723) craftloop-standards line_role::tests::serialization_round_trips_for_every_role
+        PASS [   0.065s] (628/723) craftloop-standards line_style::tests::dimension_and_extension_lines_are_lighter_than_visible_geometry
+        PASS [   0.054s] (629/723) craftloop-standards line_style::tests::every_role_maps_to_a_style_the_match_is_exhaustive
+        PASS [   0.061s] (630/723) craftloop-standards line_style::tests::hidden_and_centerline_are_both_dashed_but_distinguishably_so
+        PASS [   0.061s] (631/723) craftloop-standards line_style::tests::visible_lines_are_solid_and_the_baseline_weight
+        PASS [   0.063s] (632/723) craftloop-standards profile::tests::a_compliance_claiming_name_is_rejected_at_construction
+        PASS [   0.062s] (633/723) craftloop-standards profile::tests::a_standards_aware_name_is_accepted
+        PASS [   0.062s] (634/723) craftloop-standards tests::no_entry_in_the_crates_own_public_surface_claims_compliance
+        PASS [   0.062s] (635/723) craftloop-standards tests::unsupported_conventions_is_a_real_nonempty_documented_list
+        PASS [   0.062s] (636/723) craftloop-standards::standards_export every_implemented_role_resolves_to_an_explicit_style
+        PASS [   0.074s] (637/723) craftloop-standards::standards_export a_project_can_build_a_named_profile_and_read_back_its_projection_convention
+        PASS [   0.064s] (638/723) craftloop-standards::standards_export unsupported_conventions_are_documented_not_silently_missing
+        PASS [   0.064s] (639/723) craftloop-standards::standards_export visible_and_hidden_geometry_are_never_visually_identical
+        PASS [   0.067s] (640/723) craftloop-test-support tests::sequence_never_collides_with_the_nil_sentinel
+        PASS [   0.077s] (641/723) craftloop-test-support tests::sequence_implements_iterator_for_ergonomic_bulk_fixture_creation
+        PASS [   0.066s] (642/723) craftloop-test-support tests::sequence_produces_distinct_reproducible_ids
+        PASS [   0.065s] (643/723) craftloop-test-support tests::starting_at_allows_independent_non_colliding_sequences
+        PASS [   0.055s] (644/723) craftloop-test-support tests::starting_at_zero_panics_because_zero_is_the_nil_sentinel
+        PASS [   0.065s] (645/723) craftloop-transactions tests::committing_twice_fails
+        PASS [   0.072s] (646/723) craftloop-transactions tests::commit_makes_all_recorded_changes_visible_together
+        PASS [   0.063s] (647/723) craftloop-transactions tests::each_transaction_has_a_unique_stable_id
+        PASS [   0.052s] (648/723) craftloop-transactions tests::new_commit_after_undo_clears_the_redo_stack
+        PASS [   0.058s] (649/723) craftloop-transactions tests::recording_after_commit_fails_instead_of_silently_mutating_history
+        PASS [   0.062s] (650/723) craftloop-transactions tests::rollback_discards_changes_and_they_never_reach_history
+        PASS [   0.065s] (651/723) craftloop-transactions tests::undo_and_redo_operate_on_whole_transactions_not_individual_changes
+        PASS [   0.065s] (652/723) craftloop-transactions tests::undo_on_empty_history_is_a_structured_error_not_a_panic
+        PASS [   0.061s] (653/723) craftloop-units angle::tests::a_degree_symbol_suffix_is_accepted
+        PASS [   0.067s] (654/723) craftloop-units angle::tests::a_bare_number_is_read_as_degrees
+        PASS [   0.066s] (655/723) craftloop-units angle::tests::a_length_suffix_on_an_angle_field_is_a_structured_unit_error
+        PASS [   0.069s] (656/723) craftloop-units angle::tests::empty_input_is_a_structured_error
+        PASS [   0.069s] (657/723) craftloop-units angle::tests::negative_angles_parse_correctly
+        PASS [   0.068s] (658/723) craftloop-units angle::tests::word_suffixes_deg_and_degrees_are_accepted_case_insensitively
+        PASS [   0.067s] (659/723) craftloop-units length::tests::a_bare_number_uses_the_default_unit
+        PASS [   0.067s] (660/723) craftloop-units length::tests::an_explicit_unit_is_honored_regardless_of_the_default
+        PASS [   0.065s] (661/723) craftloop-units length::tests::centimeters_convert_correctly
+        PASS [   0.070s] (662/723) craftloop-units length::tests::decimal_values_with_units_parse_correctly
+        PASS [   0.071s] (663/723) craftloop-units length::tests::empty_input_is_a_structured_error
+        PASS [   0.068s] (664/723) craftloop-units length::tests::garbage_after_a_valid_unit_suffix_is_an_invalid_number_error
+        PASS [   0.066s] (665/723) craftloop-units length::tests::inches_accept_both_the_word_and_the_double_quote_symbol
+        PASS [   0.065s] (666/723) craftloop-units length::tests::meters_are_distinguished_from_millimeters_despite_shared_letter
+        PASS [   0.062s] (667/723) craftloop-units length_unit::tests::centimeters_and_meters_convert_by_powers_of_ten
+        PASS [   0.061s] (668/723) craftloop-units length_unit::tests::default_unit_is_millimeters
+        PASS [   0.051s] (669/723) craftloop-units length_unit::tests::inches_convert_using_the_standard_25_4mm_factor
+        PASS [   0.051s] (670/723) craftloop-units length_unit::tests::millimeters_is_the_identity_conversion
+        PASS [   0.050s] (671/723) craftloop-units length_unit::tests::to_and_from_millimeters_round_trip_for_every_unit
+        PASS [   0.051s] (672/723) craftloop-units numeric::tests::ambiguous_input_can_still_be_resolved_by_supplying_an_explicit_locale
+        PASS [   0.051s] (673/723) craftloop-units numeric::tests::auto_flags_the_genuinely_ambiguous_three_digit_single_separator_case
+        PASS [   0.051s] (674/723) craftloop-units numeric::tests::auto_parses_repeated_grouping_separator_with_no_decimal_point_as_a_whole_number
+        PASS [   0.052s] (675/723) craftloop-units numeric::tests::auto_parses_unambiguous_dual_separator_cases_us_and_eu_style
+        PASS [   0.052s] (676/723) craftloop-units numeric::tests::auto_parses_unambiguous_single_separator_cases
+        PASS [   0.056s] (677/723) craftloop-units numeric::tests::comma_locale_parses_a_comma_as_the_decimal_point
+        PASS [   0.055s] (678/723) craftloop-units numeric::tests::comma_locale_treats_periods_as_thousands_separators
+        PASS [   0.055s] (679/723) craftloop-units numeric::tests::empty_input_is_a_structured_error
+        PASS [   0.056s] (680/723) craftloop-units numeric::tests::garbage_input_is_invalid_number_not_a_panic
+        PASS [   0.055s] (681/723) craftloop-units numeric::tests::negative_numbers_parse_correctly
+        PASS [   0.054s] (682/723) craftloop-units numeric::tests::period_locale_parses_a_period_as_the_decimal_point
+        PASS [   0.053s] (683/723) craftloop-units numeric::tests::period_locale_treats_commas_as_thousands_separators
+        PASS [   0.053s] (684/723) craftloop-units numeric::tests::plain_integers_parse_under_either_locale
+        PASS [   0.052s] (685/723) craftloop-units radius_diameter::tests::a_zero_or_negative_value_is_rejected
+        PASS [   0.051s] (686/723) craftloop-units radius_diameter::tests::an_explicit_unit_after_the_prefix_is_honored
+        PASS [   0.051s] (687/723) craftloop-units radius_diameter::tests::d_prefix_is_read_as_diameter
+        PASS [   0.050s] (688/723) craftloop-units radius_diameter::tests::diameter_symbol_prefixes_are_recognized
+        PASS [   0.051s] (689/723) craftloop-units radius_diameter::tests::empty_input_is_a_structured_error
+        PASS [   0.051s] (690/723) craftloop-units radius_diameter::tests::input_without_a_radial_prefix_is_a_structured_unit_error
+        PASS [   0.052s] (691/723) craftloop-units radius_diameter::tests::r_prefix_is_read_as_radius
+        PASS [   0.054s] (692/723) craftloop-units radius_diameter::tests::radius_and_diameter_are_never_confused_for_the_same_prefix
+        PASS [   0.056s] (693/723) craftloop-units::invalid_numeric_diagnostics every_parser_preserves_the_exact_raw_input_on_failure
+        PASS [   0.066s] (694/723) craftloop-units::invalid_numeric_diagnostics every_failure_carries_a_typed_kind_a_ui_can_match_on_without_parsing_the_message
+        PASS [   0.059s] (695/723) craftloop-units::invalid_numeric_diagnostics the_display_message_still_includes_the_raw_input_for_human_reading
+        PASS [   0.084s] (696/723) craftloop-units::length_unit_properties millimeters_to_millimeters_is_always_the_exact_identity
+        PASS [   0.066s] (697/723) windows-harness::bin/windows-harness diagnostic_export::tests::capture_reflects_an_in_progress_stroke
+        PASS [   0.081s] (698/723) craftloop-units::length_unit_properties to_millimeters_and_back_recovers_the_original_value
+        PASS [   0.078s] (699/723) windows-harness::bin/windows-harness diagnostic_export::tests::canonical_json_export_round_trips
+        PASS [   0.068s] (700/723) windows-harness::bin/windows-harness diagnostic_export::tests::capture_reflects_completed_strokes_and_tool
+        PASS [   0.058s] (701/723) windows-harness::bin/windows-harness diagnostic_export::tests::export_always_includes_the_simulator_disclaimer
+        PASS [   0.062s] (702/723) windows-harness::bin/windows-harness scenario::tests::a_valid_scenario_round_trips_through_json
+        PASS [   0.063s] (703/723) windows-harness::bin/windows-harness scenario::tests::checked_in_example_scenario_loads_and_validates
+        PASS [   0.038s] (704/723) windows-harness::bin/windows-harness scenario::tests::from_json_rejects_a_scenario_with_an_invalid_trace
+        PASS [   0.043s] (705/723) windows-harness::bin/windows-harness scenario::tests::from_json_rejects_malformed_json
+        PASS [   0.049s] (706/723) windows-harness::bin/windows-harness scenario::tests::load_from_file_reports_io_error_for_a_missing_file
+        PASS [   0.056s] (707/723) windows-harness::bin/windows-harness scenario::tests::load_from_file_round_trips_through_a_real_temp_file
+        PASS [   0.060s] (708/723) windows-harness::bin/windows-harness state::tests::a_complete_down_move_up_sequence_becomes_one_recorded_stroke
+        PASS [   0.059s] (709/723) windows-harness::bin/windows-harness state::tests::an_invalid_event_is_rejected_and_does_not_corrupt_state
+        PASS [   0.058s] (710/723) windows-harness::bin/windows-harness state::tests::clear_resets_strokes_and_lifecycle
+        PASS [   0.057s] (711/723) windows-harness::bin/windows-harness state::tests::load_traces_leaves_state_unchanged_when_a_trace_is_invalid
+        PASS [   0.059s] (712/723) windows-harness::bin/windows-harness state::tests::load_traces_replays_multiple_traces_as_completed_strokes
+        PASS [   0.058s] (713/723) windows-harness::bin/windows-harness tool::tests::default_pressure_override_matches_the_mouse_simulator_constant
+        PASS [   0.055s] (714/723) windows-harness::bin/windows-harness tool::tests::every_tool_has_a_distinct_nonempty_label
+        PASS [   0.052s] (715/723) windows-harness::bin/windows-harness tool::tests::pressure_override_accepts_and_applies_valid_values
+        PASS [   0.050s] (716/723) windows-harness::bin/windows-harness tool::tests::pressure_override_rejects_out_of_range_values
+        PASS [   0.051s] (717/723) windows-harness::bin/windows-harness viewport::tests::default_viewport_maps_world_to_screen_identically
+        PASS [   0.050s] (718/723) windows-harness::bin/windows-harness viewport::tests::fit_bounds_centers_the_bounds_on_screen
+        PASS [   0.052s] (719/723) windows-harness::bin/windows-harness viewport::tests::fit_bounds_makes_the_whole_bounds_visible_within_the_usable_area
+        PASS [   0.052s] (720/723) windows-harness::bin/windows-harness viewport::tests::reset_returns_to_identity_transform
+        PASS [   0.052s] (721/723) windows-harness::bin/windows-harness viewport::tests::screen_to_world_inverts_world_to_screen
+        PASS [   0.052s] (722/723) windows-harness::bin/windows-harness viewport::tests::zoom_at_keeps_the_anchor_point_fixed_on_screen
+        PASS [   0.051s] (723/723) windows-harness::bin/windows-harness viewport::tests::zoom_is_clamped_to_a_sane_range
+────────────
+     Summary [   5.124s] 723 tests run: 723 passed, 0 skipped

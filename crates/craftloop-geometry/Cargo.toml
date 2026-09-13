@@ -13,4 +13,7 @@ craftloop-errors = { path = "../craftloop-errors" }
 
 [dev-dependencies]
 serde_json.workspace = true
-proptest = "1"
+proptest.workspace = true
+
+[lints]
+workspace = true

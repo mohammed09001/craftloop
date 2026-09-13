@@ -1,0 +1,19 @@
+# Execution 01, Phase 27, Task 193: fast test runner configuration.
+#
+# `cargo-nextest` is an accelerant, not a requirement -- per the task's own
+# text ("do not make optional tooling a blocker"), `cargo test --workspace`
+# remains the one command every phase's evidence is captured with and the
+# one CI treats as authoritative (see .github/workflows/ci.yml). Run
+# `cargo nextest run --workspace` locally for faster iteration; if
+# cargo-nextest is not installed, `cargo test --workspace` alone is
+# sufficient and always correct.
+
+[profile.default]
+# Run every test even after a failure, matching `cargo test`'s own
+# default and every phase's existing evidence-capture convention: one
+# full pass/fail picture per run, not a truncated report from the first
+# red test.
+fail-fast = false
+# No test in this workspace does real I/O, sleeps, or waits on external
+# state, so the default per-test timeout is left at nextest's own
+# built-in default rather than overridden.
