@@ -1,0 +1,353 @@
+
+running 7 tests
+test tests::corrupted_document_defaults_to_blocker_severity ... ok
+test tests::callers_can_match_on_kind_without_string_parsing ... ok
+test tests::diagnostic_builder_attaches_related_entities ... ok
+test tests::error_display_never_loses_the_typed_kind ... ok
+test tests::severity_can_be_overridden_for_context_the_default_cannot_know ... ok
+test tests::diagnostic_round_trips_through_json ... ok
+test tests::severity_ordering_supports_finding_the_worst_diagnostic ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 59 tests
+test arc::tests::arc_length_is_nonnegative_and_matches_radius_times_sweep_magnitude ... ok
+test arc::tests::bounds_of_a_quarter_circle_touching_an_axis_extreme_includes_that_extreme ... ok
+test arc::tests::bounds_of_a_half_circle_spans_the_full_diameter_on_the_swept_axis ... ok
+test arc::tests::contains_angle_handles_wraparound_past_two_pi ... ok
+test arc::tests::is_full_circle_detects_a_two_pi_sweep ... ok
+test arc::tests::negative_sweep_goes_clockwise ... ok
+test arc::tests::evaluate_at_zero_and_one_matches_start_and_end_points ... ok
+test arc::tests::contains_angle_is_true_for_points_strictly_inside_the_sweep ... ok
+test arc::tests::non_positive_radius_is_rejected ... ok
+test arc::tests::quarter_circle_from_zero_sweeps_to_the_expected_point ... ok
+test arc::tests::zero_sweep_is_rejected ... ok
+test bounds::tests::empty_slice_has_no_bounds ... ok
+test bounds::tests::union_of_points_is_the_smallest_enclosing_box ... ok
+test bounds::tests::width_height_and_contains_are_consistent ... ok
+test circle::tests::contains_point_is_true_on_and_inside_the_boundary ... ok
+test circle::tests::distance_to_boundary_is_nonnegative_and_zero_on_boundary ... ok
+test circle::tests::externally_tangent_circles_touch_at_one_point ... ok
+test circle::tests::identical_circles_are_coincident ... ok
+test circle::tests::intersect_circle_is_symmetric ... ok
+test circle::tests::non_positive_radius_is_rejected ... ok
+test circle::tests::overlapping_circles_intersect_at_two_points_equidistant_from_both_centers ... ok
+test circle::tests::positive_radius_is_accepted ... ok
+test circle::tests::segment_entirely_outside_circle_does_not_intersect ... ok
+test circle::tests::segment_that_would_intersect_the_infinite_line_but_stops_short_does_not_intersect ... ok
+test circle::tests::segment_through_circle_center_intersects_at_two_diametrically_opposed_points ... ok
+test circle::tests::separate_circles_do_not_intersect ... ok
+test ellipse::tests::evaluate_at_t_zero_lands_on_the_major_axis_vertex ... ok
+test ellipse::tests::evaluate_is_periodic_in_t ... ok
+test ellipse::tests::is_circle_detects_equal_axes_within_tolerance ... ok
+test ellipse::tests::non_positive_axis_is_rejected ... ok
+test ellipse::tests::quarter_turn_rotation_swaps_the_effective_extents ... ok
+test ellipse::tests::unrotated_bounds_match_center_plus_minus_axes ... ok
+test point::tests::coincidence_respects_the_supplied_tolerance_profile ... ok
+test point::tests::cross_product_sign_encodes_rotation_direction ... ok
+test point::tests::distance_is_symmetric_and_nonnegative ... ok
+test point::tests::lerp_at_t_zero_and_one_returns_the_endpoints ... ok
+test point::tests::normalized_rejects_a_degenerate_vector ... ok
+test point::tests::perpendicular_vectors_have_zero_dot_product ... ok
+test point::tests::translate_and_inverse_translate_round_trips ... ok
+test rectangle::tests::axis_aligned_constructor_always_produces_a_verified_rectangle ... ok
+test rectangle::tests::axis_aligned_rectangle_has_four_edges_of_the_expected_lengths ... ok
+test rectangle::tests::bounds_matches_the_corner_extremes ... ok
+test rectangle::tests::degenerate_axis_aligned_corners_are_rejected ... ok
+test rectangle::tests::edges_form_a_closed_loop ... ok
+test rectangle::tests::from_corners_rejects_a_coincident_edge_but_not_a_non_rectangular_quadrilateral ... ok
+test segment::tests::bounds_matches_the_endpoint_extremes ... ok
+test segment::tests::closest_point_on_segment_clamps_to_endpoints ... ok
+test segment::tests::collinear_segments_are_detected ... ok
+test segment::tests::crossing_segments_intersect_at_one_point ... ok
+test segment::tests::direction_is_unit_length_and_none_for_degenerate_segment ... ok
+test segment::tests::distance_to_point_is_nonnegative ... ok
+test segment::tests::hit_test_respects_max_distance ... ok
+test segment::tests::intersection_is_symmetric_regardless_of_argument_order ... ok
+test segment::tests::length_is_nonnegative_and_symmetric_under_reversal ... ok
+test segment::tests::non_crossing_segments_that_would_cross_if_extended_do_not_intersect ... ok
+test segment::tests::parallel_non_collinear_segments_report_parallel ... ok
+test tolerance::tests::committed_snap_distance_is_zero_because_committed_geometry_never_snaps ... ok
+test tolerance::tests::default_is_the_strict_profile_not_the_loose_one ... ok
+test tolerance::tests::recognition_profile_is_strictly_looser_than_committed ... ok
+
+test result: ok. 59 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 14 tests
+test negating_a_vector_twice_returns_the_original ... ok
+test points_within_the_coincidence_tolerance_are_coincident ... ok
+test points_beyond_the_coincidence_tolerance_are_not_coincident ... ok
+test recognition_tolerance_accepts_everything_committed_tolerance_accepts ... ok
+test point_distance_is_symmetric ... ok
+test circle_intersection_discriminant_is_order_independent ... ok
+test circle_distance_to_boundary_is_always_nonnegative ... ok
+test point_distance_is_always_nonnegative ... ok
+test reversing_a_segment_preserves_its_length ... ok
+test translate_then_inverse_translate_returns_the_original_point ... ok
+test vector_length_is_always_nonnegative ... ok
+test segment_length_is_always_nonnegative ... ok
+test segment_reversed_twice_is_the_original_segment ... ok
+test segment_intersection_discriminant_is_order_independent ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 7 tests
+test tests::debug_format_includes_type_name_for_diagnostics ... ok
+test tests::distinct_id_types_do_not_implicitly_convert ... ok
+test tests::deterministic_construction_is_reproducible ... ok
+test tests::nil_is_the_all_zero_sentinel ... ok
+test tests::ordering_is_total_and_stable_for_canonical_output ... ok
+test tests::serialization_round_trips_and_is_transparent ... ok
+test tests::new_ids_are_unique_across_many_calls ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 27 tests
+test grouping::tests::strokes_far_apart_in_space_form_separate_groups_even_if_close_in_time ... ok
+test grouping::tests::grouping_does_not_depend_on_input_order ... ok
+test grouping::tests::grouping_is_purely_an_id_partition_and_never_touches_stroke_content ... ok
+test grouping::tests::strokes_close_in_time_and_space_form_one_group ... ok
+test grouping::tests::empty_input_produces_no_groups ... ok
+test grouping::tests::strokes_far_apart_in_time_form_separate_groups ... ok
+test provenance::tests::record_appends_without_disturbing_earlier_events ... ok
+test provenance::tests::created_seeds_exactly_one_event ... ok
+test smoothing::tests::a_straight_line_is_unchanged_by_smoothing ... ok
+test provenance::tests::serialization_round_trips ... ok
+test smoothing::tests::smoothing_preserves_endpoints_exactly ... ok
+test smoothing::tests::smoothing_preserves_the_number_of_points ... ok
+test smoothing::tests::smoothing_reduces_a_single_spike ... ok
+test smoothing::tests::very_short_paths_are_returned_unchanged ... ok
+test smoothing::tests::zero_window_returns_the_input_unchanged ... ok
+test spatial::tests::empty_index_returns_no_hits ... ok
+test spatial::tests::query_bounds_finds_intersecting_strokes_only ... ok
+test spatial::tests::query_point_finds_a_stroke_under_the_point ... ok
+test spatial::tests::query_point_respects_radius ... ok
+test spatial::tests::remove_takes_a_stroke_out_of_future_queries ... ok
+test stroke::tests::a_single_sample_stroke_is_valid_and_flagged_as_single_point ... ok
+test stroke::tests::a_valid_stroke_reports_source_and_timestamps ... ok
+test stroke::tests::bounds_spans_all_sample_positions ... ok
+test stroke::tests::empty_samples_are_rejected ... ok
+test stroke::tests::from_events_extracts_samples_in_order_and_skips_capture_lost ... ok
+test stroke::tests::mixed_source_samples_are_rejected ... ok
+test stroke::tests::serialization_round_trips ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test a_malformed_trace_never_produces_a_stroke_even_after_a_round_trip_attempt ... ok
+test capabilities_on_a_replayed_simulated_stroke_never_claim_real_hardware ... ok
+test deterministic_ids_make_a_recorded_bug_reproducible_across_runs ... ok
+test provenance_created_from_a_stroke_matches_its_first_sample ... ok
+test a_reloaded_stroke_replays_the_same_smoothed_path_as_the_original ... ok
+test a_stroke_built_from_a_trace_round_trips_through_json_byte_identically ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 32 tests
+test capabilities::tests::none_reports_no_capabilities ... ok
+test lifecycle::tests::a_new_stroke_can_start_after_a_clean_end ... ok
+test disclaimer::tests::disclaimer_explicitly_names_apple_pencil_and_stylus_so_it_cannot_be_mistaken_for_them ... ok
+test capabilities::tests::has_any_is_true_if_a_single_capability_is_set ... ok
+test lifecycle::tests::cancel_ends_a_stroke_just_like_up ... ok
+test disclaimer::tests::limitations_list_is_nonempty_and_mentions_pressure_and_tilt ... ok
+test lifecycle::tests::capture_lost_ends_a_stroke_and_needs_no_sample ... ok
+test lifecycle::tests::double_down_without_up_is_rejected ... ok
+test lifecycle::tests::down_move_up_is_a_valid_sequence ... ok
+test lifecycle::tests::hover_is_valid_both_before_and_during_a_stroke ... ok
+test lifecycle::tests::move_without_down_is_rejected ... ok
+test lifecycle::tests::up_without_down_is_rejected ... ok
+test lifecycle::tests::validator_reports_active_state_correctly ... ok
+test mouse_simulator::tests::position_and_timestamp_pass_through_unchanged ... ok
+test mouse_simulator::tests::simulated_sample_capabilities_never_claim_real_hardware_support ... ok
+test mouse_simulator::tests::simulated_sample_has_constant_pressure_and_no_tilt ... ok
+test mouse_simulator::tests::simulated_sample_is_tagged_with_the_simulated_source ... ok
+test sample::tests::negative_pressure_is_rejected ... ok
+test sample::tests::non_finite_timestamp_is_rejected ... ok
+test sample::tests::pressure_out_of_range_is_rejected ... ok
+test sample::tests::real_stylus_pressure_with_matching_capability_is_authoritative ... ok
+test sample::tests::simulated_mouse_pressure_is_not_authoritative_even_when_present ... ok
+test sample::tests::serialization_round_trips ... ok
+test sample::tests::simulated_source_label_always_says_simulated ... ok
+test sample::tests::tilt_out_of_range_is_rejected ... ok
+test sample::tests::valid_sample_constructs_successfully ... ok
+test trace::tests::a_malformed_trace_fails_validation ... ok
+test trace::tests::a_well_formed_trace_validates ... ok
+test trace::tests::replay_visits_every_event_in_recorded_order ... ok
+test trace::tests::replaying_twice_produces_the_same_visited_sequence ... ok
+test trace::tests::canonical_json_round_trips_to_an_equal_trace ... ok
+test trace::tests::canonical_json_is_byte_identical_across_repeated_serializations ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 42 tests
+test beautify::tests::keep_as_ink_has_nothing_to_beautify ... ok
+test beautify::tests::a_circle_candidate_beautifies_to_a_valid_circle2 ... ok
+test beautify::tests::beautified_displacement_equals_the_original_candidates_residual ... ok
+test candidate::tests::a_clean_line_ranks_above_keep_as_ink ... ok
+test candidate::tests::a_short_two_point_stroke_only_offers_keep_as_ink ... ok
+test candidate::tests::keep_as_ink_is_always_present ... ok
+test beautify::tests::a_line_candidate_beautifies_to_a_segment_using_the_fitted_endpoints ... ok
+test candidate::tests::low_confidence_fits_are_not_offered_at_all ... ok
+test candidate::tests::ranking_is_sorted_descending_by_confidence ... ok
+test confidence::tests::confidence_clamps_out_of_range_inputs ... ok
+test confidence::tests::nonpositive_scale_is_zero_confidence_not_a_division_panic ... ok
+test confidence::tests::residual_beyond_scale_stays_clamped_at_zero ... ok
+test confidence::tests::residual_equal_to_scale_is_zero_confidence ... ok
+test confidence::tests::zero_residual_is_full_confidence ... ok
+test fit::arc::tests::a_half_circle_arc_is_unambiguous ... ok
+test fit::arc::tests::a_near_full_sweep_is_flagged_ambiguous_with_circle ... ok
+test fit::arc::tests::a_short_but_clean_sweep_is_not_flagged_ambiguous_with_freehand ... ok
+test fit::arc::tests::a_short_noisy_sweep_is_flagged_ambiguous_with_freehand ... ok
+test fit::arc::tests::sweep_direction_sign_matches_traversal_direction ... ok
+test fit::arc::tests::too_few_points_has_no_fit ... ok
+test fit::circle::tests::a_perfect_circle_fits_with_near_zero_residual_and_high_confidence ... ok
+test fit::circle::tests::a_square_shaped_stroke_is_a_poor_circle_fit ... ok
+test fit::circle::tests::collinear_points_have_no_defined_circle ... ok
+test fit::circle::tests::fewer_than_three_points_has_no_fit ... ok
+test fit::circle::tests::residual_is_nonnegative ... ok
+test fit::line::tests::a_perfectly_straight_line_fits_with_near_zero_residual_and_high_confidence ... ok
+test fit::line::tests::a_vertical_line_is_fit_correctly_unlike_ordinary_y_on_x_regression ... ok
+test fit::line::tests::a_zigzag_path_has_high_residual_and_low_confidence ... ok
+test fit::line::tests::coincident_points_have_no_defined_direction ... ok
+test fit::line::tests::fewer_than_two_points_has_no_fit ... ok
+test fit::line::tests::fitted_endpoints_span_the_extent_of_the_input_along_the_fitted_direction ... ok
+test fit::rectangle::tests::a_clean_closed_rectangle_outline_is_recognized ... ok
+test fit::rectangle::tests::a_degenerate_flat_box_is_not_a_candidate ... ok
+test fit::rectangle::tests::a_rough_closed_scribble_is_not_forced_into_a_rectangle ... ok
+test fit::rectangle::tests::an_open_stroke_that_never_closes_is_not_a_rectangle_candidate ... ok
+test fit::rectangle::tests::too_few_points_is_not_a_candidate ... ok
+test rejection_memory::tests::a_materially_different_refit_after_new_evidence_is_not_suppressed ... ok
+test rejection_memory::tests::a_rejected_candidate_is_filtered_out_of_future_recognition_results ... ok
+test rejection_memory::tests::clear_stroke_forgets_all_rejections_for_that_stroke ... ok
+test rejection_memory::tests::keep_as_ink_can_never_be_suppressed ... ok
+test rejection_memory::tests::rejection_is_scoped_per_stroke ... ok
+test rejection_memory::tests::tiny_refit_jitter_of_the_same_shape_stays_suppressed ... ok
+
+test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 3 tests
+test ordinary_shapes_are_recognized_as_their_correct_kind ... ok
+test noisy_handwriting_and_scrawls_are_never_forced_into_a_high_confidence_primitive ... ok
+test benchmark_report_covers_both_accuracy_and_forced_conversion_error ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test tests::future_schema_version_is_not_readable_by_an_older_build ... ok
+test tests::ordered_f64_rejects_nan_and_infinity ... ok
+test tests::canonical_json_is_identical_for_structurally_equal_values_regardless_of_field_order ... ok
+test tests::older_schema_version_is_readable_by_current ... ok
+test tests::ordered_f64_sorts_deterministically ... ok
+test tests::schema_version_current_is_readable_by_itself ... ok
+test tests::canonical_json_sorts_object_keys_but_preserves_array_order ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test tests::sequence_implements_iterator_for_ergonomic_bulk_fixture_creation ... ok
+test tests::sequence_produces_distinct_reproducible_ids ... ok
+test tests::starting_at_allows_independent_non_colliding_sequences ... ok
+test tests::sequence_never_collides_with_the_nil_sentinel ... ok
+test tests::starting_at_zero_panics_because_zero_is_the_nil_sentinel - should panic ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+test tests::commit_makes_all_recorded_changes_visible_together ... ok
+test tests::committing_twice_fails ... ok
+test tests::each_transaction_has_a_unique_stable_id ... ok
+test tests::new_commit_after_undo_clears_the_redo_stack ... ok
+test tests::rollback_discards_changes_and_they_never_reach_history ... ok
+test tests::undo_and_redo_operate_on_whole_transactions_not_individual_changes ... ok
+test tests::recording_after_commit_fails_instead_of_silently_mutating_history ... ok
+test tests::undo_on_empty_history_is_a_structured_error_not_a_panic ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 26 tests
+test diagnostic_export::tests::capture_reflects_an_in_progress_stroke ... ok
+test diagnostic_export::tests::capture_reflects_completed_strokes_and_tool ... ok
+test diagnostic_export::tests::export_always_includes_the_simulator_disclaimer ... ok
+test scenario::tests::from_json_rejects_malformed_json ... ok
+test scenario::tests::from_json_rejects_a_scenario_with_an_invalid_trace ... ok
+test scenario::tests::a_valid_scenario_round_trips_through_json ... ok
+test diagnostic_export::tests::canonical_json_export_round_trips ... ok
+test scenario::tests::load_from_file_reports_io_error_for_a_missing_file ... ok
+test scenario::tests::checked_in_example_scenario_loads_and_validates ... ok
+test state::tests::a_complete_down_move_up_sequence_becomes_one_recorded_stroke ... ok
+test state::tests::an_invalid_event_is_rejected_and_does_not_corrupt_state ... ok
+test state::tests::clear_resets_strokes_and_lifecycle ... ok
+test state::tests::load_traces_leaves_state_unchanged_when_a_trace_is_invalid ... ok
+test state::tests::load_traces_replays_multiple_traces_as_completed_strokes ... ok
+test tool::tests::default_pressure_override_matches_the_mouse_simulator_constant ... ok
+test tool::tests::every_tool_has_a_distinct_nonempty_label ... ok
+test tool::tests::pressure_override_accepts_and_applies_valid_values ... ok
+test tool::tests::pressure_override_rejects_out_of_range_values ... ok
+test viewport::tests::default_viewport_maps_world_to_screen_identically ... ok
+test viewport::tests::fit_bounds_centers_the_bounds_on_screen ... ok
+test viewport::tests::fit_bounds_makes_the_whole_bounds_visible_within_the_usable_area ... ok
+test viewport::tests::reset_returns_to_identity_transform ... ok
+test viewport::tests::screen_to_world_inverts_world_to_screen ... ok
+test viewport::tests::zoom_at_keeps_the_anchor_point_fixed_on_screen ... ok
+test viewport::tests::zoom_is_clamped_to_a_sane_range ... ok
+test scenario::tests::load_from_file_round_trips_through_a_real_temp_file ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

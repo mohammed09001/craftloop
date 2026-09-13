@@ -714,6 +714,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-recognition"
+version = "0.1.0"
+dependencies = [
+ "craftloop-geometry",
+ "craftloop-ids",
+ "craftloop-ink",
+ "craftloop-input",
+ "serde",
+]
+
+[[package]]
 name = "craftloop-serialization"
 version = "0.1.0"
 dependencies = [

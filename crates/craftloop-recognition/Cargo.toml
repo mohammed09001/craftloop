@@ -1,0 +1,17 @@
+[package]
+name = "craftloop-recognition"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Primitive recognition (candidate fitting/ranking) and beautification for the Craft Loop shared engineering core."
+
+[dependencies]
+serde.workspace = true
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-ink = { path = "../craftloop-ink" }
+
+[dev-dependencies]
+craftloop-input = { path = "../craftloop-input" }

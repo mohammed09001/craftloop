@@ -151,3 +151,17 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   (endpoint preservation, symmetric-window averaging in `smoothing.rs`) and
   1 test-construction bug caught and fixed in-loop.
 - Lint/format: both clean (1 clippy finding fixed: `len_without_is_empty`).
+
+### Phase 06 — closed 2026-09-13
+- Evidence: `08-phase-06-recognition.md`;
+  `test-reports/phase-06-cargo-test.txt`;
+  `test-reports/phase-06-cargo-clippy.txt`.
+- Code: `crates/craftloop-recognition` (`fit/{line,circle,arc,rectangle}.rs`,
+  `candidate.rs`, `beautify.rs`, `rejection_memory.rs`, `confidence.rs`,
+  `tests/false_positive_benchmark.rs`).
+- Tests: 243/243 passing workspace-wide (45 new). 4 real issues found and
+  fixed: dead-code displacement() bug, arc-ambiguity heuristic redesign
+  (Kåsa fit instability on short arcs), Arc/Circle ranking flakiness on a
+  full circle, and confidence-scale miscalibration caught by the Task 047
+  benchmark itself and corrected (0.25 -> 0.1).
+- Lint/format: both clean (1 clippy finding fixed: `clone_on_copy`).
