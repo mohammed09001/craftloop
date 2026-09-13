@@ -19,6 +19,7 @@ pub mod orthographic;
 pub mod page;
 pub mod page_layout;
 pub mod persistence;
+pub mod propagation;
 pub mod provenance;
 pub mod stale_result;
 pub mod units;
@@ -39,6 +40,10 @@ pub use orthographic::{
 pub use page::Page;
 pub use page_layout::PageLayoutTransform;
 pub use persistence::{load_document, save_document_atomically};
+pub use propagation::{
+    projection_guides, propagate_confirmed_value, propose_shared_value,
+    share_back_extent_from_front, ProjectionGuide,
+};
 pub use provenance::ProvenanceState;
 pub use stale_result::AsyncResult;
 pub use units::DocumentUnits;

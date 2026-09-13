@@ -420,3 +420,15 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   mode as Phase 07's `EntityId` (JSON object keys must be strings).
   Fixed with the same hand-written-Serialize pattern.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 23 — closed 2026-09-13
+- Evidence: `25-phase-23-orthographic-relationship-engine.md`;
+  `test-reports/phase-23-cargo-test.txt`;
+  `test-reports/phase-23-cargo-clippy.txt`;
+  `test-reports/phase-23-cargo-fmt.txt`.
+- Code: `crates/craftloop-document` gained `propagation.rs`
+  (`propagate_confirmed_value`, `share_back_extent_from_front`,
+  `ProjectionGuide`/`projection_guides`, `propose_shared_value`);
+  `craftloop-consistency` gained `ConflictKind::CrossViewMismatch`.
+- Tests: 654/654 passing workspace-wide (15 new). No RED-GREEN surprises.
+- Lint/format: both clean, no clippy findings.

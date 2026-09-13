@@ -31,6 +31,12 @@ pub enum ConflictKind {
     /// raw input would produce if re-parsed -- evidence that an explicit
     /// unit was silently misapplied somewhere between input and storage.
     UnitMisapplication,
+    /// Execution 01, Phase 23, Task 171: a second, incompatible value was
+    /// proposed for a dimension already shared across linked orthographic
+    /// views (MCP Article 37: "The top view should not be allowed to
+    /// establish a contradictory 130-millimeter width for the same linked
+    /// geometry... the system should explain the conflict").
+    CrossViewMismatch,
 }
 
 /// Task 104: how a conflict can be resolved. Matches Article 27/Task
