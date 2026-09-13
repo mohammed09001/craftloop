@@ -75,6 +75,15 @@ pub enum ConsistencyErrorKind {
     Conflict,
     /// A reference points at an entity that does not exist in the document.
     UnknownReference,
+    /// A resolution was attempted on a conflict that already has one
+    /// (Execution 01, Phase 14, Task 104: resolving is a one-time,
+    /// atomic transition, mirroring `TransactionErrorKind::AlreadyResolved`'s
+    /// same principle for transactions).
+    AlreadyResolved,
+    /// The requested resolution is not among the conflict's own
+    /// `resolution_choices` (e.g. attempting `Unlink` on a conflict that
+    /// never offered it).
+    ChoiceNotOffered,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -286,3 +286,20 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   at a degenerate axis-aligned initial guess). Fixed the test's initial
   guess, not the code.
 - Lint/format: both clean (1 clippy finding fixed: `type_complexity`).
+
+### Phase 14 — closed 2026-09-13
+- Evidence: `16-phase-14-consistency-engine.md`;
+  `test-reports/phase-14-cargo-test.txt`;
+  `test-reports/phase-14-cargo-clippy.txt`;
+  `test-reports/phase-14-cargo-fmt.txt`.
+- Code: new crate `crates/craftloop-consistency` (`conflict.rs`,
+  `geometry_validation.rs`, `dimension_validation.rs`,
+  `unit_validation.rs`, `resolution.rs`); `craftloop-errors` gained two
+  `ConsistencyErrorKind` variants (`AlreadyResolved`, `ChoiceNotOffered`)
+  -- the first real use of `DomainError::Consistency` anywhere in the
+  workspace (defined Phase 01, unused until now); `craftloop-document`
+  gained `SemanticEntity::Conflict`/`EntityId::Conflict` plus
+  `tests/conflict_persistence.rs`.
+- Tests: 500/500 passing workspace-wide (26 new). No RED-GREEN surprises
+  this phase -- every validator's first test run matched its design.
+- Lint/format: both clean, no clippy findings.

@@ -667,6 +667,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-consistency"
+version = "0.1.0"
+dependencies = [
+ "craftloop-constraint",
+ "craftloop-dimension",
+ "craftloop-errors",
+ "craftloop-geometry",
+ "craftloop-ids",
+ "craftloop-recognition",
+ "craftloop-units",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "craftloop-constraint"
 version = "0.1.0"
 dependencies = [
@@ -690,6 +705,7 @@ dependencies = [
 name = "craftloop-document"
 version = "0.1.0"
 dependencies = [
+ "craftloop-consistency",
  "craftloop-dimension",
  "craftloop-errors",
  "craftloop-geometry",

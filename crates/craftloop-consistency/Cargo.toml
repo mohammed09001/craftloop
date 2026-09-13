@@ -1,0 +1,21 @@
+[package]
+name = "craftloop-consistency"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Geometric Consistency Engine for the Craft Loop shared engineering core (MCP Article 27): structured conflict objects and validators coordinating geometry, dimensions, constraints, and units (Engine Contract 12)."
+
+[dependencies]
+serde.workspace = true
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-recognition = { path = "../craftloop-recognition" }
+craftloop-dimension = { path = "../craftloop-dimension" }
+craftloop-constraint = { path = "../craftloop-constraint" }
+craftloop-units = { path = "../craftloop-units" }
+
+[dev-dependencies]
+serde_json.workspace = true

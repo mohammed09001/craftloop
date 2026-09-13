@@ -5,19 +5,21 @@
 //!
 //! Task 050 names seven kinds of semantic object a page can hold: "raw
 //! ink, geometry, notes, dimensions, view labels, suggestions, conflicts,
-//! and ephemeral interaction records." Four now have a real, implemented
+//! and ephemeral interaction records." Five now have a real, implemented
 //! type behind them -- raw ink (`craftloop_ink::Stroke`, Phase 05),
 //! geometry (`craftloop_recognition::BeautifiedPrimitive`, Phase 06), notes
-//! (this crate's `Note`, Phase 07), and dimensions
-//! (`craftloop_dimension::SemanticDimension`, Phase 10). The remaining
-//! three belong to engines this execution has not reached: view labels
-//! (Phase 20), suggestions/conflicts (Phase 06's `RecognitionCandidate` is
-//! a suggestion in spirit but not yet a *stored, reified* document entity
-//! with its own lifecycle -- that lands with Phase 12-14's
-//! consistency/conflict engines). Adding placeholder variants for them now
-//! would be exactly the fabricated completeness the No-Hallucination
-//! Contract forbids; `SemanticEntity` grows a new variant in the phase that
-//! actually builds each one.
+//! (this crate's `Note`, Phase 07), dimensions
+//! (`craftloop_dimension::SemanticDimension`, Phase 10), and conflicts
+//! (`craftloop_consistency::Conflict`, Phase 14, Task 106: "unresolved
+//! conflicts must survive save/reopen" is exactly this crate's existing
+//! atomic persistence applied to one more entity kind, not a new
+//! mechanism). The remaining two belong to engines this execution has not
+//! reached: view labels (Phase 20), suggestions (Phase 06's
+//! `RecognitionCandidate` is a suggestion in spirit but not yet a *stored,
+//! reified* document entity with its own lifecycle). Adding a placeholder
+//! variant for it now would be exactly the fabricated completeness the
+//! No-Hallucination Contract forbids; `SemanticEntity` grows a new variant
+//! in the phase that actually builds it.
 //!
 //! Dimension *annotations* (`craftloop_dimension::DimensionAnnotation`) are
 //! deliberately **not** a `SemanticEntity` variant: Task 050 names
@@ -30,8 +32,9 @@
 use std::fmt;
 use std::str::FromStr;
 
+use craftloop_consistency::Conflict;
 use craftloop_dimension::SemanticDimension;
-use craftloop_ids::{CraftLoopId, DimensionId, NoteId, PrimitiveId, StrokeId};
+use craftloop_ids::{ConflictId, CraftLoopId, DimensionId, NoteId, PrimitiveId, StrokeId};
 use craftloop_ink::Stroke;
 use craftloop_recognition::Beautified;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -58,6 +61,7 @@ pub enum EntityId {
     Primitive(PrimitiveId),
     Note(NoteId),
     Dimension(DimensionId),
+    Conflict(ConflictId),
 }
 
 impl EntityId {
@@ -67,6 +71,7 @@ impl EntityId {
             EntityId::Primitive(_) => "Primitive",
             EntityId::Note(_) => "Note",
             EntityId::Dimension(_) => "Dimension",
+            EntityId::Conflict(_) => "Conflict",
         }
     }
 
@@ -76,6 +81,7 @@ impl EntityId {
             EntityId::Primitive(id) => id.as_uuid(),
             EntityId::Note(id) => id.as_uuid(),
             EntityId::Dimension(id) => id.as_uuid(),
+            EntityId::Conflict(id) => id.as_uuid(),
         }
     }
 }
@@ -100,6 +106,7 @@ impl FromStr for EntityId {
             "Primitive" => Ok(EntityId::Primitive(PrimitiveId::from_u128(value))),
             "Note" => Ok(EntityId::Note(NoteId::from_u128(value))),
             "Dimension" => Ok(EntityId::Dimension(DimensionId::from_u128(value))),
+            "Conflict" => Ok(EntityId::Conflict(ConflictId::from_u128(value))),
             other => Err(format!("unknown EntityId kind: {other:?}")),
         }
     }
@@ -130,6 +137,7 @@ pub enum SemanticEntity {
     },
     Note(Note),
     Dimension(SemanticDimension),
+    Conflict(Conflict),
 }
 
 impl SemanticEntity {
@@ -139,6 +147,7 @@ impl SemanticEntity {
             SemanticEntity::Primitive { id, .. } => EntityId::Primitive(*id),
             SemanticEntity::Note(n) => EntityId::Note(n.id),
             SemanticEntity::Dimension(d) => EntityId::Dimension(d.id),
+            SemanticEntity::Conflict(c) => EntityId::Conflict(c.id),
         }
     }
 }
@@ -229,6 +238,30 @@ mod tests {
         .unwrap();
         let entity = SemanticEntity::Dimension(dimension.clone());
         assert_eq!(entity.id(), EntityId::Dimension(dimension.id));
+
+        let json = serde_json::to_string(&entity).unwrap();
+        let back: SemanticEntity = serde_json::from_str(&json).unwrap();
+        assert_eq!(entity, back);
+    }
+
+    #[test]
+    fn a_conflict_entity_id_round_trips_like_every_other_kind() {
+        use craftloop_consistency::{ConflictKind, ConflictStatus};
+        use craftloop_errors::Severity;
+
+        let conflict = Conflict {
+            id: ConflictId::new(),
+            kind: ConflictKind::DegenerateGeometry,
+            severity: Severity::Error,
+            affected_entities: vec!["Primitive(...)".to_string()],
+            existing_truth: "nonzero length".to_string(),
+            proposed_truth: "zero length".to_string(),
+            evidence: "length = 0".to_string(),
+            resolution_choices: Vec::new(),
+            status: ConflictStatus::Unresolved,
+        };
+        let entity = SemanticEntity::Conflict(conflict.clone());
+        assert_eq!(entity.id(), EntityId::Conflict(conflict.id));
 
         let json = serde_json::to_string(&entity).unwrap();
         let back: SemanticEntity = serde_json::from_str(&json).unwrap();
