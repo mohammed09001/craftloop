@@ -106,3 +106,14 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   `cargo clippy --workspace --all-targets -- -D warnings` both clean after
   one real clippy finding was fixed (`should_implement_trait` on
   `DeterministicIdSequence::next`, renamed to `next_id`).
+
+### Phase 02 — closed 2026-09-13
+- Evidence: `04-phase-02-geometry.md`; `test-reports/phase-02-cargo-test.txt`;
+  `test-reports/phase-02-cargo-clippy.txt`.
+- Code: `crates/craftloop-geometry` (`point.rs`, `segment.rs`, `circle.rs`,
+  `arc.rs`, `ellipse.rs`, `rectangle.rs`, `tolerance.rs`, `bounds.rs`,
+  `tests/property_tests.rs`).
+- Tests: 107/107 passing workspace-wide (59 geometry unit + 14 property +
+  34 from Phase 01). One real bug (sign error in
+  `Circle2::intersect_segment`) caught by tests and fixed in-loop.
+- Lint/format: both clean.

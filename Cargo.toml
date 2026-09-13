@@ -6,6 +6,7 @@ members = [
     "crates/craftloop-serialization",
     "crates/craftloop-transactions",
     "crates/craftloop-test-support",
+    "crates/craftloop-geometry",
 ]
 
 [workspace.package]
