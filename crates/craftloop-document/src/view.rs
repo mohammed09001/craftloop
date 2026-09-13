@@ -23,7 +23,7 @@ use crate::page_layout::PageLayoutTransform;
 /// Task 144: the initial supported principal identities. Article 30 also
 /// names `Left`/`Bottom` but explicitly marks them "if later supported"
 /// -- deferred, not silently omitted.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum PrincipalViewIdentity {
     Front,
     Top,

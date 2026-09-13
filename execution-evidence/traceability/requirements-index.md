@@ -392,3 +392,17 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   `DocumentErrorKind::DuplicateViewIdentity`.
 - Tests: 611/611 passing workspace-wide (13 new). No RED-GREEN surprises.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 21 — closed 2026-09-13
+- Evidence: `23-phase-21-orthographic-readiness.md`;
+  `test-reports/phase-21-cargo-test.txt`;
+  `test-reports/phase-21-cargo-clippy.txt`;
+  `test-reports/phase-21-cargo-fmt.txt`.
+- Code: `crates/craftloop-document` gained `orthographic.rs`
+  (`ProjectionConvention`, `default_layout_offset`/
+  `default_orthographic_layout`, `OrthographicReadiness`,
+  `ReadinessIssue`, `evaluate_readiness`, `transition_to_orthographic`);
+  now depends on `craftloop-command`; `view.rs`'s `PrincipalViewIdentity`
+  gained `Ord` for `BTreeMap` keying.
+- Tests: 625/625 passing workspace-wide (14 new). No RED-GREEN surprises.
+- Lint/format: both clean (1 clippy finding fixed: `if_same_then_else`).

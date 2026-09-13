@@ -14,6 +14,7 @@ pub mod history;
 pub mod metadata;
 pub mod migration;
 pub mod note;
+pub mod orthographic;
 pub mod page;
 pub mod page_layout;
 pub mod persistence;
@@ -29,6 +30,10 @@ pub use history::{DocumentChange, DocumentHistory};
 pub use metadata::DocumentMetadata;
 pub use migration::{migrate_to_current, Migration};
 pub use note::Note;
+pub use orthographic::{
+    default_layout_offset, default_orthographic_layout, evaluate_readiness,
+    transition_to_orthographic, OrthographicReadiness, ProjectionConvention, ReadinessIssue,
+};
 pub use page::Page;
 pub use page_layout::PageLayoutTransform;
 pub use persistence::{load_document, save_document_atomically};

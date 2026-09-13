@@ -716,6 +716,7 @@ dependencies = [
 name = "craftloop-document"
 version = "0.1.0"
 dependencies = [
+ "craftloop-command",
  "craftloop-consistency",
  "craftloop-dimension",
  "craftloop-errors",
