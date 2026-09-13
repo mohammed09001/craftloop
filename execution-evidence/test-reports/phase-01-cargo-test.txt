@@ -1,0 +1,84 @@
+
+running 7 tests
+test tests::corrupted_document_defaults_to_blocker_severity ... ok
+test tests::callers_can_match_on_kind_without_string_parsing ... ok
+test tests::severity_can_be_overridden_for_context_the_default_cannot_know ... ok
+test tests::error_display_never_loses_the_typed_kind ... ok
+test tests::diagnostic_builder_attaches_related_entities ... ok
+test tests::diagnostic_round_trips_through_json ... ok
+test tests::severity_ordering_supports_finding_the_worst_diagnostic ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test tests::nil_is_the_all_zero_sentinel ... ok
+test tests::debug_format_includes_type_name_for_diagnostics ... ok
+test tests::serialization_round_trips_and_is_transparent ... ok
+test tests::distinct_id_types_do_not_implicitly_convert ... ok
+test tests::deterministic_construction_is_reproducible ... ok
+test tests::ordering_is_total_and_stable_for_canonical_output ... ok
+test tests::new_ids_are_unique_across_many_calls ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 7 tests
+test tests::canonical_json_is_identical_for_structurally_equal_values_regardless_of_field_order ... ok
+test tests::canonical_json_sorts_object_keys_but_preserves_array_order ... ok
+test tests::future_schema_version_is_not_readable_by_an_older_build ... ok
+test tests::ordered_f64_rejects_nan_and_infinity ... ok
+test tests::ordered_f64_sorts_deterministically ... ok
+test tests::older_schema_version_is_readable_by_current ... ok
+test tests::schema_version_current_is_readable_by_itself ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test tests::sequence_implements_iterator_for_ergonomic_bulk_fixture_creation ... ok
+test tests::sequence_never_collides_with_the_nil_sentinel ... ok
+test tests::sequence_produces_distinct_reproducible_ids ... ok
+test tests::starting_at_zero_panics_because_zero_is_the_nil_sentinel - should panic ... ok
+test tests::starting_at_allows_independent_non_colliding_sequences ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+test tests::commit_makes_all_recorded_changes_visible_together ... ok
+test tests::committing_twice_fails ... ok
+test tests::each_transaction_has_a_unique_stable_id ... ok
+test tests::new_commit_after_undo_clears_the_redo_stack ... ok
+test tests::undo_on_empty_history_is_a_structured_error_not_a_panic ... ok
+test tests::rollback_discards_changes_and_they_never_reach_history ... ok
+test tests::recording_after_commit_fails_instead_of_silently_mutating_history ... ok
+test tests::undo_and_redo_operate_on_whole_transactions_not_individual_changes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

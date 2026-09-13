@@ -1,0 +1,12 @@
+[package]
+name = "craftloop-serialization"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Deterministic serialization conventions, schema versioning, and numeric policy for the Craft Loop shared engineering core."
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true

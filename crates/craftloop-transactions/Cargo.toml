@@ -1,0 +1,12 @@
+[package]
+name = "craftloop-transactions"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Atomic domain transaction boundary and undo/redo history primitive for the Craft Loop shared engineering core."
+
+[dependencies]
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-errors = { path = "../craftloop-errors" }

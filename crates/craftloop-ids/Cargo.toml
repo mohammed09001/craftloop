@@ -1,0 +1,15 @@
+[package]
+name = "craftloop-ids"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Stable, strongly typed domain identifiers for the Craft Loop shared engineering core."
+
+[dependencies]
+serde.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

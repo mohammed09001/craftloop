@@ -93,3 +93,16 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   domain test was required — Task 001–006 are documentation/process tasks.
 - Branch: `execution-01/phase-00` created per Task 003 (never committed
   directly to `main`).
+
+### Phase 01 — closed 2026-09-13
+- Evidence: `03-phase-01-workspace.md`; `test-reports/phase-01-cargo-test.txt`;
+  `test-reports/phase-01-cargo-clippy.txt`.
+- Code: `Cargo.toml` (workspace), `crates/craftloop-ids`,
+  `crates/craftloop-errors`, `crates/craftloop-serialization`,
+  `crates/craftloop-transactions`, `crates/craftloop-test-support`,
+  `apps/README.md` (placeholder boundary doc).
+- Tests: 34/34 passing across 5 crates (`cargo test --workspace`).
+- Lint/format: `cargo fmt --all -- --check` and
+  `cargo clippy --workspace --all-targets -- -D warnings` both clean after
+  one real clippy finding was fixed (`should_implement_trait` on
+  `DeterministicIdSequence::next`, renamed to `next_id`).
