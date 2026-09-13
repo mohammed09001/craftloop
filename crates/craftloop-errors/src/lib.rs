@@ -110,6 +110,16 @@ pub enum InputErrorKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DocumentErrorKind {
+    /// An entity was inserted under an ID that already exists in the same
+    /// page (would silently overwrite a distinct entity).
+    DuplicateEntityId,
+    /// A reference (e.g. a page ID) does not resolve to anything in the
+    /// document.
+    UnknownReference,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum InkErrorKind {
     /// A stroke was constructed with zero samples.
     EmptyStroke,
@@ -160,6 +170,11 @@ pub enum DomainError {
     },
     #[error("ink error ({kind:?}): {detail}")]
     Ink { kind: InkErrorKind, detail: String },
+    #[error("document error ({kind:?}): {detail}")]
+    Document {
+        kind: DocumentErrorKind,
+        detail: String,
+    },
 }
 
 impl DomainError {
@@ -185,6 +200,7 @@ impl DomainError {
             DomainError::Transaction { .. } => Severity::Error,
             DomainError::Input { .. } => Severity::Error,
             DomainError::Ink { .. } => Severity::Error,
+            DomainError::Document { .. } => Severity::Error,
         }
     }
 }

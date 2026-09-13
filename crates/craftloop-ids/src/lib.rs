@@ -132,6 +132,18 @@ define_id!(
     "Identifies one AI-originated suggestion that remains distinct from \
      confirmed engineering truth until accepted (MCP Article 5, Article 384)."
 );
+define_id!(
+    NoteId,
+    "Identifies one freeform note (Engine Contract 15 document model; MCP \
+     Article 67 \"Notes Around Engineering Views\"). Added in Phase 07 \
+     alongside the document model that first needs to store notes."
+);
+define_id!(
+    PageId,
+    "Identifies one page/canvas within a notebook document (Engine \
+     Contract 15; MCP Article 65 \"Pages and Infinite Paper\"). Added in \
+     Phase 07 alongside the document model that first needs to store pages."
+);
 
 #[cfg(test)]
 mod tests {

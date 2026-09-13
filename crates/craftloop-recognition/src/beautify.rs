@@ -14,10 +14,11 @@
 //! are the same computation, not two competing goals to trade off.
 
 use craftloop_geometry::{Arc2, Circle2, RelationalRectangle, Segment2};
+use serde::{Deserialize, Serialize};
 
 use crate::candidate::RecognitionCandidate;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum BeautifiedPrimitive {
     Line(Segment2),
     Circle(Circle2),
@@ -29,7 +30,7 @@ pub enum BeautifiedPrimitive {
 /// candidate it was built from -- how far, on average, the raw ink sat
 /// from this clean shape, so callers (and tests) can verify "minimizes
 /// displacement" is more than a claim.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Beautified {
     pub primitive: BeautifiedPrimitive,
     pub displacement: f64,

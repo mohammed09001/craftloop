@@ -1,0 +1,23 @@
+[package]
+name = "craftloop-document"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Native document root, semantic paper, and persistence for the Craft Loop shared engineering core."
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-serialization = { path = "../craftloop-serialization" }
+craftloop-ink = { path = "../craftloop-ink" }
+craftloop-recognition = { path = "../craftloop-recognition" }
+
+[dev-dependencies]
+craftloop-input = { path = "../craftloop-input" }

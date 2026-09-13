@@ -661,6 +661,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-document"
+version = "0.1.0"
+dependencies = [
+ "craftloop-errors",
+ "craftloop-geometry",
+ "craftloop-ids",
+ "craftloop-ink",
+ "craftloop-input",
+ "craftloop-recognition",
+ "craftloop-serialization",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "uuid",
+]
+
+[[package]]
 name = "craftloop-errors"
 version = "0.1.0"
 dependencies = [

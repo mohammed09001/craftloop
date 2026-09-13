@@ -165,3 +165,19 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   full circle, and confidence-scale miscalibration caught by the Task 047
   benchmark itself and corrected (0.25 -> 0.1).
 - Lint/format: both clean (1 clippy finding fixed: `clone_on_copy`).
+
+### Phase 07 — closed 2026-09-13
+- Evidence: `09-phase-07-document.md`;
+  `test-reports/phase-07-cargo-test.txt`;
+  `test-reports/phase-07-cargo-clippy.txt`.
+- Code: `crates/craftloop-document` (`document.rs`, `page.rs`, `entity.rs`,
+  `note.rs`, `metadata.rs`, `units.rs`, `page_layout.rs`, `persistence.rs`,
+  `migration.rs`, `autosave.rs`, `tests/save_reopen_golden.rs`); added
+  `NoteId`/`PageId` to `craftloop-ids`, `DomainError::Document` to
+  `craftloop-errors`.
+- Tests: 286/286 passing workspace-wide (43 new). One significant bug
+  (EntityId's derived enum serde broke `BTreeMap<EntityId, _>`
+  serialization entirely) caught by the Task 055 golden test and fixed with
+  a hand-written string-based Serialize/Deserialize.
+- Lint/format: both clean (2 clippy findings fixed:
+  `wrong_self_convention`, `derivable_impls`).
