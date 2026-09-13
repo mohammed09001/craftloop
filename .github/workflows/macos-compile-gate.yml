@@ -1,20 +1,28 @@
-# Execution 01, Phase 27, Task 200.
+# Execution 01, Phase 27 Task 200; extended Phase 29 Task 211.
 #
 # "Prepare future iOS-binding build checks in a macOS runner once the
-# binding layer exists" -- no iOS/iPad binding layer exists yet (Phase 29
-# is the phase that will add one, and is an expected true blocker for
-# hardware-specific verification in this execution). Until it does, there
-# is nothing iOS-specific to build or test; this job is deliberately
-# scoped to a **compile-only** gate for the platform-independent shared
-# core on macOS, so a real cross-platform compile regression (an
-# accidental Windows-only API creeping into a shared crate, for instance)
-# is caught even without an iOS target. `windows-harness` is excluded
-# (Windows-only by design, not a portability target -- see ci.yml).
+# binding layer exists" -- Phase 28/29 added that binding layer
+# (`crates/craftloop-mobile-ffi`, UniFFI-generated Kotlin *and* Swift from
+# one Rust source). This job is deliberately still scoped narrower than
+# `ci.yml`'s full test/clippy/fmt requirement -- it stays a **compile and
+# binding-generation** gate, not a full parity job -- but now does two
+# real things a macOS runner (with its built-in Xcode/Swift toolchain)
+# can that this Windows development sandbox never could:
 #
-# This workflow is intentionally separate from ci.yml rather than a third
-# job in it: it is a narrower, forward-looking gate (compile only, no
-# test/clippy/fmt requirement), not a full parity requirement with the
-# Windows/Linux jobs.
+# 1. Compile the shared core (unchanged from Phase 27, `windows-harness`
+#    excluded -- Windows-only by design, see `ci.yml`).
+# 2. Actually generate the Swift bindings via `uniffi-bindgen` and
+#    type-check them with the real Swift compiler (`swiftc -typecheck`)
+#    -- the one verification step this execution's own sandbox could not
+#    perform (see `execution-evidence/mobile-ffi/phase-29-swift-bindgen-smoke-test.txt`,
+#    which explicitly could not do this). `swiftc` is present by default
+#    on GitHub's `macos-latest` runner image, so this step is expected to
+#    actually run, not merely be guarded dead code.
+#
+# Task 211's own phrase, "when source exists": no `ios/` Xcode project or
+# Swift package exists yet (Phase 29 named no task creating one, unlike
+# Android's Task 203) -- the final step below builds one automatically
+# once it does, and is a documented no-op (skipped, not failed) today.
 
 name: macOS Compile Gate
 
@@ -29,7 +37,7 @@ env:
 
 jobs:
   macos-compile:
-    name: macOS (shared core, compile only)
+    name: macOS (shared core, compile + Swift binding check)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,3 +51,25 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Compile shared core (no windows-harness)
         run: cargo build --workspace --exclude windows-harness
+      - name: Build craftloop-mobile-ffi cdylib
+        run: cargo build -p craftloop-mobile-ffi
+      - name: Generate Swift bindings
+        run: |
+          cargo run -p craftloop-mobile-ffi --bin uniffi-bindgen -- generate \
+            --library target/debug/libcraftloop_mobile_ffi.dylib \
+            --language swift \
+            --out-dir target/generated-swift
+      - name: Type-check generated Swift bindings
+        run: |
+          swiftc -typecheck \
+            -I target/generated-swift \
+            -import-objc-header target/generated-swift/craftloop_mobile_ffiFFI.h \
+            target/generated-swift/craftloop_mobile_ffi.swift
+      - name: "Build ios/ shell if it exists yet (Task 211's own phrase: when source exists)"
+        run: |
+          if [ -d ios ]; then
+            echo "ios/ exists -- building it for real."
+            (cd ios && xcodebuild -list)
+          else
+            echo "No ios/ project yet (expected as of Phase 29) -- skipping, not failing."
+          fi

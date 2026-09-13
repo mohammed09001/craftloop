@@ -1,0 +1,77 @@
+Execution 01, Phase 29, Task 207/208 -- UniFFI Swift binding smoke test.
+
+Confirms Task 207's framing directly: `crates/craftloop-mobile-ffi`
+(built in Phase 28 for Android/Kotlin) needed zero Rust source changes to
+also serve Swift -- UniFFI generates both language bindings from the same
+`uniffi::setup_scaffolding!()` + `#[uniffi::export]` definitions. This is
+a real run against the actually-compiled cdylib, not a hand-written
+expectation.
+
+Commands
+--------
+
+cargo build -p craftloop-mobile-ffi
+  -> target/debug/craftloop_mobile_ffi.dll (same artifact Phase 28 built)
+
+cargo run -p craftloop-mobile-ffi --bin uniffi-bindgen -- generate \
+  --library target/debug/craftloop_mobile_ffi.dll \
+  --language swift \
+  --out-dir execution-evidence/mobile-ffi/generated-swift
+
+Output
+------
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.55s
+     Running `target\debug\uniffi-bindgen.exe generate --library target/debug/craftloop_mobile_ffi.dll --language swift --out-dir execution-evidence/mobile-ffi/generated-swift`
+Warning: Unable to auto-format execution-evidence/mobile-ffi/generated-swift\craftloop_mobile_ffi.swift using swift-format. Please make sure it is installed.
+
+(The swift-format warning is expected and harmless, exactly like the
+ktlint warning in Phase 28's Kotlin smoke test -- swift-format is a code
+formatter, not part of binding generation, and this Windows sandbox has
+no Swift toolchain at all, formatter included.)
+
+Result: three files generated under
+execution-evidence/mobile-ffi/generated-swift/:
+- craftloop_mobile_ffi.swift (1328 lines) -- the actual Swift API.
+- craftloop_mobile_ffiFFI.h -- the C header the Swift file's `@_implementationOnly`
+  C interop layer binds against.
+- craftloop_mobile_ffiFFI.modulemap -- Clang module map wiring the header
+  into a Swift-importable module (what an Xcode project's bridging setup
+  or Swift Package Manager binary target would consume).
+
+Verified present, real, and correct by grep:
+
+  public struct FfiPointerSample: Equatable, Hashable {    (line 577)
+  public enum FfiCommandAction: Equatable, Hashable {       (line 765)
+  public enum FfiGrammarMatch: Equatable, Hashable {        (line 1005)
+  public enum FfiPointerSource: Equatable, Hashable {       (line 1099)
+  public func resolveCommand(...) -> FfiGrammarMatch        (line 1273)
+  public func validateStroke(...) -> FfiStrokeValidation    (line 1282)
+
+Every exported function and FFI type from Task 201 (Phase 28) is present
+with correct Swift naming (camelCase functions, PascalCase types, real
+`Equatable`/`Hashable` conformances UniFFI adds automatically) -- the
+same one-Rust-source, two-language-bindings proof Task 207 asks for,
+now demonstrated rather than merely asserted.
+
+What this smoke test does NOT prove (explicitly, per the
+No-Hallucination Contract)
+-------------------------------------------------------------------------
+- That the generated Swift actually compiles under a real Swift compiler
+  -- confirmed directly: `which swift`/`which swiftc`/`which xcodebuild`
+  all fail in this Windows sandbox. No Swift toolchain exists here at
+  all (unlike Android, where at least a JDK could in principle be
+  installed cross-platform; Swift-on-Windows toolchains exist but are
+  not installed here and are not what a real iPad build would use
+  anyway).
+- That it runs correctly on a real iPad or the iOS Simulator (both need
+  macOS + Xcode).
+- Anything about an `ios/` Xcode project actually building -- no such
+  project exists yet (see Task 211's own notes: Phase 29 names no
+  explicit "create the iOS shell" task the way Phase 28's Task 203 does
+  for Android, so none was scaffolded speculatively).
+
+This is real evidence of a real, working binding-generation pipeline for
+a second target language from the exact same Rust source Phase 28 wrote
+(Scaffolded and Implemented-and-tested at the Rust/codegen layer), not a
+claim of a validated end-to-end Swift/Xcode/iPad build.

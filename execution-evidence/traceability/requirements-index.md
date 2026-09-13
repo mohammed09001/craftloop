@@ -524,3 +524,26 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
 - First expected true blocker of this execution: Android SDK/Gradle/adb/
   NDK unavailable in this sandbox, documented per the governing plan's
   own anticipated category, not silently skipped.
+
+### Phase 29 — closed 2026-09-13
+- Evidence: `31-phase-29-ipad-adapter-readiness.md`;
+  `test-reports/phase-29-cargo-{test,clippy,fmt}.txt`;
+  `mobile-ffi/phase-29-swift-bindgen-smoke-test.txt`;
+  `mobile-ffi/uniffi-swift-decision-record.md`;
+  `mobile-ffi/pencilkit-mapping.md`;
+  `mobile-ffi/paperkit-decision-boundary.md`;
+  `mobile-ffi/apple-pencil-validation-plan.md`.
+- Code: none new -- `crates/craftloop-mobile-ffi` (Phase 28) served
+  Swift with zero source changes; `.github/workflows/macos-compile-gate.yml`
+  extended to build the cdylib, generate Swift bindings, and
+  `swiftc -typecheck` them on a real macOS runner.
+- Tests: 729/729 passing workspace-wide (0 new -- documentation/CI
+  phase). Real UniFFI Swift binding smoke test run against the same
+  compiled cdylib Phase 28 used. One real bug found and fixed via
+  validation: an unquoted `:` inside a YAML step `name:` field broke
+  `macos-compile-gate.yml`'s parsing, caught by
+  `python -c "yaml.safe_load(...)"`.
+- Lint/format: both clean, no clippy findings.
+- Second (and final, per the governing plan) expected true blocker:
+  macOS/Xcode/Swift toolchain unavailable in this sandbox, confirmed
+  directly, documented rather than silently skipped.
