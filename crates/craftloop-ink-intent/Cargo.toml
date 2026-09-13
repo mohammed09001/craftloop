@@ -1,0 +1,19 @@
+[package]
+name = "craftloop-ink-intent"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Ink Intent Classification baseline for the Craft Loop shared engineering core (Engine Contract 04): deterministic, non-ML categorization of what a stroke means before any handwriting/ML adapter exists."
+
+[dependencies]
+serde.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-ink = { path = "../craftloop-ink" }
+craftloop-recognition = { path = "../craftloop-recognition" }
+
+[dev-dependencies]
+craftloop-input = { path = "../craftloop-input" }
+craftloop-ids = { path = "../craftloop-ids" }

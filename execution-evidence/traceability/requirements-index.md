@@ -320,3 +320,16 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   `observed_length_coincidences`.
 - Tests: 514/514 passing workspace-wide (14 new). No RED-GREEN surprises.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 16 — closed 2026-09-13
+- Evidence: `18-phase-16-ink-intent-baseline.md`;
+  `test-reports/phase-16-cargo-test.txt`;
+  `test-reports/phase-16-cargo-clippy.txt`;
+  `test-reports/phase-16-cargo-fmt.txt`.
+- Code: new crate `crates/craftloop-ink-intent` (`category.rs`,
+  `context.rs`, `classifier.rs`, `tests/mixed_content.rs`) -- category
+  vocabulary, deterministic feature extraction, `IntentClassifier` trait +
+  `DeterministicBaselineClassifier` reference implementation, conservative
+  thresholds matching `craftloop-recognition`'s existing 0.6 convention.
+- Tests: 525/525 passing workspace-wide (11 new). No RED-GREEN surprises.
+- Lint/format: both clean, no clippy findings.

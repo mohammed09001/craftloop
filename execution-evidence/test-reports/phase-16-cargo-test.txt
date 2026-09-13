@@ -1,0 +1,585 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.23s
+     Running unittests src\lib.rs (target\debug\deps\craftloop_consistency-1395de4d4e69c0d0.exe)
+
+running 22 tests
+test conflict::tests::a_resolved_conflict_is_not_unresolved_but_still_exists ... ok
+test conflict::tests::a_fresh_conflict_is_unresolved ... ok
+test dimension_validation::tests::a_driving_dimension_whose_constraint_is_satisfied_has_no_conflict ... ok
+test dimension_validation::tests::an_unsatisfied_constraint_for_a_different_dimension_does_not_leak_into_this_one ... ok
+test conflict::tests::a_resolved_status_round_trips_with_its_choice ... ok
+test dimension_validation::tests::non_driving_roles_never_produce_a_conflict_here_task_105 ... ok
+test conflict::tests::serialization_round_trips ... ok
+test dimension_validation::tests::a_driving_dimension_whose_constraint_is_unsatisfied_is_a_conflict ... ok
+test geometry_validation::tests::a_collapsed_flat_rectangle_is_flagged_degenerate ... ok
+test geometry_validation::tests::a_line_barely_below_committed_tolerance_is_still_flagged ... ok
+test geometry_validation::tests::a_normal_length_line_has_no_conflict ... ok
+test geometry_validation::tests::a_normal_rectangle_has_no_conflict ... ok
+test geometry_validation::tests::a_valid_circle_can_never_be_flagged_it_cannot_be_constructed_degenerate ... ok
+test geometry_validation::tests::a_zero_length_line_is_flagged_degenerate ... ok
+test resolution::tests::resolving_twice_is_rejected_and_the_first_resolution_survives ... ok
+test resolution::tests::resolving_with_a_choice_the_conflict_never_offered_is_rejected ... ok
+test resolution::tests::resolving_with_an_offered_choice_succeeds ... ok
+test unit_validation::tests::a_bare_number_relies_on_the_default_unit_both_times_consistently ... ok
+test unit_validation::tests::a_stored_value_that_drifted_from_its_own_raw_input_is_flagged ... ok
+test unit_validation::tests::a_value_matching_its_own_raw_input_has_no_conflict ... ok
+test unit_validation::tests::an_unparseable_raw_input_surfaces_the_parser_error_not_a_panic ... ok
+test unit_validation::tests::differences_within_tolerance_are_not_flagged ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_constraint-a253cc2ebe45ea8c.exe)
+
+running 36 tests
+test constraint::tests::equal_length_reports_all_eight_underlying_scalar_variables ... ok
+test constraint::tests::fixed_value_reports_exactly_one_variable ... ok
+test constraint::tests::parallel_reports_all_eight_underlying_scalar_variables ... ok
+test constraint::tests::circle_tangent_to_circle_reports_all_eight_underlying_scalar_variables ... ok
+test constraint::tests::serialization_round_trips ... ok
+test constraint::tests::distance_reports_all_four_underlying_scalar_variables ... ok
+test constraint::tests::line_tangent_to_circle_reports_all_eight_underlying_scalar_variables ... ok
+test constraint::tests::new_variants_serialize_and_round_trip ... ok
+test residual::tests::angle_residual_is_zero_for_a_matching_right_angle ... ok
+test residual::tests::circle_tangent_to_circle_residual_is_zero_for_externally_tangent_circles ... ok
+test residual::tests::all_residuals_are_nonnegative ... ok
+test constraint::tests::symmetric_reports_all_eight_underlying_scalar_variables ... ok
+test residual::tests::distance_residual_matches_actual_euclidean_distance_minus_target ... ok
+test residual::tests::coincident_residual_is_the_distance_between_the_two_points ... ok
+test residual::tests::equal_length_residual_is_positive_for_unequal_lengths ... ok
+test residual::tests::fixed_value_residual_is_zero_when_satisfied ... ok
+test residual::tests::fixed_value_residual_is_positive_when_unsatisfied ... ok
+test residual::tests::parallel_residual_is_zero_for_two_parallel_segments ... ok
+test residual::tests::perpendicular_residual_is_zero_for_a_right_angle ... ok
+test result::tests::is_solved_is_true_only_for_the_solved_status ... ok
+test residual::tests::line_tangent_to_circle_residual_is_positive_when_the_line_crosses_the_circle ... ok
+test residual::tests::line_tangent_to_circle_residual_is_zero_when_tangent ... ok
+test residual::tests::symmetric_residual_is_positive_for_a_non_mirrored_pair ... ok
+test residual::tests::symmetric_residual_is_zero_for_a_true_mirror_pair ... ok
+test residual::tests::equal_length_residual_is_zero_for_two_segments_of_equal_length ... ok
+test result::tests::serialization_round_trips_including_diagnostics ... ok
+test solver::tests::an_unsatisfied_constraint_is_named_in_diagnostics_with_its_residual ... ok
+test solver::tests::tolerance_controls_what_counts_as_satisfied ... ok
+test solver::tests::distance_and_coincident_together_reflect_a_realistic_two_point_system ... ok
+test variable::tests::point_variables_group_two_distinct_ids ... ok
+test result::tests::value_of_reads_back_a_stored_variable ... ok
+test solver::tests::a_satisfied_system_reports_solved_with_no_diagnostics ... ok
+test solver::tests::resolve_incremental_reflects_updated_variable_values ... ok
+test solver::tests::the_default_underconstrained_variables_implementation_reports_nothing ... ok
+test variable::tests::variable_id_supports_equality_and_ordering_for_deterministic_output ... ok
+test variable::tests::serialization_round_trips ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_dimension-9af5351d568a957e.exe)
+
+running 35 tests
+test annotation::tests::a_new_annotation_is_visible_by_default ... ok
+test dimension::tests::angular_dimensions_may_be_negative_or_zero ... ok
+test annotation::tests::serialization_round_trips ... ok
+test dimension::tests::feasible_range_accepts_a_current_value_inside_it ... ok
+test dimension::tests::a_non_positive_linear_value_is_rejected ... ok
+test dimension::tests::a_positive_linear_value_is_accepted ... ok
+test dimension::tests::feasible_range_rejects_a_current_value_outside_it ... ok
+test dimension::tests::non_finite_values_are_always_rejected ... ok
+test dimension::tests::set_value_unchecked_enforces_the_feasible_range_too ... ok
+test feasible_range::tests::a_non_finite_candidate_is_never_feasible ... ok
+test feasible_range::tests::equal_fixed_sides_have_a_range_starting_at_zero ... ok
+test feasible_range::tests::non_positive_or_non_finite_side_lengths_are_rejected ... ok
+test feasible_range::tests::values_just_inside_the_boundary_are_feasible ... ok
+test kind::tests::only_angular_reports_itself_as_angular ... ok
+test role::tests::only_driving_is_directly_editable ... ok
+test role::tests::serialization_round_trips_for_every_role ... ok
+test feasible_range::tests::a_side_length_equal_to_one_of_the_fixed_sides_is_ordinarily_feasible ... ok
+test feasible_range::tests::boundary_values_are_infeasible_not_feasible ... ok
+test feasible_range::tests::the_30_50_300_example_from_mcp_article_27_is_infeasible ... ok
+test feasible_range::tests::the_30_50_range_is_exactly_20_to_80 ... ok
+test kind::tests::serialization_round_trips_for_every_kind ... ok
+test role::tests::every_role_has_a_jargon_free_explanation ... ok
+test store::tests::an_annotation_cannot_reference_an_unknown_dimension ... ok
+test store::tests::a_dimension_can_have_zero_one_or_many_annotations ... ok
+test store::tests::an_invalid_new_value_is_rejected_and_leaves_the_dimension_unchanged ... ok
+test store::tests::deleting_an_annotation_does_not_delete_the_dimension ... ok
+test store::tests::editing_a_driving_dimension_succeeds_and_returns_the_previous_value ... ok
+test store::tests::editing_a_reference_dimension_is_rejected_and_leaves_it_unchanged ... ok
+test store::tests::editing_an_unknown_dimension_is_a_structured_error ... ok
+test store::tests::explicitly_removing_a_dimension_cascades_to_its_annotations ... ok
+test store::tests::hiding_an_annotation_does_not_touch_the_dimension_or_other_annotations ... ok
+test store::tests::inserting_a_dimension_with_a_duplicate_id_is_rejected ... ok
+test target::tests::pair_target_reports_both_primitives_in_order ... ok
+test target::tests::serialization_round_trips ... ok
+test target::tests::single_target_reports_exactly_one_primitive ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\serialization.rs (target\debug\deps\serialization-6951b740532a2d3f.exe)
+
+running 4 tests
+test semantic_state_is_unaffected_by_an_annotation_round_trip_and_vice_versa ... ok
+test an_annotation_serializes_and_reloads_referencing_its_dimension_only_by_id ... ok
+test a_semantic_dimension_serializes_and_reloads_with_no_annotation_present_anywhere ... ok
+test a_dimension_store_round_trips_with_dimensions_and_annotations_as_separate_top_level_maps ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_document-dd326a1edda689b2.exe)
+
+running 55 tests
+test document::tests::a_freshly_constructed_document_always_validates ... ok
+test document::tests::add_page_increases_page_count_and_keeps_the_original_active_page ... ok
+test document::tests::a_future_schema_version_fails_validation ... ok
+test document::tests::a_new_document_starts_at_revision_zero ... ok
+test document::tests::bump_revision_increments_monotonically ... ok
+test autosave::tests::reading_a_nonexistent_journal_returns_an_empty_list_not_an_error ... ok
+test document::tests::set_active_page_rejects_an_unknown_page_id ... ok
+test document::tests::provenance_defaults_to_none_and_can_be_set_and_cleared ... ok
+test document::tests::new_document_has_one_page_and_it_is_active ... ok
+test document::tests::page_mut_returns_a_structured_error_for_an_unknown_page ... ok
+test entity::tests::a_map_keyed_by_entity_id_serializes_and_round_trips ... ok
+test autosave::tests::clear_removes_the_journal_file ... ok
+test entity::tests::entity_id_display_and_from_str_round_trip ... ok
+test entity::tests::a_dimension_entity_id_round_trips_like_every_other_kind ... ok
+test entity::tests::entity_id_matches_the_wrapped_entitys_own_id ... ok
+test entity::tests::a_conflict_entity_id_round_trips_like_every_other_kind ... ok
+test entity::tests::entity_id_serializes_as_a_plain_json_string_not_an_object ... ok
+test entity::tests::entity_id_ordering_is_deterministic_for_btreemap_use ... ok
+test autosave::tests::a_dangling_incomplete_final_line_is_not_returned_as_a_record ... ok
+test history::tests::a_new_commit_after_undo_clears_the_redo_branch ... ok
+test history::tests::a_multi_entity_commit_is_one_transaction_and_applies_all_changes ... ok
+test entity::tests::serialization_round_trips_for_each_variant ... ok
+test history::tests::a_transaction_spanning_two_pages_undoes_and_redoes_as_one_action ... ok
+test history::tests::commit_increments_revision_and_undo_redo_also_change_it ... ok
+test history::tests::undoing_with_no_history_is_a_structured_error_not_a_panic ... ok
+test history::tests::undo_reverses_every_change_in_the_transaction_as_one_unit ... ok
+test history::tests::redo_restores_the_same_semantic_state_via_pure_replay ... ok
+test history::tests::set_provenance_undoes_to_the_prior_state_including_none ... ok
+test metadata::tests::new_sets_created_and_modified_to_the_same_timestamp ... ok
+test autosave::tests::append_then_read_all_returns_records_in_order ... ok
+test migration::tests::a_document_already_at_the_target_version_passes_through_unchanged ... ok
+test migration::tests::a_document_newer_than_the_target_is_rejected_rather_than_downgraded ... ok
+test migration::tests::missing_schema_version_field_is_a_corrupted_document_error ... ok
+test metadata::tests::touch_updates_modified_but_not_created ... ok
+test migration::tests::a_registered_migration_upgrades_an_old_document ... ok
+test migration::tests::an_unregistered_old_version_fails_with_a_structured_error_not_a_guess ... ok
+test note::tests::serialization_round_trips ... ok
+test page::tests::insert_then_get_round_trips ... ok
+test page::tests::duplicate_id_insert_is_rejected_and_does_not_overwrite ... ok
+test page::tests::entities_iterates_in_deterministic_id_order ... ok
+test page::tests::remove_takes_an_entity_out_of_the_page ... ok
+test page_layout::tests::apply_maps_engineering_points_to_page_space_without_mutating_the_input ... ok
+test page_layout::tests::moving_the_page_layout_transform_never_touches_stored_entity_coordinates ... ok
+test page_layout::tests::identity_transform_is_a_no_op ... ok
+test persistence::tests::missing_file_is_a_clean_io_error ... ok
+test provenance::tests::every_state_serializes_and_round_trips ... ok
+test stale_result::tests::a_result_computed_and_accepted_with_no_intervening_change_is_fresh ... ok
+test stale_result::tests::a_result_is_discarded_if_the_document_changed_before_it_completed ... ok
+test stale_result::tests::source_revision_reflects_the_revision_at_capture_time ... ok
+test units::tests::default_unit_is_millimeters ... ok
+test units::tests::serialization_round_trips ... ok
+test persistence::tests::both_primary_and_backup_corrupted_is_a_real_error_not_a_silent_default ... ok
+test persistence::tests::save_then_load_round_trips_an_equal_document ... ok
+test persistence::tests::a_second_save_creates_a_backup_of_the_first ... ok
+test persistence::tests::a_corrupted_primary_file_recovers_from_backup ... ok
+
+test result: ok. 55 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\conflict_persistence.rs (target\debug\deps\conflict_persistence-dbcef77d6e6c66e4.exe)
+
+running 3 tests
+test an_unresolved_conflict_survives_save_and_reopen_without_corrupting_the_geometry_it_references ... ok
+test a_resolved_conflict_survives_save_and_reopen_with_its_resolution_choice_intact ... ok
+test repeated_round_trips_of_an_unresolved_conflict_do_not_drift ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\crash_safe_transactions.rs (target\debug\deps\crash_safe_transactions-f767724b1d962316.exe)
+
+running 3 tests
+test a_transaction_that_fails_after_a_successful_one_does_not_corrupt_prior_committed_state ... ok
+test a_transaction_interrupted_partway_through_leaves_no_partial_changes ... ok
+test undo_after_a_failed_transaction_still_correctly_reverts_the_last_real_commit ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\save_reopen_golden.rs (target\debug\deps\save_reopen_golden-86394b12e87bcc41.exe)
+
+running 5 tests
+test an_empty_document_also_round_trips ... ok
+test persisted_stroke_capabilities_still_honestly_report_simulated_input_after_reopen ... ok
+test a_representative_document_survives_save_and_reopen_exactly ... ok
+test every_semantic_entity_kind_is_individually_recoverable_after_reopen ... ok
+test reopening_twice_in_a_row_is_stable_no_drift_across_repeated_round_trips ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_errors-88bba5a453df3fe7.exe)
+
+running 8 tests
+test tests::callers_can_match_on_kind_without_string_parsing ... ok
+test tests::corrupted_document_defaults_to_blocker_severity ... ok
+test tests::diagnostic_builder_attaches_related_entities ... ok
+test tests::diagnostic_round_trips_through_json ... ok
+test tests::error_display_never_loses_the_typed_kind ... ok
+test tests::severity_can_be_overridden_for_context_the_default_cannot_know ... ok
+test tests::sketch_error_carries_its_typed_kind_and_matches_without_string_parsing ... ok
+test tests::severity_ordering_supports_finding_the_worst_diagnostic ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_geometry-8fe8d880fff3780d.exe)
+
+running 59 tests
+test arc::tests::arc_length_is_nonnegative_and_matches_radius_times_sweep_magnitude ... ok
+test arc::tests::bounds_of_a_half_circle_spans_the_full_diameter_on_the_swept_axis ... ok
+test arc::tests::bounds_of_a_quarter_circle_touching_an_axis_extreme_includes_that_extreme ... ok
+test arc::tests::evaluate_at_zero_and_one_matches_start_and_end_points ... ok
+test arc::tests::is_full_circle_detects_a_two_pi_sweep ... ok
+test arc::tests::contains_angle_handles_wraparound_past_two_pi ... ok
+test arc::tests::contains_angle_is_true_for_points_strictly_inside_the_sweep ... ok
+test arc::tests::negative_sweep_goes_clockwise ... ok
+test arc::tests::non_positive_radius_is_rejected ... ok
+test arc::tests::quarter_circle_from_zero_sweeps_to_the_expected_point ... ok
+test arc::tests::zero_sweep_is_rejected ... ok
+test bounds::tests::empty_slice_has_no_bounds ... ok
+test bounds::tests::union_of_points_is_the_smallest_enclosing_box ... ok
+test bounds::tests::width_height_and_contains_are_consistent ... ok
+test circle::tests::contains_point_is_true_on_and_inside_the_boundary ... ok
+test circle::tests::distance_to_boundary_is_nonnegative_and_zero_on_boundary ... ok
+test circle::tests::externally_tangent_circles_touch_at_one_point ... ok
+test circle::tests::non_positive_radius_is_rejected ... ok
+test circle::tests::overlapping_circles_intersect_at_two_points_equidistant_from_both_centers ... ok
+test circle::tests::intersect_circle_is_symmetric ... ok
+test circle::tests::identical_circles_are_coincident ... ok
+test circle::tests::segment_that_would_intersect_the_infinite_line_but_stops_short_does_not_intersect ... ok
+test circle::tests::positive_radius_is_accepted ... ok
+test circle::tests::segment_entirely_outside_circle_does_not_intersect ... ok
+test circle::tests::segment_through_circle_center_intersects_at_two_diametrically_opposed_points ... ok
+test circle::tests::separate_circles_do_not_intersect ... ok
+test ellipse::tests::evaluate_at_t_zero_lands_on_the_major_axis_vertex ... ok
+test ellipse::tests::evaluate_is_periodic_in_t ... ok
+test ellipse::tests::non_positive_axis_is_rejected ... ok
+test ellipse::tests::quarter_turn_rotation_swaps_the_effective_extents ... ok
+test ellipse::tests::is_circle_detects_equal_axes_within_tolerance ... ok
+test ellipse::tests::unrotated_bounds_match_center_plus_minus_axes ... ok
+test point::tests::cross_product_sign_encodes_rotation_direction ... ok
+test point::tests::coincidence_respects_the_supplied_tolerance_profile ... ok
+test point::tests::lerp_at_t_zero_and_one_returns_the_endpoints ... ok
+test point::tests::distance_is_symmetric_and_nonnegative ... ok
+test point::tests::perpendicular_vectors_have_zero_dot_product ... ok
+test point::tests::translate_and_inverse_translate_round_trips ... ok
+test rectangle::tests::bounds_matches_the_corner_extremes ... ok
+test rectangle::tests::degenerate_axis_aligned_corners_are_rejected ... ok
+test point::tests::normalized_rejects_a_degenerate_vector ... ok
+test rectangle::tests::axis_aligned_constructor_always_produces_a_verified_rectangle ... ok
+test rectangle::tests::axis_aligned_rectangle_has_four_edges_of_the_expected_lengths ... ok
+test rectangle::tests::edges_form_a_closed_loop ... ok
+test segment::tests::bounds_matches_the_endpoint_extremes ... ok
+test segment::tests::closest_point_on_segment_clamps_to_endpoints ... ok
+test rectangle::tests::from_corners_rejects_a_coincident_edge_but_not_a_non_rectangular_quadrilateral ... ok
+test segment::tests::collinear_segments_are_detected ... ok
+test segment::tests::crossing_segments_intersect_at_one_point ... ok
+test segment::tests::direction_is_unit_length_and_none_for_degenerate_segment ... ok
+test segment::tests::distance_to_point_is_nonnegative ... ok
+test segment::tests::hit_test_respects_max_distance ... ok
+test segment::tests::intersection_is_symmetric_regardless_of_argument_order ... ok
+test segment::tests::parallel_non_collinear_segments_report_parallel ... ok
+test tolerance::tests::committed_snap_distance_is_zero_because_committed_geometry_never_snaps ... ok
+test segment::tests::length_is_nonnegative_and_symmetric_under_reversal ... ok
+test segment::tests::non_crossing_segments_that_would_cross_if_extended_do_not_intersect ... ok
+test tolerance::tests::default_is_the_strict_profile_not_the_loose_one ... ok
+test tolerance::tests::recognition_profile_is_strictly_looser_than_committed ... ok
+
+test result: ok. 59 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\property_tests.rs (target\debug\deps\property_tests-6dda17e30be0a9a6.exe)
+
+running 14 tests
+test points_beyond_the_coincidence_tolerance_are_not_coincident ... ok
+test point_distance_is_symmetric ... ok
+test circle_intersection_discriminant_is_order_independent ... ok
+test negating_a_vector_twice_returns_the_original ... ok
+test circle_distance_to_boundary_is_always_nonnegative ... ok
+test point_distance_is_always_nonnegative ... ok
+test recognition_tolerance_accepts_everything_committed_tolerance_accepts ... ok
+test points_within_the_coincidence_tolerance_are_coincident ... ok
+test translate_then_inverse_translate_returns_the_original_point ... ok
+test segment_intersection_discriminant_is_order_independent ... ok
+test reversing_a_segment_preserves_its_length ... ok
+test segment_length_is_always_nonnegative ... ok
+test vector_length_is_always_nonnegative ... ok
+test segment_reversed_twice_is_the_original_segment ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_ids-aa5a635f39594ff1.exe)
+
+running 7 tests
+test tests::debug_format_includes_type_name_for_diagnostics ... ok
+test tests::deterministic_construction_is_reproducible ... ok
+test tests::distinct_id_types_do_not_implicitly_convert ... ok
+test tests::nil_is_the_all_zero_sentinel ... ok
+test tests::ordering_is_total_and_stable_for_canonical_output ... ok
+test tests::serialization_round_trips_and_is_transparent ... ok
+test tests::new_ids_are_unique_across_many_calls ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_ink-a7835fcecf7a4a90.exe)
+
+running 27 tests
+test grouping::tests::empty_input_produces_no_groups ... ok
+test grouping::tests::strokes_close_in_time_and_space_form_one_group ... ok
+test grouping::tests::strokes_far_apart_in_space_form_separate_groups_even_if_close_in_time ... ok
+test provenance::tests::record_appends_without_disturbing_earlier_events ... ok
+test provenance::tests::serialization_round_trips ... ok
+test smoothing::tests::smoothing_preserves_the_number_of_points ... ok
+test smoothing::tests::smoothing_reduces_a_single_spike ... ok
+test grouping::tests::grouping_does_not_depend_on_input_order ... ok
+test grouping::tests::grouping_is_purely_an_id_partition_and_never_touches_stroke_content ... ok
+test grouping::tests::strokes_far_apart_in_time_form_separate_groups ... ok
+test provenance::tests::created_seeds_exactly_one_event ... ok
+test smoothing::tests::very_short_paths_are_returned_unchanged ... ok
+test smoothing::tests::a_straight_line_is_unchanged_by_smoothing ... ok
+test smoothing::tests::zero_window_returns_the_input_unchanged ... ok
+test smoothing::tests::smoothing_preserves_endpoints_exactly ... ok
+test spatial::tests::query_point_finds_a_stroke_under_the_point ... ok
+test spatial::tests::query_point_respects_radius ... ok
+test stroke::tests::a_valid_stroke_reports_source_and_timestamps ... ok
+test stroke::tests::bounds_spans_all_sample_positions ... ok
+test spatial::tests::empty_index_returns_no_hits ... ok
+test spatial::tests::query_bounds_finds_intersecting_strokes_only ... ok
+test spatial::tests::remove_takes_a_stroke_out_of_future_queries ... ok
+test stroke::tests::a_single_sample_stroke_is_valid_and_flagged_as_single_point ... ok
+test stroke::tests::empty_samples_are_rejected ... ok
+test stroke::tests::from_events_extracts_samples_in_order_and_skips_capture_lost ... ok
+test stroke::tests::mixed_source_samples_are_rejected ... ok
+test stroke::tests::serialization_round_trips ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\replay_and_serialization.rs (target\debug\deps\replay_and_serialization-9d92930857112dc2.exe)
+
+running 6 tests
+test a_malformed_trace_never_produces_a_stroke_even_after_a_round_trip_attempt ... ok
+test capabilities_on_a_replayed_simulated_stroke_never_claim_real_hardware ... ok
+test deterministic_ids_make_a_recorded_bug_reproducible_across_runs ... ok
+test a_reloaded_stroke_replays_the_same_smoothed_path_as_the_original ... ok
+test a_stroke_built_from_a_trace_round_trips_through_json_byte_identically ... ok
+test provenance_created_from_a_stroke_matches_its_first_sample ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_ink_intent-1f834395dc413d53.exe)
+
+running 4 tests
+test context::tests::duration_reflects_the_strokes_own_timestamps ... ok
+test context::tests::unknown_tool_context_is_never_silently_upgraded_to_pen ... ok
+test context::tests::a_scribble_confined_to_a_small_area_has_a_high_ratio ... ok
+test context::tests::a_straight_short_stroke_has_a_low_path_to_diagonal_ratio ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\mixed_content.rs (target\debug\deps\mixed_content-70c17cebf5fae000.exe)
+
+running 7 tests
+test a_clean_loop_drawn_with_the_pen_tool_is_offered_as_a_geometry_candidate_not_selection ... ok
+test candidates_are_ranked_by_descending_confidence ... ok
+test commit_threshold_matches_the_established_recognition_engine_convention ... ok
+test every_returned_candidate_list_always_includes_raw_ink ... ok
+test numbers_in_sentences_never_yield_a_committable_numeric_dimension_claim ... ok
+test command_words_in_notes_never_yield_a_committable_command_claim ... ok
+test the_same_clean_loop_drawn_with_the_selector_tool_is_a_selection_gesture_not_geometry ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_input-78b1fec926805fe8.exe)
+
+running 32 tests
+test capabilities::tests::none_reports_no_capabilities ... ok
+test disclaimer::tests::disclaimer_explicitly_names_apple_pencil_and_stylus_so_it_cannot_be_mistaken_for_them ... ok
+test lifecycle::tests::cancel_ends_a_stroke_just_like_up ... ok
+test lifecycle::tests::capture_lost_ends_a_stroke_and_needs_no_sample ... ok
+test capabilities::tests::has_any_is_true_if_a_single_capability_is_set ... ok
+test disclaimer::tests::limitations_list_is_nonempty_and_mentions_pressure_and_tilt ... ok
+test lifecycle::tests::a_new_stroke_can_start_after_a_clean_end ... ok
+test lifecycle::tests::double_down_without_up_is_rejected ... ok
+test lifecycle::tests::down_move_up_is_a_valid_sequence ... ok
+test lifecycle::tests::hover_is_valid_both_before_and_during_a_stroke ... ok
+test lifecycle::tests::move_without_down_is_rejected ... ok
+test lifecycle::tests::up_without_down_is_rejected ... ok
+test lifecycle::tests::validator_reports_active_state_correctly ... ok
+test mouse_simulator::tests::position_and_timestamp_pass_through_unchanged ... ok
+test mouse_simulator::tests::simulated_sample_capabilities_never_claim_real_hardware_support ... ok
+test mouse_simulator::tests::simulated_sample_has_constant_pressure_and_no_tilt ... ok
+test mouse_simulator::tests::simulated_sample_is_tagged_with_the_simulated_source ... ok
+test sample::tests::negative_pressure_is_rejected ... ok
+test sample::tests::non_finite_timestamp_is_rejected ... ok
+test sample::tests::real_stylus_pressure_with_matching_capability_is_authoritative ... ok
+test sample::tests::pressure_out_of_range_is_rejected ... ok
+test sample::tests::simulated_mouse_pressure_is_not_authoritative_even_when_present ... ok
+test sample::tests::serialization_round_trips ... ok
+test sample::tests::simulated_source_label_always_says_simulated ... ok
+test sample::tests::tilt_out_of_range_is_rejected ... ok
+test sample::tests::valid_sample_constructs_successfully ... ok
+test trace::tests::a_malformed_trace_fails_validation ... ok
+test trace::tests::replay_visits_every_event_in_recorded_order ... ok
+test trace::tests::a_well_formed_trace_validates ... ok
+test trace::tests::replaying_twice_produces_the_same_visited_sequence ... ok
+test trace::tests::canonical_json_round_trips_to_an_equal_trace ... ok
+test trace::tests::canonical_json_is_byte_identical_across_repeated_serializations ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_recognition-45ec37707beadd13.exe)
+
+running 42 tests
+test beautify::tests::a_line_candidate_beautifies_to_a_segment_using_the_fitted_endpoints ... ok
+test beautify::tests::beautified_displacement_equals_the_original_candidates_residual ... ok
+test candidate::tests::a_short_two_point_stroke_only_offers_keep_as_ink ... ok
+test candidate::tests::keep_as_ink_is_always_present ... ok
+test beautify::tests::a_circle_candidate_beautifies_to_a_valid_circle2 ... ok
+test beautify::tests::keep_as_ink_has_nothing_to_beautify ... ok
+test candidate::tests::a_clean_line_ranks_above_keep_as_ink ... ok
+test candidate::tests::low_confidence_fits_are_not_offered_at_all ... ok
+test candidate::tests::ranking_is_sorted_descending_by_confidence ... ok
+test confidence::tests::residual_beyond_scale_stays_clamped_at_zero ... ok
+test confidence::tests::residual_equal_to_scale_is_zero_confidence ... ok
+test fit::arc::tests::a_near_full_sweep_is_flagged_ambiguous_with_circle ... ok
+test confidence::tests::confidence_clamps_out_of_range_inputs ... ok
+test confidence::tests::nonpositive_scale_is_zero_confidence_not_a_division_panic ... ok
+test confidence::tests::zero_residual_is_full_confidence ... ok
+test fit::arc::tests::a_half_circle_arc_is_unambiguous ... ok
+test fit::arc::tests::a_short_but_clean_sweep_is_not_flagged_ambiguous_with_freehand ... ok
+test fit::arc::tests::too_few_points_has_no_fit ... ok
+test fit::circle::tests::a_perfect_circle_fits_with_near_zero_residual_and_high_confidence ... ok
+test fit::circle::tests::fewer_than_three_points_has_no_fit ... ok
+test fit::arc::tests::a_short_noisy_sweep_is_flagged_ambiguous_with_freehand ... ok
+test fit::arc::tests::sweep_direction_sign_matches_traversal_direction ... ok
+test fit::circle::tests::residual_is_nonnegative ... ok
+test fit::circle::tests::a_square_shaped_stroke_is_a_poor_circle_fit ... ok
+test fit::circle::tests::collinear_points_have_no_defined_circle ... ok
+test fit::line::tests::a_perfectly_straight_line_fits_with_near_zero_residual_and_high_confidence ... ok
+test fit::line::tests::a_vertical_line_is_fit_correctly_unlike_ordinary_y_on_x_regression ... ok
+test fit::line::tests::a_zigzag_path_has_high_residual_and_low_confidence ... ok
+test fit::line::tests::coincident_points_have_no_defined_direction ... ok
+test fit::rectangle::tests::a_clean_closed_rectangle_outline_is_recognized ... ok
+test fit::rectangle::tests::a_degenerate_flat_box_is_not_a_candidate ... ok
+test fit::rectangle::tests::too_few_points_is_not_a_candidate ... ok
+test fit::line::tests::fewer_than_two_points_has_no_fit ... ok
+test rejection_memory::tests::a_materially_different_refit_after_new_evidence_is_not_suppressed ... ok
+test fit::line::tests::fitted_endpoints_span_the_extent_of_the_input_along_the_fitted_direction ... ok
+test fit::rectangle::tests::a_rough_closed_scribble_is_not_forced_into_a_rectangle ... ok
+test fit::rectangle::tests::an_open_stroke_that_never_closes_is_not_a_rectangle_candidate ... ok
+test rejection_memory::tests::a_rejected_candidate_is_filtered_out_of_future_recognition_results ... ok
+test rejection_memory::tests::clear_stroke_forgets_all_rejections_for_that_stroke ... ok
+test rejection_memory::tests::keep_as_ink_can_never_be_suppressed ... ok
+test rejection_memory::tests::rejection_is_scoped_per_stroke ... ok
+test rejection_memory::tests::tiny_refit_jitter_of_the_same_shape_stays_suppressed ... ok
+
+test result: ok. 42 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\false_positive_benchmark.rs (target\debug\deps\false_positive_benchmark-ffc11be25777de3c.exe)
+
+running 3 tests
+test noisy_handwriting_and_scrawls_are_never_forced_into_a_high_confidence_primitive ... ok
+test ordinary_shapes_are_recognized_as_their_correct_kind ... ok
+test benchmark_report_covers_both_accuracy_and_forced_conversion_error ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_serialization-5b64f5d54b665c5f.exe)
+
+running 7 tests
+test tests::canonical_json_is_identical_for_structurally_equal_values_regardless_of_field_order ... ok
+test tests::older_schema_version_is_readable_by_current ... ok
+test tests::ordered_f64_rejects_nan_and_infinity ... ok
+test tests::future_schema_version_is_not_readable_by_an_older_build ... ok
+test tests::canonical_json_sorts_object_keys_but_preserves_array_order ... ok
+test tests::ordered_f64_sorts_deterministically ... ok
+test tests::schema_version_current_is_readable_by_itself ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\craftloop_sketch-0a7743b902d9d0b5.exe)
+
+running 64 tests
+test constraint_kind::tests::concentric_lowers_to_coincident_on_the_centers_not_a_duplicated_variant ... ok
+test constraint_kind::tests::a_well_formed_constraint_validates_and_lowers_without_error ... ok
+test constraint_kind::tests::equal_radius_lowers_to_equal_length_over_center_and_point_on_circle ... ok
+test constraint_kind::tests::fixed_constraints_with_different_target_values_are_not_equivalent ... ok
+test constraint_kind::tests::line_tangent_to_circle_is_not_symmetric_line_and_circle_are_distinct_roles ... ok
+test constraint_kind::tests::different_relationship_kinds_over_the_same_primitives_are_not_equivalent ... ok
+test constraint_kind::tests::parallel_is_equivalent_to_itself_with_arguments_swapped ... ok
+test constraint_kind::tests::parallel_between_different_primitives_is_not_equivalent ... ok
+test constraint_kind::tests::horizontal_requires_a_line_primitive ... ok
+test constraint_kind::tests::concentric_requires_two_circles ... ok
+test constraint_kind::tests::fixed_lowers_to_two_fixed_value_constraints_one_per_axis ... ok
+test constraint_kind::tests::symmetric_constraints_on_the_same_axis_with_swapped_points_are_equivalent ... ok
+test ezpz_adapter::tests::a_genuinely_contradictory_system_is_reported_unsatisfied_not_solved ... ok
+test ezpz_adapter::tests::resolve_incremental_warm_starts_from_the_previous_solution ... ok
+test ezpz_adapter::tests::a_simple_two_point_distance_system_solves ... ok
+test intent::tests::a_pair_already_linked_by_equal_length_is_not_reported_as_merely_observed ... ok
+test ezpz_adapter::tests::symmetric_points_solve_through_the_direct_translation ... ok
+test intent::tests::a_rejected_suggestion_is_remembered_without_becoming_a_constraint ... ok
+test ezpz_adapter::tests::line_tangent_to_circle_solves_through_the_synthetic_radius_translation ... ok
+test ezpz_adapter::tests::circle_tangent_to_circle_solves_through_the_synthetic_radius_translation ... ok
+test intent::tests::affected_primitives_follows_transitive_chains_of_shared_constraints ... ok
+test ezpz_adapter::tests::underconstrained_variables_reports_a_point_only_bound_by_distance_as_free ... ok
+test intent::tests::accepted_suggestion_provenance_is_recorded_as_accepted_not_user_created ... ok
+test intent::tests::a_confirmed_relation_survives_repeated_solves_and_is_never_silently_dropped ... ok
+test intent::tests::accepting_a_suggestion_clears_any_prior_rejection_of_the_same_relationship ... ok
+test intent::tests::an_unconstrained_primitive_affects_nothing ... ok
+test intent::tests::inserting_an_unrelated_primitive_does_not_disturb_an_existing_relation ... ok
+test intent::tests::constraints_touching_finds_every_relation_that_references_a_primitive ... ok
+test intent::tests::an_accepted_suggestion_is_enforced_by_solve_exactly_like_a_user_created_constraint ... ok
+test intent::tests::lines_with_clearly_different_lengths_are_never_reported ... ok
+test intent::tests::near_equal_length_lines_with_no_constraint_are_reported_as_observed_only ... FAILED
+test intent::tests::rejecting_the_same_suggestion_twice_does_not_duplicate_it ... ok
+test intent::tests::removing_one_constraint_never_removes_a_different_ones_intent ... ok
+test point_ref::tests::circle_point_on_circle_is_radius_away_from_center ... ok
+test point_ref::tests::resolving_the_wrong_point_kind_for_a_primitive_is_a_structured_error ... ok
+test provenance::tests::serialization_round_trips_for_every_variant ... ok
+test point_ref::tests::line_start_and_end_resolve_to_the_segments_endpoints ... ok
+test point_ref::tests::resolving_against_an_unknown_primitive_is_a_structured_error ... ok
+test provenance::tests::the_three_origins_are_distinguishable_by_equality ... ok
+test sketch::tests::a_different_relationship_between_the_same_primitives_is_not_redundant ... ok
+test sketch::tests::adding_a_constraint_that_references_an_unknown_primitive_is_rejected ... ok
+test sketch::tests::adding_a_constraint_under_a_duplicate_id_is_rejected ... ok
+test sketch::tests::adding_the_same_relationship_twice_is_recognized_as_redundant_not_an_error ... ok
+test sketch::tests::concentric_moves_the_second_circles_center_onto_the_first_but_leaves_radii_independent ... ok
+test sketch::tests::coincident_pulls_two_line_endpoints_to_the_same_point ... ok
+test sketch::tests::circle_tangent_to_circle_moves_the_second_circle_to_touch_the_first ... ok
+test sketch::tests::a_genuinely_contradictory_sketch_reports_unsatisfied_not_a_crash ... ok
+test sketch::tests::horizontal_and_vertical_together_are_not_a_contradiction_they_collapse_the_line_to_a_point ... ok
+test sketch::tests::equal_length_matches_a_second_lines_length_to_the_first ... ok
+test sketch::tests::equal_radius_matches_a_second_circles_radius_without_moving_its_center ... ok
+test sketch::tests::parallel_aligns_a_second_line_to_the_first ... ok
+test sketch::tests::removing_an_unknown_constraint_is_rejected ... ok
+test sketch::tests::horizontal_levels_a_tilted_line ... ok
+test sketch::tests::perpendicular_rotates_a_second_line_to_a_right_angle ... ok
+test sketch::tests::provenance_is_stored_and_retrievable_per_constraint ... ok
+test sketch::tests::removing_a_constraint_and_re_solving_releases_the_relation ... ok
+test sketch::tests::line_tangent_to_circle_moves_the_line_to_touch_the_circle ... ok
+test sketch::tests::vertical_straightens_a_tilted_line ... ok
+test sketch::tests::symmetric_reflects_one_lines_endpoint_across_an_axis ... ok
+test state::tests::a_fully_anchored_primitive_is_fully_determined ... ok
+test state::tests::a_primitive_with_no_constraints_is_unknown ... ok
+test state::tests::every_state_has_a_jargon_free_explanation ... ok
+test state::tests::a_primitive_touched_only_by_a_relative_constraint_is_free_or_partially_constrained ... ok
+test state::tests::a_primitive_in_a_contradictory_system_is_conflicting_and_unhealthy ... ok
+
+failures:
+
+---- intent::tests::near_equal_length_lines_with_no_constraint_are_reported_as_observed_only stdout ----
+
+thread 'intent::tests::near_equal_length_lines_with_no_constraint_are_reported_as_observed_only' (15468) panicked at crates\craftloop-sketch\src\intent.rs:256:9:
+assertion `left == right` failed
+  left: [(PrimitiveId(0cfd0f94-0387-42fc-8976-62416b75410b), PrimitiveId(d6475936-aa2e-432b-90e0-c5c0cfcb1340))]
+ right: [(PrimitiveId(d6475936-aa2e-432b-90e0-c5c0cfcb1340), PrimitiveId(0cfd0f94-0387-42fc-8976-62416b75410b))]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    intent::tests::near_equal_length_lines_with_no_constraint_are_reported_as_observed_only
+
+test result: FAILED. 63 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p craftloop-sketch --lib`

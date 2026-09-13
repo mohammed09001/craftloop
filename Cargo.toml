@@ -16,6 +16,7 @@ members = [
     "crates/craftloop-constraint",
     "crates/craftloop-sketch",
     "crates/craftloop-consistency",
+    "crates/craftloop-ink-intent",
     "apps/windows-harness",
 ]
 
