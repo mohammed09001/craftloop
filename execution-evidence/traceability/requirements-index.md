@@ -445,3 +445,20 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   bug (a zero-value `SemanticDimension` violating its own positive-value
   invariant) caught and fixed immediately.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 25 — closed 2026-09-13
+- Evidence: `27-phase-25-standards-baseline.md`;
+  `test-reports/phase-25-cargo-test.txt`;
+  `test-reports/phase-25-cargo-clippy.txt`;
+  `test-reports/phase-25-cargo-fmt.txt`.
+- Code: new crate `crates/craftloop-standards` (`line_role.rs` --
+  `LineRole`; `line_style.rs` -- `style_for_role`; `profile.rs` --
+  `StandardsProfile`; `dimension_presentation.rs` --
+  `DimensionTypography`/`present`; `guardrail.rs` --
+  `contains_forbidden_compliance_claim`/`reject_forbidden_claim`;
+  `lib.rs` -- `UNSUPPORTED_CONVENTIONS`).
+- Tests: 686/686 passing workspace-wide (19 new). One compile-time bug
+  fixed before first successful build: `LineStyle.dash_pattern` was
+  `&'static [f64]`, which cannot derive `Deserialize`; changed to owned
+  `Vec<f64>`.
+- Lint/format: both clean, no clippy findings.

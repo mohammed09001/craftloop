@@ -1,0 +1,19 @@
+[package]
+name = "craftloop-standards"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Standards-Aware Representation Baseline for the Craft Loop shared engineering core (MCP Article 235): line semantic roles, standards profile metadata, and export-facing style mapping -- explicitly not a certified compliance claim."
+
+[dependencies]
+serde.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-document = { path = "../craftloop-document" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-dimension = { path = "../craftloop-dimension" }
+craftloop-ids = { path = "../craftloop-ids" }
+
+[dev-dependencies]
+serde_json.workspace = true

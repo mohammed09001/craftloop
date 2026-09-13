@@ -849,6 +849,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-standards"
+version = "0.1.0"
+dependencies = [
+ "craftloop-dimension",
+ "craftloop-document",
+ "craftloop-errors",
+ "craftloop-geometry",
+ "craftloop-ids",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "craftloop-test-support"
 version = "0.1.0"
 dependencies = [

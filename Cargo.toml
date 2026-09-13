@@ -19,6 +19,7 @@ members = [
     "crates/craftloop-ink-intent",
     "crates/craftloop-handwriting",
     "crates/craftloop-command",
+    "crates/craftloop-standards",
     "apps/windows-harness",
 ]
 
