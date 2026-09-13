@@ -128,6 +128,20 @@ pub enum InkErrorKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SketchErrorKind {
+    /// A constraint referenced a `PrimitiveId` not present in the sketch.
+    UnknownPrimitive,
+    /// A constraint referenced a primitive of a kind it cannot apply to
+    /// (e.g. `Horizontal` on a circle).
+    WrongPrimitiveKind,
+    /// An operation referenced a `ConstraintId` not present in the sketch.
+    UnknownConstraint,
+    /// An insert used a `ConstraintId` that already exists (would silently
+    /// overwrite a distinct constraint).
+    DuplicateConstraintId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DimensionErrorKind {
     /// A dimension value was non-finite or outside what its kind allows
     /// (e.g. a non-positive linear/radius/diameter value).
@@ -195,6 +209,11 @@ pub enum DomainError {
         kind: DimensionErrorKind,
         detail: String,
     },
+    #[error("sketch error ({kind:?}): {detail}")]
+    Sketch {
+        kind: SketchErrorKind,
+        detail: String,
+    },
 }
 
 impl DomainError {
@@ -222,6 +241,7 @@ impl DomainError {
             DomainError::Ink { .. } => Severity::Error,
             DomainError::Document { .. } => Severity::Error,
             DomainError::Dimension { .. } => Severity::Error,
+            DomainError::Sketch { .. } => Severity::Error,
         }
     }
 }
@@ -344,6 +364,22 @@ mod tests {
         let json = serde_json::to_string(&diag).expect("serialize");
         let back: Diagnostic = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(diag, back);
+    }
+
+    #[test]
+    fn sketch_error_carries_its_typed_kind_and_matches_without_string_parsing() {
+        let err = DomainError::Sketch {
+            kind: SketchErrorKind::WrongPrimitiveKind,
+            detail: "Horizontal requires a Line primitive".to_string(),
+        };
+        assert!(matches!(
+            err,
+            DomainError::Sketch {
+                kind: SketchErrorKind::WrongPrimitiveKind,
+                ..
+            }
+        ));
+        assert_eq!(err.default_severity(), Severity::Error);
     }
 
     #[test]

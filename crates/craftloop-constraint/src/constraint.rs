@@ -72,6 +72,50 @@ pub enum GeometricConstraint {
         b: PointVariables,
         value_radians: f64,
     },
+    /// The distance from `a0` to `a1` equals the distance from `b0` to
+    /// `b1`. Deliberately expressed in terms of point pairs, not a derived
+    /// "length" scalar: this lets the same variant serve both equal-length
+    /// segments (Task 087) and equal-radius circles (Task 087) by passing
+    /// `(center, point_on_circle)` as one or both pairs, matching how
+    /// [`GeometricConstraint::Radius`] already represents a circle's radius
+    /// as a center-to-point-on-circle distance rather than inventing a
+    /// separate scalar-radius variable.
+    EqualLength {
+        a0: PointVariables,
+        a1: PointVariables,
+        b0: PointVariables,
+        b1: PointVariables,
+    },
+    /// The line `line_a`-`line_b` is tangent to the circle described by
+    /// `center`/`point_on_circle` (the perpendicular distance from `center`
+    /// to the line equals the circle's radius).
+    LineTangentToCircle {
+        line_a: PointVariables,
+        line_b: PointVariables,
+        center: PointVariables,
+        point_on_circle: PointVariables,
+    },
+    /// Two circles are externally tangent (the distance between their
+    /// centers equals the sum of their radii). Internal tangency (one
+    /// circle inside the other) is not represented by this variant -- no
+    /// Version 1 scenario needs it (Task 089 evidence,
+    /// `execution-evidence/solver-evaluations/solver-decision-record.md`),
+    /// and adding it speculatively would be exactly the scope creep the
+    /// Loop Engineering Contract forbids.
+    CircleTangentToCircle {
+        a_center: PointVariables,
+        a_point_on_circle: PointVariables,
+        b_center: PointVariables,
+        b_point_on_circle: PointVariables,
+    },
+    /// Points `a` and `b` are mirror images of each other across the axis
+    /// line `axis_a`-`axis_b`.
+    Symmetric {
+        axis_a: PointVariables,
+        axis_b: PointVariables,
+        a: PointVariables,
+        b: PointVariables,
+    },
 }
 
 impl GeometricConstraint {
@@ -99,6 +143,25 @@ impl GeometricConstraint {
                 ..
             } => pts(&[*center, *point_on_circle]),
             GeometricConstraint::Angle { vertex, a, b, .. } => pts(&[*vertex, *a, *b]),
+            GeometricConstraint::EqualLength { a0, a1, b0, b1 } => pts(&[*a0, *a1, *b0, *b1]),
+            GeometricConstraint::LineTangentToCircle {
+                line_a,
+                line_b,
+                center,
+                point_on_circle,
+            } => pts(&[*line_a, *line_b, *center, *point_on_circle]),
+            GeometricConstraint::CircleTangentToCircle {
+                a_center,
+                a_point_on_circle,
+                b_center,
+                b_point_on_circle,
+            } => pts(&[*a_center, *a_point_on_circle, *b_center, *b_point_on_circle]),
+            GeometricConstraint::Symmetric {
+                axis_a,
+                axis_b,
+                a,
+                b,
+            } => pts(&[*axis_a, *axis_b, *a, *b]),
         }
     }
 }
@@ -154,5 +217,84 @@ mod tests {
         let json = serde_json::to_string(&c).unwrap();
         let back: GeometricConstraint = serde_json::from_str(&json).unwrap();
         assert_eq!(c, back);
+    }
+
+    #[test]
+    fn equal_length_reports_all_eight_underlying_scalar_variables() {
+        let c = GeometricConstraint::EqualLength {
+            a0: pv(0, 1),
+            a1: pv(2, 3),
+            b0: pv(4, 5),
+            b1: pv(6, 7),
+        };
+        assert_eq!(c.variable_ids().len(), 8);
+    }
+
+    #[test]
+    fn line_tangent_to_circle_reports_all_eight_underlying_scalar_variables() {
+        let c = GeometricConstraint::LineTangentToCircle {
+            line_a: pv(0, 1),
+            line_b: pv(2, 3),
+            center: pv(4, 5),
+            point_on_circle: pv(6, 7),
+        };
+        assert_eq!(c.variable_ids().len(), 8);
+    }
+
+    #[test]
+    fn circle_tangent_to_circle_reports_all_eight_underlying_scalar_variables() {
+        let c = GeometricConstraint::CircleTangentToCircle {
+            a_center: pv(0, 1),
+            a_point_on_circle: pv(2, 3),
+            b_center: pv(4, 5),
+            b_point_on_circle: pv(6, 7),
+        };
+        assert_eq!(c.variable_ids().len(), 8);
+    }
+
+    #[test]
+    fn symmetric_reports_all_eight_underlying_scalar_variables() {
+        let c = GeometricConstraint::Symmetric {
+            axis_a: pv(0, 1),
+            axis_b: pv(2, 3),
+            a: pv(4, 5),
+            b: pv(6, 7),
+        };
+        assert_eq!(c.variable_ids().len(), 8);
+    }
+
+    #[test]
+    fn new_variants_serialize_and_round_trip() {
+        let cases = [
+            GeometricConstraint::EqualLength {
+                a0: pv(0, 1),
+                a1: pv(2, 3),
+                b0: pv(4, 5),
+                b1: pv(6, 7),
+            },
+            GeometricConstraint::LineTangentToCircle {
+                line_a: pv(0, 1),
+                line_b: pv(2, 3),
+                center: pv(4, 5),
+                point_on_circle: pv(6, 7),
+            },
+            GeometricConstraint::CircleTangentToCircle {
+                a_center: pv(0, 1),
+                a_point_on_circle: pv(2, 3),
+                b_center: pv(4, 5),
+                b_point_on_circle: pv(6, 7),
+            },
+            GeometricConstraint::Symmetric {
+                axis_a: pv(0, 1),
+                axis_b: pv(2, 3),
+                a: pv(4, 5),
+                b: pv(6, 7),
+            },
+        ];
+        for c in cases {
+            let json = serde_json::to_string(&c).unwrap();
+            let back: GeometricConstraint = serde_json::from_str(&json).unwrap();
+            assert_eq!(c, back);
+        }
     }
 }

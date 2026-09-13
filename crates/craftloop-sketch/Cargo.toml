@@ -1,0 +1,25 @@
+[package]
+name = "craftloop-sketch"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Constraint engine integration for the Craft Loop shared engineering core: binds craftloop-constraint's backend-neutral vocabulary to real geometric primitives and a real numeric solver (Engine Contract 10, Phase 12)."
+
+[dependencies]
+serde.workspace = true
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-recognition = { path = "../craftloop-recognition" }
+craftloop-constraint = { path = "../craftloop-constraint" }
+# Pinned to an exact version, not a caret range: Phase 11's decision record
+# (execution-evidence/solver-evaluations/solver-decision-record.md) flags
+# the crates.io name `ezpz` as having been reassigned between two unrelated
+# projects in its history, so an unreviewed version bump here is exactly
+# the risk that record calls out.
+ezpz = "=0.2.29"
+
+[dev-dependencies]
+serde_json.workspace = true

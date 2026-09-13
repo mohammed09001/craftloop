@@ -3,11 +3,11 @@
 
 === Small graph: 2 points, Fixed + Distance (Task 079/081) ===
 last run satisfied: true
-solve latency (ms) over 200 runs: min=0.0120 median=0.0126 max=0.1793
+solve latency (ms) over 200 runs: min=0.0111 median=0.0113 max=0.1507
 
 === Medium graph: 4-point rectangle, 8 constraints (Task 079/081) ===
 last run satisfied: true
-solve latency (ms) over 200 runs: min=0.0165 median=0.0171 max=0.0605
+solve latency (ms) over 200 runs: min=0.0152 median=0.0158 max=0.0364
 
 === Conflict diagnostics: two contradictory Fixed constraints (Task 082) ===
 converged: true
@@ -23,3 +23,18 @@ recomputed residual for constraint 1 (Fixed x=10.0): 5
 is_satisfied: true, iterations: 1
 unsatisfied: []
 final P=(0.000000000020000168188261114, 0.0000000001000000082740371) Q=(4.99999999998, 0.0000000001000000082740371)
+
+=== Tangency: vertical line tangent to a fixed circle (Task 089 spike) ===
+is_satisfied: true converged: true iterations: 1
+unsatisfied: []
+final line x = 2.9999999985 (expected +/-3.0, guess started at 2.5)
+
+=== Tangency: circle externally tangent to a fixed circle (Task 089 spike) ===
+is_satisfied: true converged: true iterations: 1
+unsatisfied: []
+final B center x = 2.9999999988 (expected +/-3.0, guess started at 2.7)
+
+=== Symmetry: point reflected across a fixed axis (Task 090 spike) ===
+is_satisfied: true converged: true iterations: 1
+unsatisfied: []
+final B = (-2.9999999990879997, 2.0000000003680003) (expected approximately (-3.0, 2.0))

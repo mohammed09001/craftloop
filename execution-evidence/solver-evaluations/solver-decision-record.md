@@ -132,6 +132,30 @@ that cannot provide enough information to humanize common conflicts
 unless a reliable diagnostic layer can be built") is satisfied: a reliable
 diagnostic layer *can* be built, and was demonstrated, not just assumed.
 
+### Addendum — Tasks 089/090 pre-implementation spike (recorded 2026-09-13, same session, before Phase 12)
+
+Phase 12's Task 089 ("implement tangency if solver quality passes") and
+Task 090 ("implement symmetry if scope remains safe") explicitly gate on
+spike evidence that the original Phase 11 spike had not gathered — it only
+exercised `Fixed`/`Distance`/`Horizontal`/`Vertical`/`HorizontalDistance`/
+`VerticalDistance`. Before writing Phase 12's domain code, the spike was
+extended with three more scenarios, added to `ezpz-spike/src/main.rs` and
+run for real (not assumed from the `Constraint` enum merely existing):
+
+| Scenario | Constraint exercised | Result |
+|---|---|---|
+| Vertical line tangent to a fixed circle (radius 3, centered at origin), line's x free, initial guess 2.5 | `LineTangentToCircle(line, circle, LineSide::Undefined)` | `is_satisfied: true`, converged in 1 iteration, final x = 2.9999999985 |
+| Circle (radius 1) externally tangent to a fixed circle (radius 2), free x, initial guess 2.7 | `CircleTangentToCircle(a, b, CircleSide::Exterior)` | `is_satisfied: true`, converged in 1 iteration, final center x = 2.9999999988 |
+| Point B reflected across a fixed vertical axis from fixed point A=(3,2) | `Symmetric(axis, a, b)` | `is_satisfied: true`, converged in 1 iteration, final B=(-2.999999999, 2.000000000) |
+
+All three converged in a single iteration to numerically correct answers
+(errors ~1e-9, consistent with the same solver tolerance seen in every
+other scenario this session). No degenerate-input warnings, no stability
+issues, no sign-convention surprises like the one caught in the original
+`redundant_but_consistent` scenario. **Decision: Tasks 089 and 090 are
+approved for unconditional implementation in Phase 12** — the spike found
+no reason to defer either. Raw output appended to `ezpz-spike-output.txt`.
+
 ## License and supply-chain notes
 
 - `ezpz` itself: **MIT**, confirmed from its own `Cargo.toml` (not just a

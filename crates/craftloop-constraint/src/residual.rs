@@ -92,6 +92,72 @@ pub fn residual(constraint: &GeometricConstraint, values: &BTreeMap<VariableId, 
             }
             diff.abs()
         }
+        GeometricConstraint::EqualLength { a0, a1, b0, b1 } => {
+            let len_a = distance(point_of(values, *a0), point_of(values, *a1));
+            let len_b = distance(point_of(values, *b0), point_of(values, *b1));
+            (len_a - len_b).abs()
+        }
+        GeometricConstraint::LineTangentToCircle {
+            line_a,
+            line_b,
+            center,
+            point_on_circle,
+        } => {
+            let (lax, lay) = point_of(values, *line_a);
+            let (lbx, lby) = point_of(values, *line_b);
+            let (cx, cy) = point_of(values, *center);
+            let radius = distance((cx, cy), point_of(values, *point_on_circle));
+            let dir = (lbx - lax, lby - lay);
+            let dir_len = (dir.0 * dir.0 + dir.1 * dir.1).sqrt();
+            if dir_len < 1e-12 {
+                // Degenerate (zero-length) line: no well-defined distance.
+                return f64::INFINITY;
+            }
+            // Perpendicular distance from center to the infinite line
+            // through line_a/line_b, via the 2D cross product.
+            let cross = (cx - lax) * dir.1 - (cy - lay) * dir.0;
+            (cross.abs() / dir_len - radius).abs()
+        }
+        GeometricConstraint::CircleTangentToCircle {
+            a_center,
+            a_point_on_circle,
+            b_center,
+            b_point_on_circle,
+        } => {
+            let center_a = point_of(values, *a_center);
+            let center_b = point_of(values, *b_center);
+            let radius_a = distance(center_a, point_of(values, *a_point_on_circle));
+            let radius_b = distance(center_b, point_of(values, *b_point_on_circle));
+            // External tangency only (Task 089): centers exactly
+            // radius_a + radius_b apart.
+            (distance(center_a, center_b) - (radius_a + radius_b)).abs()
+        }
+        GeometricConstraint::Symmetric {
+            axis_a,
+            axis_b,
+            a,
+            b,
+        } => {
+            let (ax0, ay0) = point_of(values, *axis_a);
+            let (ax1, ay1) = point_of(values, *axis_b);
+            let (ax, ay) = point_of(values, *a);
+            let (bx, by) = point_of(values, *b);
+            let dir = (ax1 - ax0, ay1 - ay0);
+            let dir_len = (dir.0 * dir.0 + dir.1 * dir.1).sqrt();
+            if dir_len < 1e-12 {
+                return f64::INFINITY;
+            }
+            // Condition 1: the midpoint of a/b lies on the axis line.
+            let mx = (ax + bx) / 2.0;
+            let my = (ay + by) / 2.0;
+            let cross = (mx - ax0) * dir.1 - (my - ay0) * dir.0;
+            let midpoint_off_axis = (cross / dir_len).abs();
+            // Condition 2: segment a-b is perpendicular to the axis.
+            let seg = (bx - ax, by - ay);
+            let dot = seg.0 * dir.0 + seg.1 * dir.1;
+            let not_perpendicular = (dot / dir_len).abs();
+            midpoint_off_axis + not_perpendicular
+        }
     }
 }
 
@@ -215,5 +281,198 @@ mod tests {
             b: VariableId(1),
         };
         assert!(residual(&c, &values(&[(0, -5.0), (1, 5.0)])) >= 0.0);
+    }
+
+    #[test]
+    fn equal_length_residual_is_zero_for_two_segments_of_equal_length() {
+        let a0 = PointVariables::new(VariableId(0), VariableId(1));
+        let a1 = PointVariables::new(VariableId(2), VariableId(3));
+        let b0 = PointVariables::new(VariableId(4), VariableId(5));
+        let b1 = PointVariables::new(VariableId(6), VariableId(7));
+        let c = GeometricConstraint::EqualLength { a0, a1, b0, b1 };
+        // a: (0,0)->(3,4) length 5; b: (0,0)->(0,5) length 5.
+        let r = residual(
+            &c,
+            &values(&[
+                (0, 0.0),
+                (1, 0.0),
+                (2, 3.0),
+                (3, 4.0),
+                (4, 0.0),
+                (5, 0.0),
+                (6, 0.0),
+                (7, 5.0),
+            ]),
+        );
+        assert!(r < 1e-9);
+    }
+
+    #[test]
+    fn equal_length_residual_is_positive_for_unequal_lengths() {
+        let a0 = PointVariables::new(VariableId(0), VariableId(1));
+        let a1 = PointVariables::new(VariableId(2), VariableId(3));
+        let b0 = PointVariables::new(VariableId(4), VariableId(5));
+        let b1 = PointVariables::new(VariableId(6), VariableId(7));
+        let c = GeometricConstraint::EqualLength { a0, a1, b0, b1 };
+        let r = residual(
+            &c,
+            &values(&[
+                (0, 0.0),
+                (1, 0.0),
+                (2, 3.0),
+                (3, 0.0),
+                (4, 0.0),
+                (5, 0.0),
+                (6, 0.0),
+                (7, 1.0),
+            ]),
+        );
+        assert!((r - 2.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn line_tangent_to_circle_residual_is_zero_when_tangent() {
+        let line_a = PointVariables::new(VariableId(0), VariableId(1));
+        let line_b = PointVariables::new(VariableId(2), VariableId(3));
+        let center = PointVariables::new(VariableId(4), VariableId(5));
+        let point_on_circle = PointVariables::new(VariableId(6), VariableId(7));
+        let c = GeometricConstraint::LineTangentToCircle {
+            line_a,
+            line_b,
+            center,
+            point_on_circle,
+        };
+        // Vertical line x=3; circle centered at origin, radius 3.
+        let r = residual(
+            &c,
+            &values(&[
+                (0, 3.0),
+                (1, -5.0),
+                (2, 3.0),
+                (3, 5.0),
+                (4, 0.0),
+                (5, 0.0),
+                (6, 3.0),
+                (7, 0.0),
+            ]),
+        );
+        assert!(r < 1e-9);
+    }
+
+    #[test]
+    fn line_tangent_to_circle_residual_is_positive_when_the_line_crosses_the_circle() {
+        let line_a = PointVariables::new(VariableId(0), VariableId(1));
+        let line_b = PointVariables::new(VariableId(2), VariableId(3));
+        let center = PointVariables::new(VariableId(4), VariableId(5));
+        let point_on_circle = PointVariables::new(VariableId(6), VariableId(7));
+        let c = GeometricConstraint::LineTangentToCircle {
+            line_a,
+            line_b,
+            center,
+            point_on_circle,
+        };
+        // Vertical line x=1 cuts through a radius-3 circle at the origin.
+        let r = residual(
+            &c,
+            &values(&[
+                (0, 1.0),
+                (1, -5.0),
+                (2, 1.0),
+                (3, 5.0),
+                (4, 0.0),
+                (5, 0.0),
+                (6, 3.0),
+                (7, 0.0),
+            ]),
+        );
+        assert!((r - 2.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn circle_tangent_to_circle_residual_is_zero_for_externally_tangent_circles() {
+        let a_center = PointVariables::new(VariableId(0), VariableId(1));
+        let a_point_on_circle = PointVariables::new(VariableId(2), VariableId(3));
+        let b_center = PointVariables::new(VariableId(4), VariableId(5));
+        let b_point_on_circle = PointVariables::new(VariableId(6), VariableId(7));
+        let c = GeometricConstraint::CircleTangentToCircle {
+            a_center,
+            a_point_on_circle,
+            b_center,
+            b_point_on_circle,
+        };
+        // Circle A: center origin, radius 2. Circle B: center (3,0), radius 1.
+        // Externally tangent since 2 + 1 == 3.
+        let r = residual(
+            &c,
+            &values(&[
+                (0, 0.0),
+                (1, 0.0),
+                (2, 2.0),
+                (3, 0.0),
+                (4, 3.0),
+                (5, 0.0),
+                (6, 4.0),
+                (7, 0.0),
+            ]),
+        );
+        assert!(r < 1e-9);
+    }
+
+    #[test]
+    fn symmetric_residual_is_zero_for_a_true_mirror_pair() {
+        let axis_a = PointVariables::new(VariableId(0), VariableId(1));
+        let axis_b = PointVariables::new(VariableId(2), VariableId(3));
+        let a = PointVariables::new(VariableId(4), VariableId(5));
+        let b = PointVariables::new(VariableId(6), VariableId(7));
+        let c = GeometricConstraint::Symmetric {
+            axis_a,
+            axis_b,
+            a,
+            b,
+        };
+        // Axis is the vertical line x=0. A=(3,2), B=(-3,2) is its mirror.
+        let r = residual(
+            &c,
+            &values(&[
+                (0, 0.0),
+                (1, -5.0),
+                (2, 0.0),
+                (3, 5.0),
+                (4, 3.0),
+                (5, 2.0),
+                (6, -3.0),
+                (7, 2.0),
+            ]),
+        );
+        assert!(r < 1e-9);
+    }
+
+    #[test]
+    fn symmetric_residual_is_positive_for_a_non_mirrored_pair() {
+        let axis_a = PointVariables::new(VariableId(0), VariableId(1));
+        let axis_b = PointVariables::new(VariableId(2), VariableId(3));
+        let a = PointVariables::new(VariableId(4), VariableId(5));
+        let b = PointVariables::new(VariableId(6), VariableId(7));
+        let c = GeometricConstraint::Symmetric {
+            axis_a,
+            axis_b,
+            a,
+            b,
+        };
+        // Same axis, but B is not A's mirror image (wrong y).
+        let r = residual(
+            &c,
+            &values(&[
+                (0, 0.0),
+                (1, -5.0),
+                (2, 0.0),
+                (3, 5.0),
+                (4, 3.0),
+                (5, 2.0),
+                (6, -3.0),
+                (7, 9.0),
+            ]),
+        );
+        assert!(r > 1.0);
     }
 }

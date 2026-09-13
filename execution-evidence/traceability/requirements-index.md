@@ -239,3 +239,29 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   finding (a sign-convention bug in the spike's own test data, which ezpz
   correctly flagged) investigated and corrected.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 12 — closed 2026-09-13
+- Evidence: `14-phase-12-constraint-engine.md`;
+  `test-reports/phase-12-cargo-test.txt`;
+  `test-reports/phase-12-cargo-clippy.txt`;
+  `test-reports/phase-12-cargo-fmt.txt`;
+  `solver-evaluations/solver-decision-record.md` (Tasks 089/090 addendum).
+- Spike extension: `solver-evaluations/ezpz-spike/src/main.rs` gained real
+  `LineTangentToCircle`/`CircleTangentToCircle`/`Symmetric` scenarios,
+  all converging in 1 iteration -- Tasks 089/090 approved unconditionally
+  before any production code was written.
+- Code: `crates/craftloop-constraint` gained 4 `GeometricConstraint`
+  variants (`EqualLength`, `LineTangentToCircle`, `CircleTangentToCircle`,
+  `Symmetric`); `crates/craftloop-errors` gained `SketchErrorKind`; new
+  crate `crates/craftloop-sketch` (`point_ref.rs`, `constraint_kind.rs`,
+  `provenance.rs`, `ezpz_adapter.rs`, `sketch.rs`) -- the real `ezpz`
+  backend binding plus the domain layer over
+  `craftloop_recognition::BeautifiedPrimitive` geometry.
+- Tests: 450/450 passing workspace-wide (49 new). One genuine RED-GREEN
+  finding while writing Task 092's invalid/conflict tests: an assumed
+  contradiction (`Horizontal` + `Vertical` on the same line) turned out to
+  be satisfiable by collapsing the line to a point -- the failing test was
+  corrected to assert the true property, and a real contradiction
+  (two different `Fixed` values on one point) was used for the
+  conflict-case test instead.
+- Lint/format: both clean, no clippy findings.
