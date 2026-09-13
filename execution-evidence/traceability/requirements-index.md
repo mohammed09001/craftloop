@@ -265,3 +265,24 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   (two different `Fixed` values on one point) was used for the
   conflict-case test instead.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 13 — closed 2026-09-13
+- Evidence: `15-phase-13-constraint-state.md`;
+  `test-reports/phase-13-cargo-test.txt`;
+  `test-reports/phase-13-cargo-clippy.txt`;
+  `test-reports/phase-13-cargo-fmt.txt`.
+- Code: `crates/craftloop-constraint/src/solver.rs` gained
+  `ConstraintSolver::underconstrained_variables` (default-empty); new
+  `crates/craftloop-sketch/src/state.rs` (`DegreesOfFreedomState`,
+  `Sketch::degrees_of_freedom`); `constraint_kind.rs` gained
+  `SketchConstraintKind::is_equivalent`; `sketch.rs`'s `add_constraint` now
+  returns `ConstraintOutcome` (`Added`/`Redundant`); new
+  `crates/craftloop-dimension/src/feasible_range.rs`
+  (`TriangleSideRange`); `role.rs` gained `DimensionRole::explain`.
+- Tests: 474/474 passing workspace-wide (24 new). One genuine finding: an
+  `underconstrained_variables` test assumed both coordinates of a
+  distance-constrained point would be free, but only one was -- correct
+  behavior (freedom analysis is a local/linearized judgment; the point sat
+  at a degenerate axis-aligned initial guess). Fixed the test's initial
+  guess, not the code.
+- Lint/format: both clean (1 clippy finding fixed: `type_complexity`).

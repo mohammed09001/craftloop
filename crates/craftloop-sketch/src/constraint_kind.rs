@@ -290,6 +290,83 @@ impl SketchConstraintKind {
             }
         }
     }
+
+    /// Task 096: does `other` express exactly the same relationship as
+    /// `self`, up to argument order for symmetric relationships (e.g.
+    /// `Parallel(a, b)` and `Parallel(b, a)` are the same relationship)?
+    /// Used to detect and reject a literal duplicate before it enters the
+    /// constraint graph (Article 312's "the internal graph should avoid
+    /// unnecessary duplicate constraints") -- deliberately narrower than
+    /// general symbolic redundancy (e.g. noticing two lines are *already*
+    /// forced parallel by an unrelated chain of constraints, which needs
+    /// graph/symbolic reasoning no task in this phase asks for), whereas
+    /// literal duplicate detection is exactly what Task 096 asks for.
+    pub fn is_equivalent(&self, other: &SketchConstraintKind) -> bool {
+        fn unordered_primitives(a: PrimitiveId, b: PrimitiveId) -> (PrimitiveId, PrimitiveId) {
+            if a <= b {
+                (a, b)
+            } else {
+                (b, a)
+            }
+        }
+        fn unordered_points(a: PointRef, b: PointRef) -> (PointRef, PointRef) {
+            if a <= b {
+                (a, b)
+            } else {
+                (b, a)
+            }
+        }
+        const EPSILON: f64 = 1e-9;
+        match (self, other) {
+            (SketchConstraintKind::Fixed(p1, v1), SketchConstraintKind::Fixed(p2, v2)) => {
+                p1 == p2 && (v1.x - v2.x).abs() < EPSILON && (v1.y - v2.y).abs() < EPSILON
+            }
+            (
+                SketchConstraintKind::Coincident(a1, b1),
+                SketchConstraintKind::Coincident(a2, b2),
+            ) => unordered_points(*a1, *b1) == unordered_points(*a2, *b2),
+            (SketchConstraintKind::Horizontal(a), SketchConstraintKind::Horizontal(b)) => a == b,
+            (SketchConstraintKind::Vertical(a), SketchConstraintKind::Vertical(b)) => a == b,
+            (SketchConstraintKind::Parallel(a1, b1), SketchConstraintKind::Parallel(a2, b2))
+            | (
+                SketchConstraintKind::Perpendicular(a1, b1),
+                SketchConstraintKind::Perpendicular(a2, b2),
+            )
+            | (
+                SketchConstraintKind::EqualLength(a1, b1),
+                SketchConstraintKind::EqualLength(a2, b2),
+            )
+            | (
+                SketchConstraintKind::EqualRadius(a1, b1),
+                SketchConstraintKind::EqualRadius(a2, b2),
+            )
+            | (
+                SketchConstraintKind::Concentric(a1, b1),
+                SketchConstraintKind::Concentric(a2, b2),
+            )
+            | (
+                SketchConstraintKind::CircleTangentToCircle(a1, b1),
+                SketchConstraintKind::CircleTangentToCircle(a2, b2),
+            ) => unordered_primitives(*a1, *b1) == unordered_primitives(*a2, *b2),
+            (
+                SketchConstraintKind::LineTangentToCircle(line1, circle1),
+                SketchConstraintKind::LineTangentToCircle(line2, circle2),
+            ) => line1 == line2 && circle1 == circle2,
+            (
+                SketchConstraintKind::Symmetric {
+                    axis: ax1,
+                    a: a1,
+                    b: b1,
+                },
+                SketchConstraintKind::Symmetric {
+                    axis: ax2,
+                    a: a2,
+                    b: b2,
+                },
+            ) => ax1 == ax2 && unordered_points(*a1, *b1) == unordered_points(*a2, *b2),
+            _ => false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -414,5 +491,62 @@ mod tests {
         assert!(lowered
             .iter()
             .all(|c| matches!(c, GeometricConstraint::FixedValue { .. })));
+    }
+
+    #[test]
+    fn parallel_is_equivalent_to_itself_with_arguments_swapped() {
+        let a = PrimitiveId::new();
+        let b = PrimitiveId::new();
+        assert!(SketchConstraintKind::Parallel(a, b)
+            .is_equivalent(&SketchConstraintKind::Parallel(b, a)));
+    }
+
+    #[test]
+    fn parallel_between_different_primitives_is_not_equivalent() {
+        let a = PrimitiveId::new();
+        let b = PrimitiveId::new();
+        let c = PrimitiveId::new();
+        assert!(!SketchConstraintKind::Parallel(a, b)
+            .is_equivalent(&SketchConstraintKind::Parallel(a, c)));
+    }
+
+    #[test]
+    fn different_relationship_kinds_over_the_same_primitives_are_not_equivalent() {
+        let a = PrimitiveId::new();
+        let b = PrimitiveId::new();
+        assert!(!SketchConstraintKind::Parallel(a, b)
+            .is_equivalent(&SketchConstraintKind::Perpendicular(a, b)));
+    }
+
+    #[test]
+    fn line_tangent_to_circle_is_not_symmetric_line_and_circle_are_distinct_roles() {
+        let line = PrimitiveId::new();
+        let circle = PrimitiveId::new();
+        // Swapping the roles would name a different (nonsensical, since
+        // neither is actually the other's kind) relationship -- must not
+        // be treated as equivalent, unlike the genuinely symmetric kinds
+        // above.
+        assert!(!SketchConstraintKind::LineTangentToCircle(line, circle)
+            .is_equivalent(&SketchConstraintKind::LineTangentToCircle(circle, line)));
+    }
+
+    #[test]
+    fn symmetric_constraints_on_the_same_axis_with_swapped_points_are_equivalent() {
+        let axis = PrimitiveId::new();
+        let a = PointRef::LineStart(PrimitiveId::new());
+        let b = PointRef::LineStart(PrimitiveId::new());
+        assert!(SketchConstraintKind::Symmetric { axis, a, b }
+            .is_equivalent(&SketchConstraintKind::Symmetric { axis, a: b, b: a }));
+    }
+
+    #[test]
+    fn fixed_constraints_with_different_target_values_are_not_equivalent() {
+        let point_ref = PointRef::LineStart(PrimitiveId::new());
+        let a = SketchConstraintKind::Fixed(point_ref, Point2::new(0.0, 0.0));
+        let b = SketchConstraintKind::Fixed(point_ref, Point2::new(5.0, 5.0));
+        assert!(
+            !a.is_equivalent(&b),
+            "different target values must not be treated as duplicates"
+        );
     }
 }

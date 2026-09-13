@@ -26,9 +26,11 @@ pub mod ezpz_adapter;
 pub mod point_ref;
 pub mod provenance;
 pub mod sketch;
+pub mod state;
 
 pub use constraint_kind::SketchConstraintKind;
 pub use ezpz_adapter::EzpzSolver;
 pub use point_ref::PointRef;
 pub use provenance::ConstraintProvenance;
-pub use sketch::Sketch;
+pub use sketch::{ConstraintOutcome, Sketch};
+pub use state::DegreesOfFreedomState;

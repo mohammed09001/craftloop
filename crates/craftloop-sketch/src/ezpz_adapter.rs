@@ -268,7 +268,22 @@ impl Lowering<'_> {
     }
 }
 
-fn solve_from(variables: &[Variable], constraints: &[ConstraintRequest]) -> SolveResult {
+/// The dense `VariableId -> ezpz::Id` mapping, the initial-guess list
+/// (real variables plus any synthetic radius variables), and the lowered
+/// `ezpz` constraint requests -- what [`prepare`] builds, shared by both a
+/// real solve and a freedom analysis.
+type Prepared = (
+    BTreeMap<VariableId, EzpzId>,
+    Vec<(EzpzId, f64)>,
+    Vec<EzpzConstraintRequest>,
+);
+
+/// Shared translation step for both a real solve and a freedom analysis:
+/// build the dense `VariableId -> ezpz::Id` mapping, the initial-guess
+/// list (real variables plus any synthetic radius variables tangency
+/// constraints need -- see the module doc comment), and the lowered
+/// `ezpz` constraint requests.
+fn prepare(variables: &[Variable], constraints: &[ConstraintRequest]) -> Prepared {
     let mut mapping: BTreeMap<VariableId, EzpzId> = BTreeMap::new();
     let mut guesses: Vec<(EzpzId, f64)> = Vec::with_capacity(variables.len());
     let mut current_values: BTreeMap<VariableId, f64> = BTreeMap::new();
@@ -291,6 +306,11 @@ fn solve_from(variables: &[Variable], constraints: &[ConstraintRequest]) -> Solv
             requests.push(EzpzConstraintRequest::highest_priority(ezpz_constraint));
         }
     }
+    (mapping, guesses, requests)
+}
+
+fn solve_from(variables: &[Variable], constraints: &[ConstraintRequest]) -> SolveResult {
+    let (mapping, guesses, requests) = prepare(variables, constraints);
 
     match ezpz::solve(&requests, guesses, Config::default()) {
         Ok(outcome) => {
@@ -328,6 +348,34 @@ fn solve_from(variables: &[Variable], constraints: &[ConstraintRequest]) -> Solv
     }
 }
 
+/// Task 093: `ezpz` already computes exactly this (`solve_analysis`'s
+/// `FreedomAnalysis::underconstrained`) -- using it directly, rather than
+/// re-deriving DOF counts by hand from the constraint graph, follows the
+/// same "prefer a demonstrated solver capability over a hand-built
+/// heuristic" judgment Phase 11's evaluation made about the solver choice
+/// itself.
+fn underconstrained_from(
+    variables: &[Variable],
+    constraints: &[ConstraintRequest],
+) -> Vec<VariableId> {
+    let (mapping, guesses, requests) = prepare(variables, constraints);
+    let Ok(analysis) = ezpz::solve_analysis(&requests, guesses, Config::default()) else {
+        return Vec::new();
+    };
+    let underconstrained: std::collections::BTreeSet<EzpzId> = analysis
+        .analysis
+        .underconstrained()
+        .iter()
+        .copied()
+        .collect();
+    mapping
+        .iter()
+        .filter_map(|(variable_id, ezpz_id)| {
+            underconstrained.contains(ezpz_id).then_some(*variable_id)
+        })
+        .collect()
+}
+
 impl ConstraintSolver for EzpzSolver {
     fn solve(&mut self, variables: &[Variable], constraints: &[ConstraintRequest]) -> SolveResult {
         solve_from(variables, constraints)
@@ -348,6 +396,14 @@ impl ConstraintSolver for EzpzSolver {
             .map(|v| Variable::new(v.id, previous.value_of(v.id).unwrap_or(v.initial_value)))
             .collect();
         solve_from(&warm_started, constraints)
+    }
+
+    fn underconstrained_variables(
+        &mut self,
+        variables: &[Variable],
+        constraints: &[ConstraintRequest],
+    ) -> Vec<VariableId> {
+        underconstrained_from(variables, constraints)
     }
 }
 
@@ -692,6 +748,73 @@ mod tests {
         assert!(result.is_solved(), "expected solved, got {result:?}");
         assert!((result.value_of(bx).unwrap() - -3.0).abs() < 1e-6);
         assert!((result.value_of(by).unwrap() - 2.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn underconstrained_variables_reports_a_point_only_bound_by_distance_as_free() {
+        // Mirrors ezpz's own `solve_analysis` doc example exactly,
+        // including its initial guess -- deliberately, not incidentally.
+        // Freedom analysis is a *local* (linearized) judgment: an earlier
+        // version of this test placed Q at (4.0, 0.0), exactly on the
+        // x-axis from P, and only qy came back underconstrained. That is
+        // correct, not a bug -- at that specific point on the constraint
+        // circle, the only *locally* free direction (the tangent to the
+        // circle) is purely vertical; moving in x there immediately
+        // changes the Distance residual, so x is not locally free even
+        // though the point as a whole has one genuine degree of freedom
+        // along the circle. Off that axis-aligned special case (as here),
+        // both components of Q's tangential freedom show up. This is
+        // recorded in Task 093's higher-level DOF state as a caveat: a
+        // per-variable "not reported free" is not proof of full
+        // constraint at a degenerate initial guess.
+        let px = VariableId(0);
+        let py = VariableId(1);
+        let qx = VariableId(2);
+        let qy = VariableId(3);
+        let p = PointVariables::new(px, py);
+        let q = PointVariables::new(qx, qy);
+        let variables = vec![
+            Variable::new(px, 0.0),
+            Variable::new(py, -0.02),
+            Variable::new(qx, 4.39),
+            Variable::new(qy, 4.38),
+        ];
+        let constraints = vec![
+            req(
+                ConstraintId::new(),
+                GeometricConstraint::FixedValue {
+                    variable: px,
+                    value: 0.0,
+                },
+            ),
+            req(
+                ConstraintId::new(),
+                GeometricConstraint::FixedValue {
+                    variable: py,
+                    value: 0.0,
+                },
+            ),
+            req(
+                ConstraintId::new(),
+                GeometricConstraint::Distance {
+                    a: p,
+                    b: q,
+                    value: 4.0,
+                },
+            ),
+        ];
+        let mut solver = EzpzSolver::new();
+        let free = solver.underconstrained_variables(&variables, &constraints);
+        assert!(free.contains(&qx), "expected qx free, got {free:?}");
+        assert!(free.contains(&qy), "expected qy free, got {free:?}");
+        assert!(
+            !free.contains(&px),
+            "px is fixed, must not be reported free"
+        );
+        assert!(
+            !free.contains(&py),
+            "py is fixed, must not be reported free"
+        );
     }
 
     #[test]

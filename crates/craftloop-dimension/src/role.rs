@@ -40,6 +40,27 @@ impl DimensionRole {
     pub fn is_directly_editable(&self) -> bool {
         matches!(self, DimensionRole::Driving)
     }
+
+    /// Execution 01, Phase 13, Task 099: UI-ready explanation for this
+    /// role, free of internal/solver terminology (Article 99's "prefer
+    /// 'This width is already defined in the front view' over
+    /// 'Redundant driving dimension'"). Covers this crate's half of Task
+    /// 099's named list ("derived, shared" and, here, the rest of the
+    /// role vocabulary too); `craftloop-sketch::DegreesOfFreedomState::
+    /// explain` covers the geometric half ("free", "conflicting").
+    pub fn explain(&self) -> &'static str {
+        match self {
+            DimensionRole::Driving => "Editing this value changes the design.",
+            DimensionRole::Reference => {
+                "Reports the current geometry; editing it does not change anything."
+            }
+            DimensionRole::Derived => {
+                "Calculated from other relationships and cannot be edited directly."
+            }
+            DimensionRole::Shared => "The same value as another view -- change it there instead.",
+            DimensionRole::Bounded => "Restricted to a feasible range rather than one fixed value.",
+        }
+    }
 }
 
 #[cfg(test)]
@@ -58,6 +79,25 @@ mod tests {
             assert!(
                 !role.is_directly_editable(),
                 "{role:?} must not be directly editable"
+            );
+        }
+    }
+
+    #[test]
+    fn every_role_has_a_jargon_free_explanation() {
+        for role in [
+            DimensionRole::Driving,
+            DimensionRole::Reference,
+            DimensionRole::Derived,
+            DimensionRole::Shared,
+            DimensionRole::Bounded,
+        ] {
+            let text = role.explain();
+            assert!(!text.is_empty());
+            assert!(
+                !text.to_lowercase().contains("solver")
+                    && !text.to_lowercase().contains("driving dimension"),
+                "explanation for {role:?} leaked internal terminology: {text:?}"
             );
         }
     }

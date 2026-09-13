@@ -48,6 +48,28 @@ pub trait ConstraintSolver {
         constraints: &[ConstraintRequest],
         previous: &SolveResult,
     ) -> SolveResult;
+
+    /// Which variables are underconstrained (free to vary without
+    /// violating any requested constraint) at the current solution.
+    /// Execution 01, Phase 13, Task 093: the raw, solver-reported input a
+    /// higher domain layer (`craftloop-sketch`'s degree-of-freedom state)
+    /// translates into user-facing state, per Engine Contract 10's
+    /// "Variables, constraints, incremental solve, diagnostics".
+    ///
+    /// Default: report nothing as underconstrained. A backend that cannot
+    /// determine this (like [`ResidualChecker`], which does not iterate
+    /// and so has no basis for a freedom judgment) legitimately implements
+    /// this interface by accepting the default -- callers must treat an
+    /// empty result as "this backend did not report," not as "nothing is
+    /// free."
+    fn underconstrained_variables(
+        &mut self,
+        variables: &[Variable],
+        constraints: &[ConstraintRequest],
+    ) -> Vec<crate::variable::VariableId> {
+        let _ = (variables, constraints);
+        Vec::new()
+    }
 }
 
 /// Reference implementation: does **not** search for a solution. It
@@ -186,6 +208,18 @@ mod tests {
         let second =
             solver.resolve_incremental(&[Variable::new(VariableId(0), 5.0)], &[request], &first);
         assert!(second.is_solved());
+    }
+
+    #[test]
+    fn the_default_underconstrained_variables_implementation_reports_nothing() {
+        // ResidualChecker does not iterate, so it has no basis to claim any
+        // variable is free -- an empty result here means "not reported,"
+        // never "nothing is free" (see the trait's own doc comment).
+        let variables = vec![Variable::new(VariableId(0), 5.0)];
+        let mut solver = ResidualChecker::new(1e-6);
+        assert!(solver
+            .underconstrained_variables(&variables, &[])
+            .is_empty());
     }
 
     #[test]

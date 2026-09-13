@@ -42,17 +42,42 @@ use crate::constraint_kind::SketchConstraintKind;
 use crate::point_ref::{PointRef, PrimitiveMap};
 use crate::provenance::ConstraintProvenance;
 
-struct ConstraintEntry {
-    kind: SketchConstraintKind,
-    provenance: ConstraintProvenance,
+pub(crate) struct ConstraintEntry {
+    pub(crate) kind: SketchConstraintKind,
+    pub(crate) provenance: ConstraintProvenance,
+}
+
+/// What [`Sketch::add_constraint`] actually did. Task 096: recognizing a
+/// duplicate is deliberately not an error (see `add_constraint`'s doc
+/// comment) -- this type carries the plain-language-ready distinction
+/// instead of forcing every caller to special-case a specific error kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConstraintOutcome {
+    /// A new constraint was stored.
+    Added,
+    /// An equivalent constraint already existed; nothing new was stored.
+    Redundant { existing: ConstraintId },
+}
+
+impl ConstraintOutcome {
+    /// Task 096/099: plain-language diagnostic, e.g. for a toast/inline
+    /// message when a user re-applies a relationship that already holds.
+    pub fn explain(&self) -> String {
+        match self {
+            ConstraintOutcome::Added => "Relationship added.".to_string(),
+            ConstraintOutcome::Redundant { .. } => {
+                "This relationship is already guaranteed by an existing one.".to_string()
+            }
+        }
+    }
 }
 
 /// A set of primitives plus the constraints relating them. See the module
 /// doc comment for `solve()`'s role.
 #[derive(Default)]
 pub struct Sketch {
-    primitives: PrimitiveMap,
-    constraints: BTreeMap<ConstraintId, ConstraintEntry>,
+    pub(crate) primitives: PrimitiveMap,
+    pub(crate) constraints: BTreeMap<ConstraintId, ConstraintEntry>,
 }
 
 impl Sketch {
@@ -71,12 +96,19 @@ impl Sketch {
     /// Task 084/091: add one constraint with its provenance. Validated
     /// against the current primitives before being stored (Task 084's
     /// forbidden shortcut: do not discover a type mismatch mid-solve).
+    ///
+    /// Task 096: a constraint expressing exactly the same relationship as
+    /// one already stored (see [`SketchConstraintKind::is_equivalent`]) is
+    /// **not** an error (Article 312: "should not necessarily create an
+    /// error") -- it is recognized as redundant and not inserted a second
+    /// time, and the caller is told which existing constraint already
+    /// covers it.
     pub fn add_constraint(
         &mut self,
         id: ConstraintId,
         kind: SketchConstraintKind,
         provenance: ConstraintProvenance,
-    ) -> DomainResult<()> {
+    ) -> DomainResult<ConstraintOutcome> {
         if self.constraints.contains_key(&id) {
             return Err(DomainError::Sketch {
                 kind: SketchErrorKind::DuplicateConstraintId,
@@ -84,9 +116,16 @@ impl Sketch {
             });
         }
         kind.validate(&self.primitives)?;
+        if let Some((&existing, _)) = self
+            .constraints
+            .iter()
+            .find(|(_, entry)| entry.kind.is_equivalent(&kind))
+        {
+            return Ok(ConstraintOutcome::Redundant { existing });
+        }
         self.constraints
             .insert(id, ConstraintEntry { kind, provenance });
-        Ok(())
+        Ok(ConstraintOutcome::Added)
     }
 
     pub fn remove_constraint(&mut self, id: ConstraintId) -> DomainResult<()> {
@@ -115,7 +154,9 @@ impl Sketch {
     /// allocation order -- and therefore every `VariableId` assigned -- is
     /// deterministic given the same constraint set, matching this
     /// workspace's canonical-serialization philosophy (Phase 01).
-    fn variable_map(&self) -> DomainResult<(BTreeMap<PointRef, PointVariables>, Vec<Variable>)> {
+    pub(crate) fn variable_map(
+        &self,
+    ) -> DomainResult<(BTreeMap<PointRef, PointVariables>, Vec<Variable>)> {
         let mut refs: BTreeSet<PointRef> = BTreeSet::new();
         for entry in self.constraints.values() {
             refs.extend(entry.kind.point_refs());
@@ -676,6 +717,75 @@ mod tests {
             (b_start.y - 2.0).abs() < 1e-4,
             "expected y≈2.0, got {}",
             b_start.y
+        );
+    }
+
+    // --- Task 096: redundant constraint detection -------------------------
+
+    #[test]
+    fn adding_the_same_relationship_twice_is_recognized_as_redundant_not_an_error() {
+        let mut sketch = Sketch::new();
+        let a = PrimitiveId::new();
+        let b = PrimitiveId::new();
+        sketch.insert_primitive(a, line(Point2::new(0.0, 0.0), Point2::new(4.0, 0.0)));
+        sketch.insert_primitive(b, line(Point2::new(0.0, 2.0), Point2::new(4.0, 2.3)));
+
+        let first = ConstraintId::new();
+        let outcome = sketch
+            .add_constraint(
+                first,
+                SketchConstraintKind::Parallel(a, b),
+                ConstraintProvenance::UserCreated,
+            )
+            .unwrap();
+        assert_eq!(outcome, ConstraintOutcome::Added);
+
+        // Article 312: re-adding the same relationship (here with
+        // arguments swapped, still the same relationship) is not an
+        // error.
+        let second = ConstraintId::new();
+        let outcome = sketch
+            .add_constraint(
+                second,
+                SketchConstraintKind::Parallel(b, a),
+                ConstraintProvenance::UserCreated,
+            )
+            .unwrap();
+        assert_eq!(outcome, ConstraintOutcome::Redundant { existing: first });
+        assert!(outcome.explain().contains("already"));
+
+        // The graph must not carry a duplicate: only the first constraint
+        // is actually stored.
+        assert!(sketch.constraint(first).is_some());
+        assert!(sketch.constraint(second).is_none());
+    }
+
+    #[test]
+    fn a_different_relationship_between_the_same_primitives_is_not_redundant() {
+        let mut sketch = Sketch::new();
+        let a = PrimitiveId::new();
+        let b = PrimitiveId::new();
+        sketch.insert_primitive(a, line(Point2::new(0.0, 0.0), Point2::new(4.0, 0.0)));
+        sketch.insert_primitive(b, line(Point2::new(0.0, 2.0), Point2::new(0.3, 6.0)));
+
+        sketch
+            .add_constraint(
+                ConstraintId::new(),
+                SketchConstraintKind::Parallel(a, b),
+                ConstraintProvenance::UserCreated,
+            )
+            .unwrap();
+        let outcome = sketch
+            .add_constraint(
+                ConstraintId::new(),
+                SketchConstraintKind::Perpendicular(a, b),
+                ConstraintProvenance::UserCreated,
+            )
+            .unwrap();
+        assert_eq!(
+            outcome,
+            ConstraintOutcome::Added,
+            "a different relationship must not be treated as redundant"
         );
     }
 

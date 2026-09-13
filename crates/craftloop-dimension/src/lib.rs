@@ -8,6 +8,7 @@
 
 pub mod annotation;
 pub mod dimension;
+pub mod feasible_range;
 pub mod kind;
 pub mod role;
 pub mod store;
@@ -15,6 +16,7 @@ pub mod target;
 
 pub use annotation::DimensionAnnotation;
 pub use dimension::SemanticDimension;
+pub use feasible_range::{triangle_third_side_is_feasible, TriangleSideRange};
 pub use kind::DimensionKind;
 pub use role::DimensionRole;
 pub use store::DimensionStore;
