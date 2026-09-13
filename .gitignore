@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# Rust
+/target/
+**/target/
+Cargo.lock.bak
+
+# OS
+.DS_Store
+Thumbs.db
