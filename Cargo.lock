@@ -671,6 +671,7 @@ dependencies = [
  "craftloop-input",
  "craftloop-recognition",
  "craftloop-serialization",
+ "craftloop-transactions",
  "serde",
  "serde_json",
  "thiserror 2.0.20",

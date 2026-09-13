@@ -18,6 +18,7 @@ craftloop-geometry = { path = "../craftloop-geometry" }
 craftloop-serialization = { path = "../craftloop-serialization" }
 craftloop-ink = { path = "../craftloop-ink" }
 craftloop-recognition = { path = "../craftloop-recognition" }
+craftloop-transactions = { path = "../craftloop-transactions" }
 
 [dev-dependencies]
 craftloop-input = { path = "../craftloop-input" }

@@ -181,3 +181,15 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   a hand-written string-based Serialize/Deserialize.
 - Lint/format: both clean (2 clippy findings fixed:
   `wrong_self_convention`, `derivable_impls`).
+
+### Phase 08 — closed 2026-09-13
+- Evidence: `10-phase-08-transactions.md`;
+  `test-reports/phase-08-cargo-test.txt`;
+  `test-reports/phase-08-cargo-clippy.txt`.
+- Code: `crates/craftloop-document/src/{history,provenance,stale_result}.rs`
+  (new), `document.rs` extended with revision/provenance,
+  `tests/crash_safe_transactions.rs`.
+- Tests: 342/342 passing workspace-wide (56 new). One design bug (fabricated
+  UserCreated default on provenance-undo-to-None) caught and fixed before
+  first compile.
+- Lint/format: both clean, no clippy findings.

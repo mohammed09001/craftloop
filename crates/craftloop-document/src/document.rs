@@ -19,8 +19,10 @@ use craftloop_ids::{CraftLoopId, PageId};
 use craftloop_serialization::SchemaVersion;
 use serde::{Deserialize, Serialize};
 
+use crate::entity::EntityId;
 use crate::metadata::DocumentMetadata;
 use crate::page::Page;
+use crate::provenance::ProvenanceState;
 use crate::units::DocumentUnits;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -34,6 +36,17 @@ pub struct Document {
     /// naming one. `None` only for a document with zero pages (unusual,
     /// but not invalid -- an empty notebook).
     active_page: Option<PageId>,
+    /// Monotonically increasing count of committed transactions (Phase 08,
+    /// Task 060: "associate async results with source revision IDs and
+    /// discard them when the document changes"). Bumped by
+    /// `history::DocumentHistory::commit`, never by direct mutation, so it
+    /// is a trustworthy "has anything changed since I looked?" signal.
+    revision: u64,
+    /// Current provenance classification per entity (Task 059). Absent for
+    /// an entity means "never explicitly classified" (most tests fall into
+    /// this bucket); real usage sets it as part of the same transaction
+    /// that inserts the entity.
+    provenance: BTreeMap<EntityId, ProvenanceState>,
 }
 
 impl Document {
@@ -50,7 +63,41 @@ impl Document {
             units: DocumentUnits::default(),
             pages,
             active_page,
+            revision: 0,
+            provenance: BTreeMap::new(),
         }
+    }
+
+    pub fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    /// Advance the revision counter by one. Called once per committed
+    /// transaction by `DocumentHistory::commit`; not intended for direct
+    /// use outside that path.
+    pub fn bump_revision(&mut self) {
+        self.revision += 1;
+    }
+
+    pub fn provenance_of(&self, id: EntityId) -> Option<ProvenanceState> {
+        self.provenance.get(&id).copied()
+    }
+
+    /// Set `id`'s provenance state, returning the previous value (if any)
+    /// so a caller building an undo record can restore it exactly.
+    pub fn set_provenance(
+        &mut self,
+        id: EntityId,
+        state: ProvenanceState,
+    ) -> Option<ProvenanceState> {
+        self.provenance.insert(id, state)
+    }
+
+    /// Remove `id`'s provenance entry entirely, restoring "never
+    /// classified." Used to invert a `SetProvenance` change whose prior
+    /// state was `None`.
+    pub fn clear_provenance(&mut self, id: EntityId) {
+        self.provenance.remove(&id);
     }
 
     pub fn add_page(&mut self, name: impl Into<String>) -> PageId {
@@ -178,5 +225,35 @@ mod tests {
         let mut doc = Document::new("Untitled", 0.0);
         doc.schema_version = SchemaVersion(SchemaVersion::CURRENT.0 + 1);
         assert!(doc.validate().is_err());
+    }
+
+    #[test]
+    fn a_new_document_starts_at_revision_zero() {
+        assert_eq!(Document::new("Untitled", 0.0).revision(), 0);
+    }
+
+    #[test]
+    fn bump_revision_increments_monotonically() {
+        let mut doc = Document::new("Untitled", 0.0);
+        doc.bump_revision();
+        doc.bump_revision();
+        assert_eq!(doc.revision(), 2);
+    }
+
+    #[test]
+    fn provenance_defaults_to_none_and_can_be_set_and_cleared() {
+        let mut doc = Document::new("Untitled", 0.0);
+        let id = EntityId::Note(craftloop_ids::NoteId::new());
+        assert_eq!(doc.provenance_of(id), None);
+
+        let previous = doc.set_provenance(id, ProvenanceState::Suggested);
+        assert_eq!(previous, None);
+        assert_eq!(doc.provenance_of(id), Some(ProvenanceState::Suggested));
+
+        let previous = doc.set_provenance(id, ProvenanceState::Accepted);
+        assert_eq!(previous, Some(ProvenanceState::Suggested));
+
+        doc.clear_provenance(id);
+        assert_eq!(doc.provenance_of(id), None);
     }
 }
