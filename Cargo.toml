@@ -8,6 +8,7 @@ members = [
     "crates/craftloop-test-support",
     "crates/craftloop-geometry",
     "crates/craftloop-input",
+    "crates/craftloop-ink",
     "apps/windows-harness",
 ]
 

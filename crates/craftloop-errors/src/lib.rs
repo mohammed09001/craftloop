@@ -109,6 +109,14 @@ pub enum InputErrorKind {
     InvalidLifecycleSequence,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum InkErrorKind {
+    /// A stroke was constructed with zero samples.
+    EmptyStroke,
+    /// A stroke's samples did not all report the same `PointerSource`.
+    MixedSource,
+}
+
 /// A structured domain error. Every variant is namespaced by subsystem and
 /// carries a typed `kind`; `detail` is supplementary human-readable context
 /// only, per the forbidden-shortcut rule above.
@@ -150,6 +158,8 @@ pub enum DomainError {
         kind: InputErrorKind,
         detail: String,
     },
+    #[error("ink error ({kind:?}): {detail}")]
+    Ink { kind: InkErrorKind, detail: String },
 }
 
 impl DomainError {
@@ -174,6 +184,7 @@ impl DomainError {
             DomainError::Persistence { .. } => Severity::Error,
             DomainError::Transaction { .. } => Severity::Error,
             DomainError::Input { .. } => Severity::Error,
+            DomainError::Ink { .. } => Severity::Error,
         }
     }
 }

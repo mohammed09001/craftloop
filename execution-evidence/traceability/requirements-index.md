@@ -140,3 +140,14 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   panicking under a timeout; interactive/visual verification explicitly
   deferred to a human (no display in this environment).
 - Lint/format: both clean.
+
+### Phase 05 — closed 2026-09-13
+- Evidence: `07-phase-05-raw-ink.md`; `test-reports/phase-05-cargo-test.txt`;
+  `test-reports/phase-05-cargo-clippy.txt`.
+- Code: `crates/craftloop-ink` (`stroke.rs`, `grouping.rs`, `smoothing.rs`,
+  `spatial.rs`, `provenance.rs`, `tests/replay_and_serialization.rs`); added
+  `DomainError::Ink`/`InkErrorKind` to `craftloop-errors`.
+- Tests: 198/198 passing workspace-wide (33 new). 2 real production bugs
+  (endpoint preservation, symmetric-window averaging in `smoothing.rs`) and
+  1 test-construction bug caught and fixed in-loop.
+- Lint/format: both clean (1 clippy finding fixed: `len_without_is_empty`).
