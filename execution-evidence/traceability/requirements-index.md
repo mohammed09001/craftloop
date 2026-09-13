@@ -193,3 +193,16 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   UserCreated default on provenance-undo-to-None) caught and fixed before
   first compile.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 09 — closed 2026-09-13
+- Evidence: `11-phase-09-units.md`; `test-reports/phase-09-cargo-test.txt`;
+  `test-reports/phase-09-cargo-clippy.txt`.
+- Code: `crates/craftloop-units` (`length_unit.rs`, `numeric.rs`,
+  `length.rs`, `angle.rs`, `radius_diameter.rs`,
+  `tests/invalid_numeric_diagnostics.rs`); refactored
+  `craftloop-document/src/units.rs` to re-export `LengthUnit`.
+- Tests: 385/385 passing workspace-wide (43 new). 2 real bugs (auto-locale
+  repeated-separator misclassification caught in design review;
+  raw-input-truncation-after-suffix-stripping caught by the Task 069
+  diagnostic test itself) fixed in-loop.
+- Lint/format: both clean (1 clippy finding fixed: `derivable_impls`).

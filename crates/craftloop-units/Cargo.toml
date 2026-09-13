@@ -1,0 +1,15 @@
+[package]
+name = "craftloop-units"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Canonical units and engineering numeric parsing for the Craft Loop shared engineering core."
+
+[dependencies]
+serde.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+
+[dev-dependencies]
+serde_json.workspace = true
