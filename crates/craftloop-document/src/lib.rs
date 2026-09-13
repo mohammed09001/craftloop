@@ -13,6 +13,7 @@ pub mod entity;
 pub mod history;
 pub mod metadata;
 pub mod migration;
+pub mod multiview;
 pub mod note;
 pub mod orthographic;
 pub mod page;
@@ -29,6 +30,7 @@ pub use entity::{EntityId, SemanticEntity};
 pub use history::{DocumentChange, DocumentHistory};
 pub use metadata::DocumentMetadata;
 pub use migration::{migrate_to_current, Migration};
+pub use multiview::{axes_for_identity, MultiviewGraph, SharedAxis};
 pub use note::Note;
 pub use orthographic::{
     default_layout_offset, default_orthographic_layout, evaluate_readiness,

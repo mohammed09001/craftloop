@@ -406,3 +406,17 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   gained `Ord` for `BTreeMap` keying.
 - Tests: 625/625 passing workspace-wide (14 new). No RED-GREEN surprises.
 - Lint/format: both clean (1 clippy finding fixed: `if_same_then_else`).
+
+### Phase 22 — closed 2026-09-13
+- Evidence: `24-phase-22-multiview-constraint-graph.md`;
+  `test-reports/phase-22-cargo-test.txt`;
+  `test-reports/phase-22-cargo-clippy.txt`;
+  `test-reports/phase-22-cargo-fmt.txt`.
+- Code: `crates/craftloop-document` gained `multiview.rs`
+  (`SharedAxis`, `axes_for_identity`, `MultiviewGraph`).
+- Tests: 639/639 passing workspace-wide (14 new). One genuine
+  persistence bug found by its own round-trip test: `MultiviewGraph`
+  derived `Serialize` on a tuple-keyed `BTreeMap`, the exact same failure
+  mode as Phase 07's `EntityId` (JSON object keys must be strings).
+  Fixed with the same hand-written-Serialize pattern.
+- Lint/format: both clean, no clippy findings.
