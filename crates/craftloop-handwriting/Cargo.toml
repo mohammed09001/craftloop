@@ -1,0 +1,21 @@
+[package]
+name = "craftloop-handwriting"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Engineering Handwriting Adapter Boundary for the Craft Loop shared engineering core: a platform-neutral handwriting recognizer interface, a deterministic test stub, and routing into the existing numeric/text parser (never geometry) (Engine Contract 05)."
+
+[dependencies]
+serde.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-ink = { path = "../craftloop-ink" }
+craftloop-recognition = { path = "../craftloop-recognition" }
+craftloop-units = { path = "../craftloop-units" }
+
+[dev-dependencies]
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-input = { path = "../craftloop-input" }
+serde_json.workspace = true

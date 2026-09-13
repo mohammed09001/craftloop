@@ -333,3 +333,19 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   thresholds matching `craftloop-recognition`'s existing 0.6 convention.
 - Tests: 525/525 passing workspace-wide (11 new). No RED-GREEN surprises.
 - Lint/format: both clean, no clippy findings.
+
+### Phase 17 — closed 2026-09-13
+- Evidence: `19-phase-17-handwriting-adapter.md`;
+  `test-reports/phase-17-cargo-test.txt`;
+  `test-reports/phase-17-cargo-clippy.txt`;
+  `test-reports/phase-17-cargo-fmt.txt`;
+  `handwriting-adapter-platform-plan.md`.
+- Code: new crate `crates/craftloop-handwriting` (`recognizer.rs`,
+  `stub.rs`, `routing.rs`, `provenance.rs`, `tests/ambiguity.rs`) --
+  `HandwritingRecognizer` trait, `FixtureHandwritingRecognizer` (no real
+  recognizer reachable on Windows), routing into
+  `craftloop-units`' existing parsers (structurally cannot touch
+  geometry), provenance tracking, all six named ambiguity classes tested.
+- Tests: 544/544 passing workspace-wide (19 new). No RED-GREEN surprises.
+- Lint/format: both clean (2 clippy findings fixed:
+  `cloned_ref_to_slice_refs`).
