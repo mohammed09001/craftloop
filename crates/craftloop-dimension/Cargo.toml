@@ -1,0 +1,17 @@
+[package]
+name = "craftloop-dimension"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Semantic dimension model for the Craft Loop shared engineering core."
+
+[dependencies]
+serde.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+
+[dev-dependencies]
+serde_json.workspace = true

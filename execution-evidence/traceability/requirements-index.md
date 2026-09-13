@@ -206,3 +206,15 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   raw-input-truncation-after-suffix-stripping caught by the Task 069
   diagnostic test itself) fixed in-loop.
 - Lint/format: both clean (1 clippy finding fixed: `derivable_impls`).
+
+### Phase 10 — closed 2026-09-13
+- Evidence: `12-phase-10-dimension.md`; `test-reports/phase-10-cargo-test.txt`;
+  `test-reports/phase-10-cargo-clippy.txt`.
+- Code: `crates/craftloop-dimension` (`kind.rs`, `role.rs`, `target.rs`,
+  `dimension.rs`, `annotation.rs`, `store.rs`, `tests/serialization.rs`);
+  added `DimensionAnnotationId` to `craftloop-ids`,
+  `DomainError::Dimension` to `craftloop-errors`; added
+  `SemanticEntity::Dimension` to `craftloop-document`.
+- Tests: 378/378 passing workspace-wide (30 new). All passed on first run
+  this phase.
+- Lint/format: both clean, no clippy findings.

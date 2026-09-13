@@ -20,6 +20,7 @@ craftloop-ink = { path = "../craftloop-ink" }
 craftloop-recognition = { path = "../craftloop-recognition" }
 craftloop-transactions = { path = "../craftloop-transactions" }
 craftloop-units = { path = "../craftloop-units" }
+craftloop-dimension = { path = "../craftloop-dimension" }
 
 [dev-dependencies]
 craftloop-input = { path = "../craftloop-input" }

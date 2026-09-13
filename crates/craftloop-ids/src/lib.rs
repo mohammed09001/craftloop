@@ -144,6 +144,15 @@ define_id!(
      Contract 15; MCP Article 65 \"Pages and Infinite Paper\"). Added in \
      Phase 07 alongside the document model that first needs to store pages."
 );
+define_id!(
+    DimensionAnnotationId,
+    "Identifies one visible presentation of a semantic dimension (Engine \
+     Contract 09; MCP Article 499 \"Term: Dimension Annotation\"). Distinct \
+     from `DimensionId`: one semantic dimension can have zero, one, or \
+     several annotations, each independently identified so hiding/deleting \
+     one never implies anything about the semantic dimension or its other \
+     annotations. Added in Phase 10 alongside the dimension model."
+);
 
 #[cfg(test)]
 mod tests {

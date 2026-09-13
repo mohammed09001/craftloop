@@ -127,6 +127,21 @@ pub enum InkErrorKind {
     MixedSource,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DimensionErrorKind {
+    /// A dimension value was non-finite or outside what its kind allows
+    /// (e.g. a non-positive linear/radius/diameter value).
+    InvalidValue,
+    /// An edit was attempted on a dimension whose role does not permit
+    /// direct value edits (only `Driving` dimensions are user-editable).
+    NotEditable,
+    /// An annotation referenced a dimension ID that does not exist.
+    UnknownDimension,
+    /// An insert used an ID that already exists (would silently overwrite
+    /// a distinct dimension/annotation).
+    DuplicateId,
+}
+
 /// A structured domain error. Every variant is namespaced by subsystem and
 /// carries a typed `kind`; `detail` is supplementary human-readable context
 /// only, per the forbidden-shortcut rule above.
@@ -175,6 +190,11 @@ pub enum DomainError {
         kind: DocumentErrorKind,
         detail: String,
     },
+    #[error("dimension error ({kind:?}): {detail}")]
+    Dimension {
+        kind: DimensionErrorKind,
+        detail: String,
+    },
 }
 
 impl DomainError {
@@ -201,6 +221,7 @@ impl DomainError {
             DomainError::Input { .. } => Severity::Error,
             DomainError::Ink { .. } => Severity::Error,
             DomainError::Document { .. } => Severity::Error,
+            DomainError::Dimension { .. } => Severity::Error,
         }
     }
 }

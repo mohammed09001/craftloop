@@ -5,23 +5,33 @@
 //!
 //! Task 050 names seven kinds of semantic object a page can hold: "raw
 //! ink, geometry, notes, dimensions, view labels, suggestions, conflicts,
-//! and ephemeral interaction records." Only three have a real, implemented
-//! type behind them yet -- raw ink (`craftloop_ink::Stroke`, Phase 05),
-//! geometry (`craftloop_recognition::BeautifiedPrimitive`, Phase 06), and
-//! notes (this crate's `Note`, added this phase). The other four belong to
-//! engines this execution has not reached: dimensions (Phase 10), view
-//! labels (Phase 20), suggestions/conflicts (Phases 06's `RecognitionCandidate`
-//! is a suggestion in spirit but not yet a *stored, reified* document
-//! entity with its own lifecycle -- that lands with Phase 12-14's
+//! and ephemeral interaction records." Four now have a real, implemented
+//! type behind them -- raw ink (`craftloop_ink::Stroke`, Phase 05),
+//! geometry (`craftloop_recognition::BeautifiedPrimitive`, Phase 06), notes
+//! (this crate's `Note`, Phase 07), and dimensions
+//! (`craftloop_dimension::SemanticDimension`, Phase 10). The remaining
+//! three belong to engines this execution has not reached: view labels
+//! (Phase 20), suggestions/conflicts (Phase 06's `RecognitionCandidate` is
+//! a suggestion in spirit but not yet a *stored, reified* document entity
+//! with its own lifecycle -- that lands with Phase 12-14's
 //! consistency/conflict engines). Adding placeholder variants for them now
 //! would be exactly the fabricated completeness the No-Hallucination
 //! Contract forbids; `SemanticEntity` grows a new variant in the phase that
 //! actually builds each one.
+//!
+//! Dimension *annotations* (`craftloop_dimension::DimensionAnnotation`) are
+//! deliberately **not** a `SemanticEntity` variant: Task 050 names
+//! "dimensions," not "dimension annotations," as a page-level entity kind,
+//! and `craftloop-dimension`'s own `DimensionStore` (Phase 10) already
+//! fully covers annotation storage/visibility with its own tests. Wiring
+//! annotations into `Page` as well would duplicate that storage for no
+//! task this phase asks for.
 
 use std::fmt;
 use std::str::FromStr;
 
-use craftloop_ids::{CraftLoopId, NoteId, PrimitiveId, StrokeId};
+use craftloop_dimension::SemanticDimension;
+use craftloop_ids::{CraftLoopId, DimensionId, NoteId, PrimitiveId, StrokeId};
 use craftloop_ink::Stroke;
 use craftloop_recognition::Beautified;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -47,6 +57,7 @@ pub enum EntityId {
     Stroke(StrokeId),
     Primitive(PrimitiveId),
     Note(NoteId),
+    Dimension(DimensionId),
 }
 
 impl EntityId {
@@ -55,6 +66,7 @@ impl EntityId {
             EntityId::Stroke(_) => "Stroke",
             EntityId::Primitive(_) => "Primitive",
             EntityId::Note(_) => "Note",
+            EntityId::Dimension(_) => "Dimension",
         }
     }
 
@@ -63,6 +75,7 @@ impl EntityId {
             EntityId::Stroke(id) => id.as_uuid(),
             EntityId::Primitive(id) => id.as_uuid(),
             EntityId::Note(id) => id.as_uuid(),
+            EntityId::Dimension(id) => id.as_uuid(),
         }
     }
 }
@@ -86,6 +99,7 @@ impl FromStr for EntityId {
             "Stroke" => Ok(EntityId::Stroke(StrokeId::from_u128(value))),
             "Primitive" => Ok(EntityId::Primitive(PrimitiveId::from_u128(value))),
             "Note" => Ok(EntityId::Note(NoteId::from_u128(value))),
+            "Dimension" => Ok(EntityId::Dimension(DimensionId::from_u128(value))),
             other => Err(format!("unknown EntityId kind: {other:?}")),
         }
     }
@@ -115,6 +129,7 @@ pub enum SemanticEntity {
         beautified: Beautified,
     },
     Note(Note),
+    Dimension(SemanticDimension),
 }
 
 impl SemanticEntity {
@@ -123,6 +138,7 @@ impl SemanticEntity {
             SemanticEntity::Stroke(s) => EntityId::Stroke(s.id),
             SemanticEntity::Primitive { id, .. } => EntityId::Primitive(*id),
             SemanticEntity::Note(n) => EntityId::Note(n.id),
+            SemanticEntity::Dimension(d) => EntityId::Dimension(d.id),
         }
     }
 }
@@ -198,5 +214,24 @@ mod tests {
         let json = serde_json::to_string(&map).unwrap();
         let back: BTreeMap<EntityId, i32> = serde_json::from_str(&json).unwrap();
         assert_eq!(map, back);
+    }
+
+    #[test]
+    fn a_dimension_entity_id_round_trips_like_every_other_kind() {
+        use craftloop_dimension::{DimensionKind, DimensionRole, DimensionTarget};
+        let dimension = SemanticDimension::new(
+            DimensionId::new(),
+            DimensionKind::Linear,
+            DimensionRole::Driving,
+            DimensionTarget::Single(PrimitiveId::new()),
+            10.0,
+        )
+        .unwrap();
+        let entity = SemanticEntity::Dimension(dimension.clone());
+        assert_eq!(entity.id(), EntityId::Dimension(dimension.id));
+
+        let json = serde_json::to_string(&entity).unwrap();
+        let back: SemanticEntity = serde_json::from_str(&json).unwrap();
+        assert_eq!(entity, back);
     }
 }
