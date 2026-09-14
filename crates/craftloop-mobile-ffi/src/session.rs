@@ -438,10 +438,26 @@ pub struct FfiStrokeSummary {
     pub sample_count: u32,
 }
 
+/// Execution 02, Phase 08 (Tasks 055/057): the coarse snapshot originally
+/// carried no geometry at all for a primitive -- only `id`/`kind` --
+/// which made tap-to-select hit-testing and fit-to-content bounding-box
+/// computation impossible from the Android side. Every
+/// `BeautifiedPrimitive` variant already has a real, tested `.bounds()`
+/// method (`craftloop-geometry`'s own `Segment2`/`Circle2`/`Arc2`/
+/// `RelationalRectangle`, Phase 06 origin); this reuses that directly
+/// rather than adding new geometry logic here, matching this crate's own
+/// rule of never reimplementing a domain calculation at the FFI layer.
+/// A bounding box (not full point/edge geometry) is the minimum Article
+/// 13 needs for these two tasks -- still a coarse snapshot, not a
+/// diffing/full-fidelity contract.
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct FfiPrimitiveSummary {
     pub id: String,
     pub kind: FfiPrimitiveKind,
+    pub min_x: f64,
+    pub min_y: f64,
+    pub max_x: f64,
+    pub max_y: f64,
 }
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
@@ -671,23 +687,27 @@ impl CraftLoopSession {
                             sample_count: stroke.len() as u32,
                         }),
                         SemanticEntity::Primitive { id, beautified } => {
-                            let kind = match beautified.primitive {
-                                craftloop_recognition::BeautifiedPrimitive::Line(_) => {
-                                    FfiPrimitiveKind::Line
+                            let (kind, bounds) = match &beautified.primitive {
+                                craftloop_recognition::BeautifiedPrimitive::Line(s) => {
+                                    (FfiPrimitiveKind::Line, s.bounds())
                                 }
-                                craftloop_recognition::BeautifiedPrimitive::Circle(_) => {
-                                    FfiPrimitiveKind::Circle
+                                craftloop_recognition::BeautifiedPrimitive::Circle(c) => {
+                                    (FfiPrimitiveKind::Circle, c.bounds())
                                 }
-                                craftloop_recognition::BeautifiedPrimitive::Arc(_) => {
-                                    FfiPrimitiveKind::Arc
+                                craftloop_recognition::BeautifiedPrimitive::Arc(a) => {
+                                    (FfiPrimitiveKind::Arc, a.bounds())
                                 }
-                                craftloop_recognition::BeautifiedPrimitive::Rectangle(_) => {
-                                    FfiPrimitiveKind::Rectangle
+                                craftloop_recognition::BeautifiedPrimitive::Rectangle(r) => {
+                                    (FfiPrimitiveKind::Rectangle, r.bounds())
                                 }
                             };
                             primitives.push(FfiPrimitiveSummary {
                                 id: id.to_string(),
                                 kind,
+                                min_x: bounds.min.x,
+                                min_y: bounds.min.y,
+                                max_x: bounds.max.x,
+                                max_y: bounds.max.y,
                             });
                         }
                         // Dimensions render from `dimension_store()` below,
@@ -1845,6 +1865,42 @@ mod tests {
         // A valid edit does take effect.
         session.edit_dimension(dimension_id.clone(), 130.0).unwrap();
         assert_eq!(session.scene_snapshot().dimensions[0].value, 130.0);
+    }
+
+    #[test]
+    fn scene_snapshot_reports_a_real_bounding_box_per_primitive_kind() {
+        // Execution 02, Phase 08 (Tasks 055/057): the snapshot originally
+        // carried no geometry for a primitive at all, making Android-side
+        // tap-to-select hit-testing and fit-to-content bounding-box
+        // computation impossible. Every kind's bounds must come from the
+        // real, tested `.bounds()` on the underlying geometry type, not a
+        // placeholder -- checked here against hand-computed expectations
+        // for a line and a circle.
+        let session = CraftLoopSession::new();
+        let line_id = session.create_primitive_line(1.0, 2.0, 5.0, 8.0).unwrap();
+        let circle_id = session.create_primitive_circle(10.0, 10.0, 3.0).unwrap();
+
+        let snapshot = session.scene_snapshot();
+        let line = snapshot
+            .primitives
+            .iter()
+            .find(|p| p.id == line_id)
+            .unwrap();
+        assert_eq!(
+            (line.min_x, line.min_y, line.max_x, line.max_y),
+            (1.0, 2.0, 5.0, 8.0)
+        );
+
+        let circle = snapshot
+            .primitives
+            .iter()
+            .find(|p| p.id == circle_id)
+            .unwrap();
+        assert_eq!(
+            (circle.min_x, circle.min_y, circle.max_x, circle.max_y),
+            (7.0, 7.0, 13.0, 13.0),
+            "a circle centered at (10,10) with radius 3 bounds to [7,13] on each axis"
+        );
     }
 
     #[test]

@@ -1,17 +1,22 @@
-// Execution 02, Phases 06-07. Replaces the Execution 01 placeholder
+// Execution 02, Phases 06-08. Replaces the Execution 01 placeholder
 // (one Text() line calling resolveCommand) with a real single-Activity
 // Compose host: a live Jetpack Ink canvas wired to CraftLoopSession,
-// plus Article 8's Alpha-only Debug Region.
+// pan/zoom/selection/deletion/fit-to-content (Phase 08), plus Article
+// 8's Alpha-only Debug Region.
 
 package com.craftloop.shell
 
 import android.os.Bundle
+import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -21,6 +26,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.ink.strokes.Stroke
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,6 +35,69 @@ import uniffi.craftloop_mobile_ffi.FfiPointerSample
 
 class MainActivity : ComponentActivity() {
     private val viewModel: CraftLoopViewModel by viewModels()
+
+    // Task 053/054: real Android gesture detectors driving the
+    // Kotlin-local viewport, fed only the events dispatchTouchEvent
+    // below decides are "finger input inside the canvas" -- not built
+    // on Compose's own pointerInput/detectTransformGestures, since this
+    // phase's stylus-only gate already proved that competing with
+    // InProgressStrokes' internal pointerInteropFilter bridge from
+    // *inside* Compose is unreliable (see InkCanvas.kt's doc comment).
+    // Handling gestures here, entirely outside that bridge, sidesteps
+    // the same brittleness rather than risking it a third way.
+    private val gestureDetector by lazy {
+        GestureDetector(
+            this,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onScroll(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    distanceX: Float,
+                    distanceY: Float,
+                ): Boolean {
+                    // GestureDetector reports the distance already
+                    // *travelled* (i.e. the delta to subtract to follow
+                    // the finger), not a target delta to add.
+                    viewModel.applyViewportGesture(-distanceX, -distanceY, 1f, e2.x, e2.y)
+                    return true
+                }
+
+                override fun onSingleTapUp(e: MotionEvent): Boolean {
+                    // Task 055: select on a stylus tap only. Real bug
+                    // found and fixed here: this same `gestureDetector`
+                    // is also fed finger events (for `onScroll` pan), so
+                    // a plain finger tap -- zero movement, same as any
+                    // pan gesture's degenerate case -- also satisfies
+                    // Android's own `onSingleTapUp` contract and would
+                    // select too if this checked nothing. The tool-type
+                    // check is against this exact event, not which
+                    // dispatchTouchEvent branch happened to feed the
+                    // detector, so it holds regardless of call site.
+                    if (e.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
+                        viewModel.selectAt(e.x, e.y)
+                    }
+                    return true
+                }
+            },
+        )
+    }
+    private val scaleGestureDetector by lazy {
+        ScaleGestureDetector(
+            this,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    viewModel.applyViewportGesture(
+                        0f,
+                        0f,
+                        detector.scaleFactor,
+                        detector.focusX,
+                        detector.focusY,
+                    )
+                    return true
+                }
+            },
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,52 +111,32 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Article 11's stylus-only gate, implemented for real this time.
+     * Article 11's stylus-only-draws / finger-navigates gate.
      *
-     * Two earlier attempts tried to gate non-stylus pointers *inside*
-     * Compose (consuming a `PointerInputChange` in a sibling
-     * `pointerInput` block, then a `nextBrush = { ... null }` hook on
-     * `InProgressStrokes`). Both were proven wrong by a real on-device
-     * touch-swipe test that still produced a committed ink stroke.
-     * Reading `InProgressShapesImpl`'s real source
-     * (`androidx/ink/authoring/compose/InProgressShapes.kt`, the
-     * `androidx.ink:ink-authoring-compose-android:1.0.0` sources jar)
-     * explains why: it chains its own
-     * `.pointerInput(...).pointerInteropFilter { ... }` internally, and
-     * its own doc comment on that exact line says plainly: "the event
-     * processing of pointerInteropFilter relative to pointerInput is
-     * inconsistent in its order ... causing ordered event consumption
-     * logic to be confusing and brittle." Any fix built out of
-     * Compose-level consumption or state-update ordering is exactly the
-     * kind of "ordered consumption logic" its own authors warn is
-     * unreliable against that internal bridge -- which is why both
-     * earlier attempts silently failed despite reasoning correctly
-     * about the *documented* contract in isolation.
+     * **Task 052's real scope, corrected from Phase 07's version**:
+     * Phase 07 blocked every non-stylus `MotionEvent` outright, which
+     * was correct for proving the ink surface alone but is not Article
+     * 11's actual policy -- "Finger -> pan, zoom, interface controls"
+     * requires finger input to keep working, just never as ink. This
+     * version routes by *where* and *what tool is active*, still
+     * deciding before the event ever reaches the View tree (the one
+     * part of the three-attempt ink-gate saga that was proven reliable
+     * -- see `InkCanvas.kt`'s doc comment for why anything relying on
+     * Compose-internal ordering against `InProgressStrokes` was not):
      *
-     * `dispatchTouchEvent` runs before the event reaches the View tree
-     * at all -- before the root `ComposeView`, before Compose's pointer
-     * input system, before `InProgressShapesImpl`'s internal
-     * `pointerInput`/`pointerInteropFilter`/`AndroidView` combination
-     * gets a chance to see it. This is the standard, un-racy Android
-     * mechanism for "this event must never reach certain descendants,"
-     * and it does not depend on any ordering assumption between two
-     * independent input systems. Real S Pen input reports
-     * `MotionEvent.TOOL_TYPE_STYLUS` (Android's own documented API);
-     * `adb shell input touchscreen` synthesizes `TOOL_TYPE_FINGER` --
-     * confirmed by this session's own real device tests, not assumed.
-     *
-     * Records the observed tool type for the Debug Region even when
-     * swallowing the event, so a rejected touch is still visible as
-     * diagnostic evidence (Article 8) rather than silently invisible.
-     *
-     * Scoped to this phase's actual on-screen content (only the canvas
-     * and a non-interactive debug overlay exist yet) -- blocking ALL
-     * non-stylus input at the Activity level is behaviorally identical
-     * to blocking it only within the canvas region for now. Phase 08
-     * (pan/zoom) and Phase 09 (icon toolbar) will need finger input to
-     * reach *other* on-screen controls, at which point this gate must
-     * narrow to the canvas region specifically -- tracked here, not
-     * silently deferred.
+     * - Outside the canvas region (e.g. over a Phase 08 control button
+     *   below it): always forwarded normally, regardless of tool type
+     *   -- buttons need real finger taps.
+     * - Inside the canvas region, stylus/eraser input while the Pen
+     *   tool is active: forwarded normally, reaching `InProgressStrokes`
+     *   exactly as Phase 07 proved works.
+     * - Inside the canvas region, stylus input while a non-drawing tool
+     *   (Select) is active: never forwarded to the View tree (Select
+     *   mode must not draw ink either); fed to `gestureDetector` instead
+     *   so a real stylus tap can hit-test a primitive.
+     * - Inside the canvas region, non-stylus input: never forwarded to
+     *   the View tree (must never draw ink, Article 11's core rule);
+     *   fed to the scale/gesture detectors for pan/zoom instead.
      */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         val toolType = ev.getToolType(0)
@@ -99,21 +149,56 @@ class MainActivity : ComponentActivity() {
                 else -> "unknown"
             }
         viewModel.setLastPointerSource(sourceLabel)
-        if (toolType != MotionEvent.TOOL_TYPE_STYLUS) {
-            return false
+
+        // Real bug found and fixed here: `canvasBoundsPx` is null until
+        // Compose's first `onGloballyPositioned` callback fires, which
+        // has not necessarily happened yet on the very first touch
+        // after a cold launch. Treating "bounds unknown" as "outside
+        // the canvas" (the original version of this check) fails open
+        // -- it forwards the event unconditionally via
+        // `super.dispatchTouchEvent`, including a finger event, which
+        // then reaches `InProgressStrokes` with nothing filtering it at
+        // all. A real on-device test caught this: a single synthetic
+        // touch swipe run immediately after a fresh launch produced
+        // five committed transactions. Fail closed instead: unknown
+        // bounds means "assume inside the canvas" (true almost always
+        // anyway -- the canvas fills nearly the whole screen), which
+        // routes through the same stylus/tool gating below rather than
+        // skipping it.
+        val bounds = viewModel.canvasBoundsPx
+        val insideCanvas =
+            bounds == null || bounds.contains(androidx.compose.ui.geometry.Offset(ev.x, ev.y))
+        if (!insideCanvas) {
+            return super.dispatchTouchEvent(ev)
         }
-        return super.dispatchTouchEvent(ev)
+
+        val isStylus = toolType == MotionEvent.TOOL_TYPE_STYLUS || toolType == MotionEvent.TOOL_TYPE_ERASER
+        val drawingToolActive = viewModel.uiState.value.activeTool == Tool.PEN
+        return if (isStylus && drawingToolActive) {
+            super.dispatchTouchEvent(ev)
+        } else if (isStylus) {
+            // Select tool: real stylus tap, hit-test instead of ink.
+            gestureDetector.onTouchEvent(ev)
+            true
+        } else {
+            // Finger/mouse inside the canvas: pan/zoom, never ink.
+            scaleGestureDetector.onTouchEvent(ev)
+            gestureDetector.onTouchEvent(ev)
+            true
+        }
     }
 }
 
 /** Article 8's screen structure: Canvas Region (most of the screen)
- * plus a collapsible Debug Region. Tool Region (Phase 09) and Context
- * Region (Phase 10/11) do not exist yet -- this phase's whole scope is
- * proving live ink reaches CraftLoopSession and back. */
+ * plus a collapsible Debug Region and (Phase 08) a temporary control
+ * row -- Phase 09 replaces this row with the real icon toolbar; these
+ * are plain text buttons only to make Select/Delete/Fit/Undo/Redo
+ * exercisable and verifiable on-device before that exists. */
 @Composable
 fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val debugState by viewModel.debugState.collectAsStateWithLifecycle()
+    val sceneSnapshot by viewModel.sceneSnapshot.collectAsStateWithLifecycle()
 
     // Task 049/050: committed raw ink is not yet re-materialized as a
     // renderable androidx.ink.strokes.Stroke from CraftLoopSession's
@@ -132,8 +217,36 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
             onStrokeFinished = { samples: List<FfiPointerSample> ->
                 viewModel.submitStroke(samples)
             },
-            modifier = Modifier.weight(1f),
+            viewport = uiState.viewport,
+            modifier =
+                Modifier.weight(1f).onGloballyPositioned { coordinates ->
+                    // `boundsInWindow` matches the coordinate space
+                    // `MotionEvent.x`/`.y` arrive in at
+                    // `Activity.dispatchTouchEvent` (window-relative,
+                    // not root-Composable-relative) -- using
+                    // `boundsInRoot`/`positionInRoot` here would silently
+                    // misalign the hit-test whenever the window itself
+                    // isn't at (0,0), e.g. multi-window/split-screen.
+                    viewModel.canvasBoundsPx = coordinates.boundsInWindow()
+                },
         )
+        // Phase 08 temporary controls (Tasks 055-057) -- functional
+        // triggers only, no icon/visual design (Article 7, Phase 09).
+        Row(modifier = Modifier.padding(4.dp)) {
+            Button(onClick = {
+                viewModel.setActiveTool(if (uiState.activeTool == Tool.PEN) Tool.SELECT else Tool.PEN)
+            }) { Text(if (uiState.activeTool == Tool.PEN) "Pen" else "Select") }
+            Button(onClick = { viewModel.deleteSelected() }) { Text("Delete") }
+            // Phase 08 verification-only helper -- see the ViewModel
+            // method's own doc comment. Not a Phase 09 toolbar tool.
+            Button(onClick = { viewModel.debugInsertTestLine() }) { Text("TestLine") }
+            Button(onClick = {
+                val bounds = viewModel.canvasBoundsPx
+                if (bounds != null) viewModel.fitToContent(bounds.width, bounds.height)
+            }) { Text("Fit") }
+            Button(onClick = { viewModel.undo() }, enabled = debugState.canUndo) { Text("Undo") }
+            Button(onClick = { viewModel.redo() }, enabled = debugState.canRedo) { Text("Redo") }
+        }
         if (uiState.debugOverlayVisible) {
             DebugRegion(
                 lastPointerSource = uiState.lastPointerSource,
@@ -142,6 +255,11 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
                 canRedo = debugState.canRedo,
                 transactionCount = debugState.transactionCount,
                 unresolvedConflictCount = debugState.unresolvedConflictCount,
+                selectedCount = sceneSnapshot.selectedEntityIds.size,
+                primitiveCount = sceneSnapshot.primitives.size,
+                zoom = uiState.viewport.zoom,
+                panX = uiState.viewport.panX,
+                panY = uiState.viewport.panY,
             )
         }
     }
@@ -157,12 +275,19 @@ fun DebugRegion(
     canRedo: Boolean,
     transactionCount: UInt,
     unresolvedConflictCount: UInt,
+    selectedCount: Int,
+    primitiveCount: Int,
+    zoom: Float,
+    panX: Float,
+    panY: Float,
 ) {
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.padding(8.dp)) {
             Text("Debug: pointer=$lastPointerSource revision=$revision")
             Text("txCount=$transactionCount canUndo=$canUndo canRedo=$canRedo")
             Text("unresolvedConflicts=$unresolvedConflictCount")
+            Text("selected=$selectedCount primitives=$primitiveCount")
+            Text("zoom=%.2f pan=(%.0f, %.0f)".format(zoom, panX, panY))
         }
     }
 }

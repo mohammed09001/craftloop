@@ -20,7 +20,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -151,12 +154,36 @@ fun InkCanvas(
     committedStrokes: List<Stroke>,
     onStrokeFinished: (List<FfiPointerSample>) -> Unit,
     modifier: Modifier = Modifier,
+    viewport: ViewportState = ViewportState(),
 ) {
     val context = LocalContext.current
     val capabilities = remember { queryRealInputCapabilities(context) }
     val renderer = remember { CanvasStrokeRenderer.create() }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // Task 053/054: pan/zoom is a pure rendering transform applied here
+    // -- MainActivity.dispatchTouchEvent (real screen-space
+    // MotionEvent coordinates) and CraftLoopViewModel's hit-testing
+    // (ViewModel.selectAt) both do their own explicit inverse-transform
+    // math against the same ViewportState rather than relying on
+    // Compose/Android to remap raw MotionEvent coordinates through this
+    // graphicsLayer automatically -- given this exact ink surface's
+    // established history of the Compose/native-interop boundary not
+    // behaving as documented (see the stylus-gate doc comment below),
+    // trusting an *assumed* automatic coordinate remap here without a
+    // real on-device check would be exactly the kind of unverified
+    // claim Article 27 forbids. `TransformOrigin(0f, 0f)` keeps the
+    // screen/content mapping the plain affine `screen = content * zoom
+    // + pan` that both call sites already assume.
+    Box(
+        modifier =
+            modifier.fillMaxSize().clipToBounds().graphicsLayer(
+                scaleX = viewport.zoom,
+                scaleY = viewport.zoom,
+                translationX = viewport.panX,
+                translationY = viewport.panY,
+                transformOrigin = TransformOrigin(0f, 0f),
+            ),
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             committedStrokes.forEach { stroke ->
                 renderer.draw(
