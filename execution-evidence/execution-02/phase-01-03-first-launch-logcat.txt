@@ -1,0 +1,30 @@
+09-14 13:20:11.012 20472 20472 I IDS_TAG : IDS count updated to 1 for android.app.Application@8b3035c
+09-14 13:20:11.280 20472 20472 I BufferQueueProducer: [](id:4ff800000000,api:0,p:1022731853,c:20472) setDequeueTimeout:2077252342
+09-14 13:20:11.280 20472 20472 I BLASTBufferQueue_Java: new BLASTBufferQueue, mName= ViewRootImpl@74f6d73[MainActivity] mNativeObject= 0xb40000707cf12ff0 sc.mNativeObject= 0xb40000715cf076d0 caller= android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3028 android.view.ViewRootImpl.relayoutWindow:10131 android.view.ViewRootImpl.performTraversals:4110 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 android.view.Choreographer$CallbackRecord.run:1689 android.view.Choreographer$CallbackRecord.run:1698 android.view.Choreographer.doCallbacks:1153 android.view.Choreographer.doFrame:1079 android.view.Choreographer$FrameDisplayEventReceiver.run:1646 
+09-14 13:20:11.280 20472 20472 I BLASTBufferQueue_Java: update, w= 2560 h= 1600 mName = ViewRootImpl@74f6d73[MainActivity] mNativeObject= 0xb40000707cf12ff0 sc.mNativeObject= 0xb40000715cf076d0 format= -1 caller= android.graphics.BLASTBufferQueue.<init>:89 android.view.ViewRootImpl.updateBlastSurfaceIfNeeded:3028 android.view.ViewRootImpl.relayoutWindow:10131 android.view.ViewRootImpl.performTraversals:4110 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 
+09-14 13:20:11.281 20472 20472 I ViewRootImpl@74f6d73[MainActivity]: Relayout returned: old=(0,0,2560,1600) new=(0,0,2560,1600) relayoutAsync=false req=(2560,1600)0 dur=15 res=0x403 s={true 0xb40000705cf1af00} ch=true seqId=0
+09-14 13:20:11.283 20472 20472 D ViewRootImpl@74f6d73[MainActivity]: mThreadedRenderer.initialize() mSurface={isValid=true 0xb40000705cf1af00} hwInitialized=true
+09-14 13:20:11.291 20472 20472 D ViewRootImpl@74f6d73[MainActivity]: reportNextDraw android.view.ViewRootImpl.performTraversals:4718 android.view.ViewRootImpl.doTraversal:3288 android.view.ViewRootImpl$TraversalRunnable.run:11344 android.view.Choreographer$CallbackRecord.run:1689 android.view.Choreographer$CallbackRecord.run:1698 
+09-14 13:20:11.291 20472 20472 I ViewRootImpl@74f6d73[MainActivity]: Setup new sync=wmsSync-ViewRootImpl@74f6d73[MainActivity]#0
+09-14 13:20:11.292 20472 20472 I ViewRootImpl@74f6d73[MainActivity]: Creating new active sync group ViewRootImpl@74f6d73[MainActivity]#1
+09-14 13:20:11.293 20472 20472 I ViewRootImpl@74f6d73[MainActivity]: registerCallbacksForSync syncBuffer=false
+09-14 13:20:11.299 20472 20510 I ViewRootImpl@74f6d73[MainActivity]: Received frameDrawingCallback syncResult=0 frameNum=1.
+09-14 13:20:11.299 20472 20510 I ViewRootImpl@74f6d73[MainActivity]: mWNT: t=0xb400006facf34ff0 mBlastBufferQueue=0xb40000707cf12ff0 fn= 1 mRenderHdrSdrRatio=1.0 caller= android.view.ViewRootImpl$8.onFrameDraw:13841 android.view.ThreadedRenderer$1.onFrameDraw:792 <bottom of call stack> 
+09-14 13:20:11.299 20472 20510 I ViewRootImpl@74f6d73[MainActivity]: Setting up sync and frameCommitCallback
+09-14 13:20:11.335 20472 20497 I BLASTBufferQueue: [ViewRootImpl@74f6d73[MainActivity]#0](f:0,a:0,s:0) onFrameAvailable the first frame is available
+09-14 13:20:11.335 20472 20497 I ViewRootImpl@74f6d73[MainActivity]: Received frameCommittedCallback lastAttemptedDrawFrameNum=1 didProduceBuffer=true
+09-14 13:20:11.336 20472 20497 D OpenGLRenderer: CFMS:: SetUp Pid : 20472    Tid : 20497
+09-14 13:20:11.336 20472 20472 I ViewRootImpl@74f6d73[MainActivity]: reportDrawFinished seqId=0
+09-14 13:20:11.337 20472 20497 D OpenGLRenderer: HWUI - treat SMPTE_170M as sRGB
+09-14 13:20:11.345 20472 20472 I InsetsSourceConsumer: applyRequestedVisibilityToControl: visible=true, type=statusBars, host=com.craftloop.shell/com.craftloop.shell.MainActivity
+09-14 13:20:11.346 20472 20472 I InsetsSourceConsumer: applyRequestedVisibilityToControl: visible=true, type=navigationBars, host=com.craftloop.shell/com.craftloop.shell.MainActivity
+09-14 13:20:11.357 20472 20472 I ViewRootImpl@74f6d73[MainActivity]: handleWindowFocusChanged: 1 0 call from android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged:0
+09-14 13:20:11.358 20472 20472 D ViewRootImpl@74f6d73[MainActivity]: mThreadedRenderer.initializeIfNeeded()#2 mSurface={isValid=true 0xb40000705cf1af00}
+09-14 13:20:11.359 20472 20472 D InputMethodManagerUtils: startInputInner - Id : 0
+09-14 13:20:11.359 20472 20472 I InputMethodManager: startInputInner - IInputMethodManagerGlobalInvoker.startInputOrWindowGainedFocus
+09-14 13:20:11.383 20472 20472 D InputMethodManagerUtils: startInputInner - Id : 0
+09-14 13:20:11.391 20472 20472 I InsetsSourceConsumer: applyRequestedVisibilityToControl: visible=false, type=ime, host=com.craftloop.shell/com.craftloop.shell.MainActivity
+09-14 13:20:11.490 20472 20479 I craftloop.shell: Compiler allocated 6865KB to compile void android.view.ViewRootImpl.performTraversals()
+09-14 13:20:16.711 20472 20572 D ProfileInstaller: Installing profile for com.craftloop.shell
+09-14 13:20:28.079 20472 20472 I ViewRootImpl: updatePointerIcon pointerType = 1, calling pid = 20472
+09-14 13:20:28.081 20472 20472 D InputManagerGlobal: setPointerIconType iconId = 1, callingPid = 20472
