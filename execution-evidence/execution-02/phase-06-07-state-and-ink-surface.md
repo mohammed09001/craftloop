@@ -193,3 +193,67 @@ regardless).
 dependencies), `android/app/src/main/java/com/craftloop/shell/
 CraftLoopViewModel.kt` (new), `InkCanvas.kt` (new), `MainActivity.kt`
 (rewritten).
+
+## Follow-up: the stylus-only gate above was real, and wrong
+
+After the tablet was physically unlocked in a later session, direct
+testing found the "consume non-stylus changes in a sibling
+`Box.pointerInput(PointerEventPass.Initial)`" mechanism above **did
+not work**: a real S Pen stroke committed correctly
+(`phase-06-07-canvas-screenshot.png`: `pointer=stylus revision=1
+txCount=1`, a real quadrilateral drawn on screen), but a synthetic
+`adb shell input touchscreen swipe 600 600 1200 1000 300` (a genuine
+touch, not stylus) also produced a new, visible, committed ink stroke
+(`phase-06-07-touch-gate-screenshot.png`: `pointer=touch revision=2
+txCount=2`, with a new line matching the swipe's exact path). A third
+check later read `revision=4` with a blank canvas
+(`phase-06-07-gate-test-baseline.png`) -- consistent with `Ink`'s own
+transient "wet ink" rendering clearing on some later recomposition,
+not a new bug (see the already-disclosed Task 049/050 gap above: this
+app never retains finished `Stroke`s in its own `committedStrokes`
+list, so nothing survives past Ink's own internal handoff window).
+
+**Real root cause**, found by downloading and reading the actual
+`androidx.ink` 1.0.0 sources jars again (`ink-authoring-compose`,
+`maven.google.com`), specifically
+`androidx/ink/authoring/compose/InProgressShapes.kt`'s
+`InProgressShapesImpl`: the library's own internal gesture detector
+checks `change.changedToDown()` (which *does* respect `isConsumed`) at
+the point it decides whether to start tracking a pointer -- so
+consumption alone is the documented mechanism, and in principle Compose's
+Initial-before-Main pass ordering should make an ancestor's Initial-pass
+consumption visible there. The controlled test above proved that,
+empirically, it was not taking effect for the touch swipe in this
+app's actual composable tree shape. Rather than keep relying on
+inter-composable pass-ordering as the *only* line of defense, the same
+source file's `nextShapeSpec: () -> ShapeSpec?` parameter (surfaced to
+`InProgressStrokes` as `nextBrush: () -> Brush?`) is a second,
+independent, explicitly documented hook: "called at the start of each
+pointer" (i.e. at down time), and if it returns `null`, the code's own
+`if (shapeSpec != null) { ipsv.startShape(...) }` check (line ~289 of
+that file) simply never starts a shape for that pointer at all -- no
+ink, no finished-stroke callback, nothing to consume in the first
+place.
+
+**Fix**: `InkCanvas.kt` now tracks the most recently observed pointer
+type (`lastToolType`, updated by the same Initial-pass observer that
+already existed) and passes `nextBrush = { if (lastToolType ==
+PointerType.Stylus) defaultBrush() else null }` to `InProgressStrokes`,
+alongside (not instead of) the original consumption logic as
+defense-in-depth.
+
+**Verification status of the fix itself**: rebuilt and reinstalled
+successfully (`gradlew installDebug`, `BUILD SUCCESSFUL in 1m 39s`,
+38 tasks). Launching the app to re-run the exact controlled
+touch-swipe test hit the **same screen-lock blocker again**
+(`mWakefulness=Awake` after a wake keyevent, but
+`mCurrentFocus=Window{... NotificationShade}` -- the device is
+PIN/pattern/biometric-locked, not just asleep, and no `adb`-only
+gesture dismisses that; guessing at a real unlock credential was not
+attempted, correctly). **The fix compiles, installs, and is grounded
+in the real library source rather than a guess, but the before/after
+screenshot re-test proving it actually blocks touch on this device
+could not be completed this session** -- this needs one more physical
+unlock-and-retest pass, the same three commands already documented in
+Part E above (`adb shell input touchscreen swipe ...` immediately
+followed by a screenshot, compared against a screenshot taken first).
