@@ -6,24 +6,51 @@
 //!
 //! Holds exactly what Tasks 048/050 ask for and this execution has real
 //! types for: schema version, metadata, a unit setting, and pages of
-//! semantic entities. "Orthographic sets" and "asset references" (also
-//! named in Task 048) are deliberately absent -- orthographic sets are
-//! Phase 20's `OrthographicSet` (Engine Contract 19), and reference-image
-//! asset storage has no owning phase reached yet. Both get a field here
-//! when the phase that defines their type is done, not before.
+//! semantic entities. "Asset references" (also named in Task 048) are
+//! deliberately absent -- reference-image asset storage has no owning
+//! phase reached yet, and gets a field here when it does.
+//!
+//! Execution 02, Phase 04 (`CraftLoopSession` Mobile API, Article 12):
+//! `view_blocks`/`orthographic_sets`/`multiview_graph`/`dimension_store`
+//! were added here. Execution 01 built `ViewBlock`/`OrthographicSet`
+//! (Phase 20), `MultiviewGraph` (Phase 22), and `DimensionStore` (Phase
+//! 10) as fully tested, independent types, but every scenario test that
+//! used more than one of them (e.g. `scenario_216_front_to_orthographic`)
+//! constructed them as bare local variables -- none of them was ever a
+//! real, persisted `Document` field, so "save, kill the app, reopen it"
+//! (Execution 02 Article 35's Golden Alpha Journey) had nothing to
+//! actually round-trip. This is that wiring: each field lives here, next
+//! to the `SemanticEntity` pages that already reference the same
+//! `PrimitiveId`/`DimensionId` space, so one `Document` is the single
+//! persisted unit of engineering truth the session layer needs.
+//!
+//! `dimension_store` is deliberately *not* a replacement for the
+//! `SemanticEntity::Dimension` copies `Page` already stores (Phase 07):
+//! the page copy is what renders and what Phase 07's existing tests
+//! already exercise; `dimension_store` is the authoritative copy the
+//! multiview/propagation engine (`propagation.rs`) actually mutates
+//! (`DimensionStore::edit_driving_value`/`set_dimension`), since
+//! reusing that engine's own validation is required rather than
+//! reimplementing it. `CraftLoopSession` (`craftloop-mobile-ffi`) is
+//! responsible for keeping the two in sync, always inside one atomic
+//! `DocumentHistory::commit` transaction -- see its module doc.
 
 use std::collections::BTreeMap;
 
+use craftloop_dimension::DimensionStore;
 use craftloop_errors::{DocumentErrorKind, DomainError, DomainResult};
-use craftloop_ids::{CraftLoopId, PageId};
+use craftloop_ids::{CraftLoopId, OrthographicSetId, PageId, ViewId};
 use craftloop_serialization::SchemaVersion;
+use craftloop_sketch::Sketch;
 use serde::{Deserialize, Serialize};
 
 use crate::entity::EntityId;
 use crate::metadata::DocumentMetadata;
+use crate::multiview::MultiviewGraph;
 use crate::page::Page;
 use crate::provenance::ProvenanceState;
 use crate::units::DocumentUnits;
+use crate::view::{OrthographicSet, ViewBlock};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Document {
@@ -47,6 +74,28 @@ pub struct Document {
     /// this bucket); real usage sets it as part of the same transaction
     /// that inserts the entity.
     provenance: BTreeMap<EntityId, ProvenanceState>,
+    /// Execution 02, Phase 04: every `ViewBlock` this document has ever
+    /// created (Article 30's semantic identity/layout/membership state),
+    /// keyed by its stable `ViewId`.
+    view_blocks: BTreeMap<ViewId, ViewBlock>,
+    /// Execution 02, Phase 04: every `OrthographicSet` (a group of linked
+    /// views describing one design state, Article 30/327).
+    orthographic_sets: BTreeMap<OrthographicSetId, OrthographicSet>,
+    /// Execution 02, Phase 04: which shared `DimensionId` each view's each
+    /// consumed axis is bound to (Article 35/37's "same width in front and
+    /// top"). See `crate::multiview`.
+    multiview_graph: MultiviewGraph,
+    /// Execution 02, Phase 04: the authoritative dimension values the
+    /// multiview/propagation engine reads and edits. See this struct's own
+    /// doc comment above for how this relates to `Page`'s
+    /// `SemanticEntity::Dimension` copies.
+    dimension_store: DimensionStore,
+    /// Execution 02, Phase 04 (Article 17's Constraint Alpha Workflow):
+    /// constraint-bearing geometry and the constraints relating it
+    /// (`craftloop-sketch`, Phase 12). A document has exactly one
+    /// `Sketch` for Execution 02's Alpha scope -- no task before this one
+    /// asks for more than one constrainable geometry set per document.
+    sketch: Sketch,
 }
 
 impl Document {
@@ -65,6 +114,11 @@ impl Document {
             active_page,
             revision: 0,
             provenance: BTreeMap::new(),
+            view_blocks: BTreeMap::new(),
+            orthographic_sets: BTreeMap::new(),
+            multiview_graph: MultiviewGraph::new(),
+            dimension_store: DimensionStore::new(),
+            sketch: Sketch::new(),
         }
     }
 
@@ -98,6 +152,79 @@ impl Document {
     /// state was `None`.
     pub fn clear_provenance(&mut self, id: EntityId) {
         self.provenance.remove(&id);
+    }
+
+    // -- View blocks / orthographic sets / multiview graph / dimension
+    // -- store (Execution 02, Phase 04). Mutation is `pub(crate)`-only:
+    // -- every change to these collections must go through
+    // -- `history::DocumentChange` so it is undoable and so
+    // -- `bump_revision` stays the single source of "did anything
+    // -- change" (matching `provenance`'s own convention above).
+
+    pub fn view_block(&self, id: ViewId) -> Option<&ViewBlock> {
+        self.view_blocks.get(&id)
+    }
+
+    pub fn view_blocks(&self) -> impl Iterator<Item = &ViewBlock> {
+        self.view_blocks.values()
+    }
+
+    pub(crate) fn set_view_block(&mut self, id: ViewId, block: Option<ViewBlock>) {
+        match block {
+            Some(block) => {
+                self.view_blocks.insert(id, block);
+            }
+            None => {
+                self.view_blocks.remove(&id);
+            }
+        }
+    }
+
+    pub fn orthographic_set(&self, id: OrthographicSetId) -> Option<&OrthographicSet> {
+        self.orthographic_sets.get(&id)
+    }
+
+    pub fn orthographic_sets(&self) -> impl Iterator<Item = &OrthographicSet> {
+        self.orthographic_sets.values()
+    }
+
+    pub(crate) fn set_orthographic_set(
+        &mut self,
+        id: OrthographicSetId,
+        set: Option<OrthographicSet>,
+    ) {
+        match set {
+            Some(set) => {
+                self.orthographic_sets.insert(id, set);
+            }
+            None => {
+                self.orthographic_sets.remove(&id);
+            }
+        }
+    }
+
+    pub fn multiview_graph(&self) -> &MultiviewGraph {
+        &self.multiview_graph
+    }
+
+    pub(crate) fn multiview_graph_mut(&mut self) -> &mut MultiviewGraph {
+        &mut self.multiview_graph
+    }
+
+    pub fn dimension_store(&self) -> &DimensionStore {
+        &self.dimension_store
+    }
+
+    pub(crate) fn dimension_store_mut(&mut self) -> &mut DimensionStore {
+        &mut self.dimension_store
+    }
+
+    pub fn sketch(&self) -> &Sketch {
+        &self.sketch
+    }
+
+    pub(crate) fn sketch_mut(&mut self) -> &mut Sketch {
+        &mut self.sketch
     }
 
     pub fn add_page(&mut self, name: impl Into<String>) -> PageId {

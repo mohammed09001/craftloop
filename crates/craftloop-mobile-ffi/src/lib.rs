@@ -34,11 +34,15 @@
 
 uniffi::setup_scaffolding!();
 
+pub mod session;
+
 use craftloop_command::grammar;
 use craftloop_command::{CommandAction, CommandNamespace, GrammarMatch};
 use craftloop_ids::{CraftLoopId, StrokeId};
 use craftloop_ink::Stroke;
 use craftloop_input::{InputCapabilities, PointerButtons, PointerSample, PointerSource};
+
+pub use session::*;
 
 // ---------------------------------------------------------------------
 // Input boundary

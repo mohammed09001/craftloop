@@ -23,6 +23,7 @@ craftloop-units = { path = "../craftloop-units" }
 craftloop-dimension = { path = "../craftloop-dimension" }
 craftloop-consistency = { path = "../craftloop-consistency" }
 craftloop-command = { path = "../craftloop-command" }
+craftloop-sketch = { path = "../craftloop-sketch" }
 
 [dev-dependencies]
 craftloop-input = { path = "../craftloop-input" }

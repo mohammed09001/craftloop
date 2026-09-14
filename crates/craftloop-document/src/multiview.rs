@@ -139,6 +139,23 @@ impl MultiviewGraph {
         self.bindings.get(&(view, axis)).copied()
     }
 
+    /// Execution 02, Phase 04: insert a binding without re-running
+    /// `bind_axis`'s identity/axis-compatibility validation. Used only by
+    /// `history::DocumentChange::apply`/`invert` to replay a binding that
+    /// was already validated once, through `bind_axis` itself, at the
+    /// point `CraftLoopSession` first created it -- a `DocumentChange`
+    /// only carries the raw `ViewId`/`SharedAxis`/`DimensionId` (not a
+    /// `&ViewBlock`), so it has nothing further to validate against, and
+    /// re-deriving one would only duplicate a check already performed.
+    pub(crate) fn insert_binding_unchecked(
+        &mut self,
+        view: ViewId,
+        axis: SharedAxis,
+        dimension: DimensionId,
+    ) {
+        self.bindings.insert((view, axis), dimension);
+    }
+
     /// Task 160: "Which views depend on this width?" -- the incremental-
     /// propagation query Task 161 relies on: a caller changing
     /// `dimension`'s value only needs to touch exactly these views, never

@@ -29,7 +29,7 @@ use crate::target::DimensionTarget;
 /// independent maps (Task 077: "persist semantic and presentation state
 /// independently") -- each serializes and deserializes on its own; neither
 /// is nested inside the other.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DimensionStore {
     dimensions: BTreeMap<DimensionId, SemanticDimension>,
     annotations: BTreeMap<DimensionAnnotationId, DimensionAnnotation>,
@@ -53,6 +53,33 @@ impl DimensionStore {
 
     pub fn dimension(&self, id: DimensionId) -> Option<&SemanticDimension> {
         self.dimensions.get(&id)
+    }
+
+    /// Execution 02, Phase 04: every stored dimension, including ones with
+    /// no page-visible `SemanticEntity::Dimension` copy at all (a shared
+    /// axis dimension `CraftLoopSession::propagate_shared_value` mints has
+    /// no single page placement of its own -- see that method's doc
+    /// comment). A scene snapshot needs this as its authoritative source
+    /// rather than only scanning page entities, or a propagated/shared
+    /// value would be invisible to the caller that needs to render it.
+    pub fn dimensions(&self) -> impl Iterator<Item = &SemanticDimension> {
+        self.dimensions.values()
+    }
+
+    /// Execution 02, Phase 04: unconditionally replace-or-insert `dimension`
+    /// under its own id, returning whatever was previously stored there (if
+    /// anything). Unlike `insert_dimension` (which rejects a duplicate id)
+    /// or `edit_driving_value` (which only ever touches `.value` on an
+    /// existing `Driving` dimension), this is the raw setter
+    /// `history::DocumentChange::SetDimension::apply` needs to replay a
+    /// whole-value snapshot (any role, any field) that a caller already
+    /// validated by some other means (a fresh `SemanticDimension::new`, or
+    /// an `edit_driving_value` call whose *result* is what gets snapshotted
+    /// into the change) -- it does not re-run either of those validations
+    /// itself, matching `MultiviewGraph::insert_binding_unchecked`'s same
+    /// "already validated once, this only replays it" reasoning.
+    pub fn set_dimension(&mut self, dimension: SemanticDimension) -> Option<SemanticDimension> {
+        self.dimensions.insert(dimension.id, dimension)
     }
 
     /// Remove a dimension **and** every annotation that presented it. This
@@ -418,6 +445,36 @@ mod tests {
                 ..
             })
         ));
+    }
+
+    #[test]
+    fn set_dimension_inserts_when_absent_and_returns_none() {
+        let mut store = DimensionStore::new();
+        let dim = driving_dimension();
+        let id = dim.id;
+        let previous = store.set_dimension(dim);
+        assert!(previous.is_none());
+        assert_eq!(store.dimension(id).unwrap().value(), 25.0);
+    }
+
+    #[test]
+    fn set_dimension_replaces_an_existing_value_and_returns_the_old_one() {
+        let mut store = DimensionStore::new();
+        let dim = driving_dimension();
+        let id = dim.id;
+        store.insert_dimension(dim.clone()).unwrap();
+
+        let replacement = SemanticDimension::new(
+            id,
+            DimensionKind::Linear,
+            DimensionRole::Driving,
+            DimensionTarget::Single(PrimitiveId::new()),
+            99.0,
+        )
+        .unwrap();
+        let previous = store.set_dimension(replacement);
+        assert_eq!(previous, Some(dim));
+        assert_eq!(store.dimension(id).unwrap().value(), 99.0);
     }
 
     #[test]

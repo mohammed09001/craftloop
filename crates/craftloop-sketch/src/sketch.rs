@@ -37,11 +37,20 @@ use craftloop_errors::{DomainError, DomainResult, SketchErrorKind};
 use craftloop_geometry::Point2;
 use craftloop_ids::{ConstraintId, PrimitiveId};
 use craftloop_recognition::{Beautified, BeautifiedPrimitive};
+use serde::{Deserialize, Serialize};
 
 use crate::constraint_kind::SketchConstraintKind;
 use crate::point_ref::{PointRef, PrimitiveMap};
 use crate::provenance::ConstraintProvenance;
 
+/// Execution 02, Phase 04: `Debug`/`Clone`/`PartialEq`/`Serialize`/
+/// `Deserialize` were added so a whole `Sketch` can be a
+/// `craftloop-document::Document` field and survive save/reopen
+/// (Article 35's Golden Alpha Journey) -- every field type here
+/// (`SketchConstraintKind`, `ConstraintProvenance`) already derived
+/// `Serialize`/`Deserialize` for its own persistence needs (Phase 12),
+/// so this is additive, not a new capability those types lacked.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) struct ConstraintEntry {
     pub(crate) kind: SketchConstraintKind,
     pub(crate) provenance: ConstraintProvenance,
@@ -74,7 +83,13 @@ impl ConstraintOutcome {
 
 /// A set of primitives plus the constraints relating them. See the module
 /// doc comment for `solve()`'s role.
-#[derive(Default)]
+///
+/// Execution 02, Phase 04: `Debug`/`Clone`/`PartialEq`/`Serialize`/
+/// `Deserialize` were added (see `ConstraintEntry`'s doc comment) so a
+/// `Document` can hold and persist a `Sketch` directly rather than every
+/// caller (`craftloop-mobile-ffi`'s `CraftLoopSession`) needing to
+/// reconstruct one from scratch after every reopen.
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Sketch {
     pub(crate) primitives: PrimitiveMap,
     pub(crate) constraints: BTreeMap<ConstraintId, ConstraintEntry>,
@@ -95,6 +110,27 @@ impl Sketch {
 
     pub fn primitive(&self, id: PrimitiveId) -> Option<&Beautified> {
         self.primitives.get(&id)
+    }
+
+    /// Execution 02, Phase 04: every primitive id this sketch currently
+    /// stores. `craftloop-mobile-ffi::CraftLoopSession::solve_constraints`
+    /// needs this to know which primitives to diff after a solve (before
+    /// this method existed, a caller had no way to enumerate what a
+    /// `Sketch` holds without already knowing every id in advance).
+    pub fn primitive_ids(&self) -> impl Iterator<Item = PrimitiveId> + '_ {
+        self.primitives.keys().copied()
+    }
+
+    /// Execution 02, Phase 04: remove one primitive (and, implicitly,
+    /// every constraint that referenced it becomes unresolvable at the
+    /// next `solve()` -- callers deleting geometry a live constraint
+    /// depends on are expected to remove that constraint too, the same
+    /// ordering `craftloop-mobile-ffi::CraftLoopSession` already commits
+    /// as one atomic transaction). Returns the removed value, mirroring
+    /// `BTreeMap::remove`'s own convention (`Page::remove`,
+    /// `DimensionStore::remove_dimension`) elsewhere in this workspace.
+    pub fn remove_primitive(&mut self, id: PrimitiveId) -> Option<Beautified> {
+        self.primitives.remove(&id)
     }
 
     /// Task 084/091: add one constraint with its provenance. Validated
@@ -140,6 +176,35 @@ impl Sketch {
                 kind: SketchErrorKind::UnknownConstraint,
                 detail: format!("no constraint with id {id:?}"),
             })
+    }
+
+    /// Execution 02, Phase 04: insert a constraint entry without
+    /// `add_constraint`'s validation/duplicate-id/redundancy checks. Used
+    /// only by `craftloop-document::history::DocumentChange::apply` to
+    /// replay a constraint that was already accepted once, through
+    /// `add_constraint` itself, when `CraftLoopSession` first applied it
+    /// -- re-running redundancy detection on redo could wrongly collapse
+    /// a *distinct* constraint into `Redundant` if some other equivalent
+    /// constraint happens to exist at that point in history, which would
+    /// silently fail to restore the exact state being redone. Same
+    /// "already validated once, this only replays it" reasoning as
+    /// `MultiviewGraph::insert_binding_unchecked`/
+    /// `DimensionStore::set_dimension`.
+    pub fn set_constraint_unchecked(
+        &mut self,
+        id: ConstraintId,
+        kind: SketchConstraintKind,
+        provenance: ConstraintProvenance,
+    ) {
+        self.constraints
+            .insert(id, ConstraintEntry { kind, provenance });
+    }
+
+    /// The removal counterpart to [`Sketch::set_constraint_unchecked`]:
+    /// no "unknown constraint" error, since a replayed removal is exactly
+    /// undoing/redoing a state this type already held.
+    pub fn remove_constraint_unchecked(&mut self, id: ConstraintId) {
+        self.constraints.remove(&id);
     }
 
     pub fn constraint(
@@ -991,5 +1056,51 @@ mod tests {
         // satisfy) and must not panic on an empty constraint set.
         let result = sketch.solve(&mut solver);
         assert!(result.is_solved());
+    }
+
+    // --- Execution 02, Phase 04: persistence -----------------------------
+
+    #[test]
+    fn a_sketch_with_primitives_and_constraints_round_trips_through_json() {
+        let mut sketch = Sketch::new();
+        let a = PrimitiveId::new();
+        let b = PrimitiveId::new();
+        sketch.insert_primitive(a, line(Point2::new(0.0, 0.0), Point2::new(4.0, 0.0)));
+        sketch.insert_primitive(b, circle(Point2::new(1.0, 1.0), 2.0));
+        sketch
+            .add_constraint(
+                ConstraintId::new(),
+                SketchConstraintKind::Horizontal(a),
+                ConstraintProvenance::UserCreated,
+            )
+            .unwrap();
+
+        let json = serde_json::to_string(&sketch).unwrap();
+        let reloaded: Sketch = serde_json::from_str(&json).unwrap();
+        assert_eq!(reloaded, sketch);
+        assert_eq!(reloaded.primitive(a), sketch.primitive(a));
+        assert_eq!(reloaded.constraints.len(), 1);
+    }
+
+    #[test]
+    fn primitive_ids_lists_every_stored_primitive() {
+        let mut sketch = Sketch::new();
+        let a = PrimitiveId::new();
+        let b = PrimitiveId::new();
+        sketch.insert_primitive(a, line(Point2::new(0.0, 0.0), Point2::new(1.0, 0.0)));
+        sketch.insert_primitive(b, circle(Point2::new(0.0, 0.0), 1.0));
+        let mut ids: Vec<PrimitiveId> = sketch.primitive_ids().collect();
+        ids.sort();
+        let mut expected = vec![a, b];
+        expected.sort();
+        assert_eq!(ids, expected);
+    }
+
+    #[test]
+    fn an_empty_sketch_round_trips_too() {
+        let sketch = Sketch::new();
+        let json = serde_json::to_string(&sketch).unwrap();
+        let reloaded: Sketch = serde_json::from_str(&json).unwrap();
+        assert_eq!(reloaded, sketch);
     }
 }

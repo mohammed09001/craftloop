@@ -13,6 +13,8 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 serde.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
 # Execution 01, Phase 28, Task 202: pinned to an exact version, not a
 # caret range, per the task's own "pin a tested version" instruction --
 # the same convention Phase 11's solver decision record established for
@@ -20,10 +22,20 @@ serde.workspace = true
 # modern (0.25+) UniFFI approach.
 uniffi = { version = "=0.32.1", features = ["cli"] }
 craftloop-ids = { path = "../craftloop-ids" }
+craftloop-errors = { path = "../craftloop-errors" }
 craftloop-geometry = { path = "../craftloop-geometry" }
 craftloop-input = { path = "../craftloop-input" }
 craftloop-ink = { path = "../craftloop-ink" }
 craftloop-command = { path = "../craftloop-command" }
+# Execution 02, Phase 04: CraftLoopSession (Article 12) wraps the real
+# document/dimension/consistency/sketch engines rather than
+# reimplementing any of their validation at this boundary.
+craftloop-document = { path = "../craftloop-document" }
+craftloop-dimension = { path = "../craftloop-dimension" }
+craftloop-consistency = { path = "../craftloop-consistency" }
+craftloop-sketch = { path = "../craftloop-sketch" }
+craftloop-recognition = { path = "../craftloop-recognition" }
+craftloop-constraint = { path = "../craftloop-constraint" }
 
 [[bin]]
 name = "uniffi-bindgen"

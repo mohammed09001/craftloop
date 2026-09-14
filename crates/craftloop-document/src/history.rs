@@ -21,22 +21,38 @@
 //! strictly more correct than trying to synthesize an inverse operation
 //! for each entity kind.
 //!
-//! "Cross-view propagation" (as Task 057's objective names it) has no real
-//! multi-view mechanism to test yet -- view blocks are Phase 20. The
-//! closest real analog this execution can exercise now is a single
-//! transaction touching **multiple pages** at once (see the module tests),
-//! which exercises the same atomicity property multi-view propagation will
-//! need once it exists: one visible action, several entities across
-//! several containers, undone/redone as one unit.
+//! "Cross-view propagation" (as Task 057's objective names it) had no real
+//! multi-view mechanism to test when this module was first written --
+//! view blocks were Phase 20. The closest real analog Phase 08 could
+//! exercise then was a single transaction touching **multiple pages** at
+//! once (see the module tests), which exercises the same atomicity
+//! property multi-view propagation needs: one visible action, several
+//! entities across several containers, undone/redone as one unit.
+//!
+//! Execution 02, Phase 04 adds the real mechanism itself:
+//! `SetViewBlock`/`SetOrthographicSet`/`SetMultiviewBinding`/
+//! `SetDimension` follow the exact same "state delta" convention as
+//! `SetProvenance` above (an `Option` `previous`/`new` pair, `invert()` is
+//! just swapping them) so every `Document` field Phase 04 added
+//! (`view_blocks`, `orthographic_sets`, `multiview_graph`,
+//! `dimension_store`) is undoable/redoable/persistable through this same
+//! one mechanism, not a second one.
 
+use craftloop_dimension::SemanticDimension;
 use craftloop_errors::DomainResult;
-use craftloop_ids::{PageId, TransactionId};
+use craftloop_ids::{
+    ConstraintId, DimensionId, OrthographicSetId, PageId, PrimitiveId, TransactionId, ViewId,
+};
+use craftloop_recognition::Beautified;
+use craftloop_sketch::{ConstraintProvenance, SketchConstraintKind};
 use craftloop_transactions::{Transaction, TransactionLog};
 use serde::{Deserialize, Serialize};
 
 use crate::document::Document;
 use crate::entity::{EntityId, SemanticEntity};
+use crate::multiview::SharedAxis;
 use crate::provenance::ProvenanceState;
+use crate::view::{OrthographicSet, ViewBlock};
 
 /// One atomic step within a transaction. A single user-visible action
 /// (Task 056) is a `Vec<DocumentChange>` committed together via
@@ -62,6 +78,59 @@ pub enum DocumentChange {
         previous: Option<ProvenanceState>,
         new: Option<ProvenanceState>,
     },
+    /// Execution 02, Phase 04: create, update, or remove (`new: None`) one
+    /// `ViewBlock`. Same "state delta" convention as `SetProvenance`.
+    SetViewBlock {
+        id: ViewId,
+        previous: Option<ViewBlock>,
+        new: Option<ViewBlock>,
+    },
+    /// Execution 02, Phase 04: create, update, or remove one
+    /// `OrthographicSet`.
+    SetOrthographicSet {
+        id: OrthographicSetId,
+        previous: Option<OrthographicSet>,
+        new: Option<OrthographicSet>,
+    },
+    /// Execution 02, Phase 04: bind or unbind one view's one shared axis in
+    /// the `MultiviewGraph` (Article 35/37).
+    SetMultiviewBinding {
+        view: ViewId,
+        axis: SharedAxis,
+        previous: Option<DimensionId>,
+        new: Option<DimensionId>,
+    },
+    /// Execution 02, Phase 04: the authoritative `DimensionStore` copy of a
+    /// dimension's full value (see `document.rs`'s doc comment on how this
+    /// relates to a page's own `SemanticEntity::Dimension` copy -- a
+    /// caller committing a dimension edit/creation normally pairs this
+    /// with an `InsertEntity`/`RemoveEntity` change in the same
+    /// transaction so both copies move together atomically).
+    SetDimension {
+        id: DimensionId,
+        previous: Option<SemanticDimension>,
+        new: Option<SemanticDimension>,
+    },
+    /// Execution 02, Phase 04 (Article 17's Constraint Alpha Workflow):
+    /// insert one constraint-bearing primitive into the document's
+    /// `Sketch`.
+    InsertSketchPrimitive {
+        id: PrimitiveId,
+        beautified: Beautified,
+    },
+    /// `beautified` is the full value being removed, snapshotted at
+    /// record time -- same "state delta" convention as `RemoveEntity`.
+    RemoveSketchPrimitive {
+        id: PrimitiveId,
+        beautified: Beautified,
+    },
+    /// Create, update, or remove one stored constraint in the document's
+    /// `Sketch`.
+    SetSketchConstraint {
+        id: ConstraintId,
+        previous: Option<(SketchConstraintKind, ConstraintProvenance)>,
+        new: Option<(SketchConstraintKind, ConstraintProvenance)>,
+    },
 }
 
 impl DocumentChange {
@@ -80,6 +149,78 @@ impl DocumentChange {
                         document.set_provenance(*entity_id, *state);
                     }
                     None => document.clear_provenance(*entity_id),
+                }
+                Ok(())
+            }
+            DocumentChange::SetViewBlock { id, new, .. } => {
+                document.set_view_block(*id, new.clone());
+                Ok(())
+            }
+            DocumentChange::SetOrthographicSet { id, new, .. } => {
+                document.set_orthographic_set(*id, new.clone());
+                Ok(())
+            }
+            DocumentChange::SetMultiviewBinding {
+                view, axis, new, ..
+            } => {
+                match new {
+                    Some(dimension) => {
+                        // The graph's own `bind_axis` re-validates identity/
+                        // axis compatibility every time (it has no way to
+                        // trust a previously-valid binding is still valid
+                        // once undo/redo can rewrite view identity too) --
+                        // this needs the real `ViewBlock` to do that, which
+                        // this change's own `view`/`axis` pair does not
+                        // carry (only the ids). A binding recorded by
+                        // `CraftLoopSession` is always validated once at
+                        // creation time through `bind_axis` itself before
+                        // this change is ever built (see its module docs),
+                        // so re-deriving a `ViewBlock` here would only
+                        // duplicate that check; this apply step is
+                        // therefore the direct, already-validated write.
+                        document
+                            .multiview_graph_mut()
+                            .insert_binding_unchecked(*view, *axis, *dimension);
+                    }
+                    None => {
+                        document.multiview_graph_mut().unlink_axis(*view, *axis);
+                    }
+                }
+                Ok(())
+            }
+            DocumentChange::SetDimension { id, new, .. } => {
+                match new {
+                    Some(dimension) => {
+                        document
+                            .dimension_store_mut()
+                            .set_dimension(dimension.clone());
+                    }
+                    None => {
+                        document.dimension_store_mut().remove_dimension(*id);
+                    }
+                }
+                Ok(())
+            }
+            DocumentChange::InsertSketchPrimitive { id, beautified } => {
+                document
+                    .sketch_mut()
+                    .insert_primitive(*id, beautified.clone());
+                Ok(())
+            }
+            DocumentChange::RemoveSketchPrimitive { id, .. } => {
+                document.sketch_mut().remove_primitive(*id);
+                Ok(())
+            }
+            DocumentChange::SetSketchConstraint { id, new, .. } => {
+                match new {
+                    Some((kind, provenance)) => {
+                        document
+                            .sketch_mut()
+                            .set_constraint_unchecked(*id, *kind, *provenance);
+                    }
+                    None => {
+                        document.sketch_mut().remove_constraint_unchecked(*id);
+                    }
                 }
                 Ok(())
             }
@@ -106,6 +247,53 @@ impl DocumentChange {
                 previous: *new,
                 new: *previous,
             },
+            DocumentChange::SetViewBlock { id, previous, new } => DocumentChange::SetViewBlock {
+                id: *id,
+                previous: new.clone(),
+                new: previous.clone(),
+            },
+            DocumentChange::SetOrthographicSet { id, previous, new } => {
+                DocumentChange::SetOrthographicSet {
+                    id: *id,
+                    previous: new.clone(),
+                    new: previous.clone(),
+                }
+            }
+            DocumentChange::SetMultiviewBinding {
+                view,
+                axis,
+                previous,
+                new,
+            } => DocumentChange::SetMultiviewBinding {
+                view: *view,
+                axis: *axis,
+                previous: *new,
+                new: *previous,
+            },
+            DocumentChange::SetDimension { id, previous, new } => DocumentChange::SetDimension {
+                id: *id,
+                previous: new.clone(),
+                new: previous.clone(),
+            },
+            DocumentChange::InsertSketchPrimitive { id, beautified } => {
+                DocumentChange::RemoveSketchPrimitive {
+                    id: *id,
+                    beautified: beautified.clone(),
+                }
+            }
+            DocumentChange::RemoveSketchPrimitive { id, beautified } => {
+                DocumentChange::InsertSketchPrimitive {
+                    id: *id,
+                    beautified: beautified.clone(),
+                }
+            }
+            DocumentChange::SetSketchConstraint { id, previous, new } => {
+                DocumentChange::SetSketchConstraint {
+                    id: *id,
+                    previous: *new,
+                    new: *previous,
+                }
+            }
         }
     }
 }
@@ -374,5 +562,229 @@ mod tests {
         let (second, _) = note_change(page_id, "second");
         history.commit(&mut document, vec![second]).unwrap();
         assert!(!history.can_redo());
+    }
+
+    // --- Execution 02, Phase 04: view/orthographic/multiview/dimension --
+
+    #[test]
+    fn set_view_block_undoes_to_the_prior_state_including_none() {
+        use crate::view::{PrincipalViewIdentity, ViewBlock};
+        use craftloop_ids::ViewId;
+
+        let mut document = Document::new("Untitled", 0.0);
+        let mut history = DocumentHistory::new();
+        let view_id = ViewId::new();
+        let mut block = ViewBlock::new(view_id);
+        block.set_identity(PrincipalViewIdentity::Front);
+
+        history
+            .commit(
+                &mut document,
+                vec![DocumentChange::SetViewBlock {
+                    id: view_id,
+                    previous: None,
+                    new: Some(block.clone()),
+                }],
+            )
+            .unwrap();
+        assert_eq!(
+            document.view_block(view_id).and_then(|b| b.identity()),
+            Some(PrincipalViewIdentity::Front)
+        );
+
+        history.undo(&mut document).unwrap();
+        assert!(document.view_block(view_id).is_none());
+
+        history.redo(&mut document).unwrap();
+        assert_eq!(
+            document.view_block(view_id).and_then(|b| b.identity()),
+            Some(PrincipalViewIdentity::Front)
+        );
+    }
+
+    #[test]
+    fn set_orthographic_set_undoes_to_the_prior_state_including_none() {
+        use crate::view::OrthographicSet;
+        use craftloop_ids::OrthographicSetId;
+
+        let mut document = Document::new("Untitled", 0.0);
+        let mut history = DocumentHistory::new();
+        let set_id = OrthographicSetId::new();
+        let set = OrthographicSet::new(set_id);
+
+        history
+            .commit(
+                &mut document,
+                vec![DocumentChange::SetOrthographicSet {
+                    id: set_id,
+                    previous: None,
+                    new: Some(set.clone()),
+                }],
+            )
+            .unwrap();
+        assert!(document.orthographic_set(set_id).is_some());
+
+        history.undo(&mut document).unwrap();
+        assert!(document.orthographic_set(set_id).is_none());
+
+        history.redo(&mut document).unwrap();
+        assert!(document.orthographic_set(set_id).is_some());
+    }
+
+    #[test]
+    fn set_multiview_binding_undoes_to_the_prior_state_including_none() {
+        use craftloop_ids::{DimensionId, ViewId};
+
+        let mut document = Document::new("Untitled", 0.0);
+        let mut history = DocumentHistory::new();
+        let view_id = ViewId::new();
+        let dimension_id = DimensionId::new();
+
+        history
+            .commit(
+                &mut document,
+                vec![DocumentChange::SetMultiviewBinding {
+                    view: view_id,
+                    axis: SharedAxis::Width,
+                    previous: None,
+                    new: Some(dimension_id),
+                }],
+            )
+            .unwrap();
+        assert_eq!(
+            document
+                .multiview_graph()
+                .axis_of(view_id, SharedAxis::Width),
+            Some(dimension_id)
+        );
+
+        history.undo(&mut document).unwrap();
+        assert_eq!(
+            document
+                .multiview_graph()
+                .axis_of(view_id, SharedAxis::Width),
+            None
+        );
+
+        history.redo(&mut document).unwrap();
+        assert_eq!(
+            document
+                .multiview_graph()
+                .axis_of(view_id, SharedAxis::Width),
+            Some(dimension_id)
+        );
+    }
+
+    #[test]
+    fn set_dimension_undoes_to_the_prior_state_including_none() {
+        use craftloop_dimension::{DimensionKind, DimensionRole, DimensionTarget};
+        use craftloop_ids::PrimitiveId;
+
+        let mut document = Document::new("Untitled", 0.0);
+        let mut history = DocumentHistory::new();
+        let dimension = SemanticDimension::new(
+            DimensionId::new(),
+            DimensionKind::Linear,
+            DimensionRole::Driving,
+            DimensionTarget::Single(PrimitiveId::new()),
+            25.0,
+        )
+        .unwrap();
+        let dimension_id = dimension.id;
+
+        history
+            .commit(
+                &mut document,
+                vec![DocumentChange::SetDimension {
+                    id: dimension_id,
+                    previous: None,
+                    new: Some(dimension),
+                }],
+            )
+            .unwrap();
+        assert_eq!(
+            document
+                .dimension_store()
+                .dimension(dimension_id)
+                .map(|d| d.value()),
+            Some(25.0)
+        );
+
+        history.undo(&mut document).unwrap();
+        assert!(document.dimension_store().dimension(dimension_id).is_none());
+
+        history.redo(&mut document).unwrap();
+        assert_eq!(
+            document
+                .dimension_store()
+                .dimension(dimension_id)
+                .map(|d| d.value()),
+            Some(25.0)
+        );
+    }
+
+    #[test]
+    fn insert_sketch_primitive_undoes_and_redoes() {
+        use craftloop_geometry::{Point2, Segment2};
+        use craftloop_ids::PrimitiveId;
+        use craftloop_recognition::BeautifiedPrimitive;
+
+        let mut document = Document::new("Untitled", 0.0);
+        let mut history = DocumentHistory::new();
+        let id = PrimitiveId::new();
+        let beautified = Beautified {
+            primitive: BeautifiedPrimitive::Line(Segment2::new(
+                Point2::new(0.0, 0.0),
+                Point2::new(10.0, 0.0),
+            )),
+            displacement: 0.0,
+        };
+
+        history
+            .commit(
+                &mut document,
+                vec![DocumentChange::InsertSketchPrimitive {
+                    id,
+                    beautified: beautified.clone(),
+                }],
+            )
+            .unwrap();
+        assert_eq!(document.sketch().primitive(id), Some(&beautified));
+
+        history.undo(&mut document).unwrap();
+        assert_eq!(document.sketch().primitive(id), None);
+
+        history.redo(&mut document).unwrap();
+        assert_eq!(document.sketch().primitive(id), Some(&beautified));
+    }
+
+    #[test]
+    fn set_sketch_constraint_undoes_to_the_prior_state_including_none() {
+        use craftloop_ids::PrimitiveId;
+        use craftloop_sketch::{ConstraintProvenance, SketchConstraintKind};
+
+        let mut document = Document::new("Untitled", 0.0);
+        let mut history = DocumentHistory::new();
+        let primitive_id = PrimitiveId::new();
+        let constraint_id = ConstraintId::new();
+        let kind = SketchConstraintKind::Horizontal(primitive_id);
+
+        history
+            .commit(
+                &mut document,
+                vec![DocumentChange::SetSketchConstraint {
+                    id: constraint_id,
+                    previous: None,
+                    new: Some((kind, ConstraintProvenance::UserCreated)),
+                }],
+            )
+            .unwrap();
+        assert!(document.sketch().constraint(constraint_id).is_some());
+
+        history.undo(&mut document).unwrap();
+        assert!(document.sketch().constraint(constraint_id).is_none());
+
+        history.redo(&mut document).unwrap();
+        assert!(document.sketch().constraint(constraint_id).is_some());
     }
 }
