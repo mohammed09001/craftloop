@@ -565,4 +565,34 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
   flagged to the user as a system-level concern beyond this project.
 - Lint/format: both clean, no clippy findings.
 
-
+### Phase 31 — closed 2026-09-14
+- Evidence: `33-phase-31-performance-reliability-hardening.md`;
+  `test-reports/phase-31-cargo-test.txt`;
+  `test-reports/phase-31-cargo-clippy.txt`;
+  `test-reports/phase-31-cargo-fmt.txt`;
+  `quality-tooling/phase-31-solver-latency-percentiles.txt`;
+  `quality-tooling/phase-31-propagation-latency-percentiles.txt`;
+  `quality-tooling/phase-31-mutation-testing.md`;
+  `quality-tooling/phase-31-unsafe-code-audit.md`.
+- Code: `unsafe_code = "forbid"` added to `[workspace.lints.rust]`; new
+  tests in `craftloop-dimension/src/feasible_range.rs` and
+  `craftloop-consistency/src/geometry_validation.rs` (closing six real
+  `cargo-mutants`-found gaps); three new `craftloop-scenarios` test
+  files (Tasks 222/225/226); two new percentile-measurement examples in
+  `craftloop-sketch`/`craftloop-document` (Tasks 223/224).
+- Tests: 758/758 passing workspace-wide (13 new). Real mutation-testing
+  pass found and fixed six genuine gaps across two critical-logic files
+  (0 missed after fixes, re-confirmed). Real unsafe-code audit: zero
+  `unsafe` anywhere in this workspace's own code, now self-enforced.
+  Real measured latencies: solver p50/p95 33.5/58.7us (5-point) and
+  86.9/181.4us (20-point); propagation p50/p95 0.40/0.40us (4 views) and
+  2.00/2.10us (64 views) -- all far under any interactive budget.
+- Lint/format: both clean, no clippy findings.
+- Significant environment obstacle this phase: three consecutive
+  full-workspace build/test attempts (parallel, `-j 2`, `-j 1`) were
+  killed by the OS for low system memory (16GB total RAM); resolved by
+  running a lighter `cargo check --workspace -j 1` first, then
+  `cargo test`/`cargo clippy` with `-j 1`, both of which succeeded. Two
+  further `cargo clean` passes were also needed for disk pressure. This
+  machine's memory/disk headroom is worth the user's attention
+  independent of this project.

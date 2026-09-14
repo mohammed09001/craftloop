@@ -1,0 +1,13 @@
+   Compiling num-traits v0.2.19
+   Compiling craftloop-units v0.1.0 (C:\projects\craftloop\crates\craftloop-units)
+   Compiling craftloop-command v0.1.0 (C:\projects\craftloop\crates\craftloop-command)
+   Compiling craftloop-dimension v0.1.0 (C:\projects\craftloop\crates\craftloop-dimension)
+   Compiling craftloop-transactions v0.1.0 (C:\projects\craftloop\crates\craftloop-transactions)
+   Compiling craftloop-consistency v0.1.0 (C:\projects\craftloop\crates\craftloop-consistency)
+   Compiling craftloop-document v0.1.0 (C:\projects\craftloop\crates\craftloop-document)
+   Compiling plotters v0.3.7
+   Compiling criterion v0.5.1
+    Finished `release` profile [optimized] target(s) in 19.61s
+     Running `target\release\examples\propagation_latency_percentiles.exe`
+views_4 (n=2000): p50 = 0.40 us, p95 = 0.40 us
+views_64 (n=2000): p50 = 2.00 us, p95 = 2.10 us

@@ -162,6 +162,119 @@ mod tests {
     }
 
     #[test]
+    fn a_line_exactly_at_the_tolerance_boundary_is_not_flagged() {
+        // Task 227's mutation-testing pass (Phase 31) found that no
+        // existing test distinguished the strict `<` in `length <
+        // tolerance.point_coincidence` from a weakened `<=` -- every
+        // prior test used a length clearly above or clearly below the
+        // boundary, never exactly at it.
+        let a = Point2::new(0.0, 0.0);
+        let b = Point2::new(Tolerances::committed().point_coincidence, 0.0);
+        let length = Segment2::new(a, b).length();
+        assert_eq!(
+            length,
+            Tolerances::committed().point_coincidence,
+            "test setup: this axis-aligned segment's length must equal the tolerance exactly"
+        );
+        let conflict = validate_primitive_geometry(
+            PrimitiveId::new(),
+            &BeautifiedPrimitive::Line(Segment2::new(a, b)),
+        );
+        assert!(
+            conflict.is_none(),
+            "a length exactly at the tolerance is not strictly below it, so must not be flagged"
+        );
+    }
+
+    /// A "kite" shape whose shoelace area reduces to exactly `height`
+    /// (bit-for-bit, not approximately): with corners `(0,0)`, `(1,0)`,
+    /// `(2,0)`, `(1,height)`, only the `i=2` shoelace term is nonzero
+    /// (`2*height - 1*0`), so the raw sum is exactly `2 * height` --
+    /// doubling is always exact in IEEE754 -- and halving that exact
+    /// value back (`/ 2.0`) exactly recovers `height`. Unlike a thin
+    /// sliver rectangle, every edge here stays close to length 1
+    /// regardless of how small `height` is, so `RelationalRectangle::
+    /// from_corners`'s own per-edge coincidence check (a real, separate
+    /// validation layer discovered by writing this test) never rejects
+    /// it.
+    fn kite_with_exact_area(height: f64) -> RelationalRectangle {
+        RelationalRectangle::from_corners([
+            Point2::new(0.0, 0.0),
+            Point2::new(1.0, 0.0),
+            Point2::new(2.0, 0.0),
+            Point2::new(1.0, height),
+        ])
+        .unwrap()
+    }
+
+    #[test]
+    fn a_rectangle_exactly_at_the_tolerance_boundary_is_not_flagged() {
+        // Same boundary distinction as the line test above, for the
+        // rectangle branch's own `area < tolerance.point_coincidence`
+        // check -- using `kite_with_exact_area` so the computed area is
+        // bit-identical to the tolerance, not merely close to it.
+        let tolerance = Tolerances::committed().point_coincidence;
+        let rectangle = kite_with_exact_area(tolerance);
+        let conflict = validate_primitive_geometry(
+            PrimitiveId::new(),
+            &BeautifiedPrimitive::Rectangle(rectangle),
+        );
+        assert!(
+            conflict.is_none(),
+            "an area exactly at the tolerance is not strictly below it, so must not be flagged"
+        );
+    }
+
+    #[test]
+    fn a_thin_rectangle_with_area_just_below_tolerance_is_still_flagged() {
+        // Task 227: closes the `/ 2.0` -> `* 2.0` mutant in the shoelace
+        // area formula. A true area of tolerance/2 is degenerate under
+        // the real `/ 2.0` formula but would be reported as `4x` too
+        // large (2 * tolerance, wrongly non-degenerate) under a
+        // `* 2.0` mutant -- the near-zero-area fixtures elsewhere in
+        // this file cannot distinguish the two, since both scalings
+        // stay far below tolerance for a truly tiny area.
+        let tolerance = Tolerances::committed().point_coincidence;
+        let rectangle = kite_with_exact_area(tolerance * 0.5); // halving is exact
+        let conflict = validate_primitive_geometry(
+            PrimitiveId::new(),
+            &BeautifiedPrimitive::Rectangle(rectangle),
+        );
+        assert!(
+            conflict.is_some(),
+            "a true area of tolerance/2 must be flagged degenerate"
+        );
+    }
+
+    #[test]
+    fn a_collapsed_quadrilateral_away_from_the_origin_is_still_flagged_degenerate() {
+        // Task 227: closes both the `(i + 1) % 4` -> `(i + 1) / 4` index
+        // mutant and the shoelace cross-term `-` -> `+` mutant. Area is
+        // translation-invariant under the *correct* formula, so
+        // translating `a_collapsed_flat_rectangle_is_flagged_degenerate`'s
+        // own collinear-plus-tiny-perturbation points away from the
+        // origin must still be flagged -- but neither mutant computes a
+        // real area formula, so (unlike the origin-anchored version,
+        // where several zero coordinates made the broken formulas
+        // coincidentally also come out near zero) translated,
+        // all-nonzero coordinates make both mutants report a large,
+        // wrong, non-degenerate value instead.
+        let rectangle = RelationalRectangle::from_corners([
+            Point2::new(10.0, 7.0),
+            Point2::new(12.0, 7.0),
+            Point2::new(14.0, 7.0),
+            Point2::new(12.0, 7.0 + 1e-15),
+        ])
+        .unwrap();
+        let conflict = validate_primitive_geometry(
+            PrimitiveId::new(),
+            &BeautifiedPrimitive::Rectangle(rectangle),
+        )
+        .unwrap();
+        assert_eq!(conflict.kind, ConflictKind::DegenerateGeometry);
+    }
+
+    #[test]
     fn a_valid_circle_can_never_be_flagged_it_cannot_be_constructed_degenerate() {
         let circle = Circle2::new(Point2::ORIGIN, 5.0).unwrap();
         let conflict =

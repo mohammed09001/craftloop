@@ -7,6 +7,12 @@ __pycache__/
 **/target/
 Cargo.lock.bak
 
+# cargo-mutants working output (Phase 31, Task 227) -- scratch logs/diffs
+# from local mutation-testing runs; the meaningful results are captured in
+# execution-evidence/quality-tooling/phase-31-mutation-testing.md instead.
+mutants.out/
+mutants.out.old/
+
 # OS
 .DS_Store
 Thumbs.db

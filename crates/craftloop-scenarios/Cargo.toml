@@ -11,6 +11,8 @@ description = "End-to-End Engine Integration scenarios for the Craft Loop shared
 
 [dev-dependencies]
 serde.workspace = true
+serde_json.workspace = true
+craftloop-serialization = { path = "../craftloop-serialization" }
 craftloop-errors = { path = "../craftloop-errors" }
 craftloop-ids = { path = "../craftloop-ids" }
 craftloop-geometry = { path = "../craftloop-geometry" }

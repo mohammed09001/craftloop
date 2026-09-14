@@ -84,6 +84,25 @@ mod tests {
     }
 
     #[test]
+    fn a_zero_or_negative_or_non_finite_side_length_is_rejected() {
+        // Task 227's mutation-testing pass (Phase 31) found this exact
+        // gap: `non_positive_or_non_finite_side_lengths_are_rejected`
+        // (above) only ever varies the *first* parameter `a`, always
+        // with a valid `b`. A mutant weakening the second parameter's
+        // own guard (`b > 0.0` -> `b >= 0.0`, silently accepting a
+        // zero-length second side whenever `a` is valid) survived every
+        // existing test as a result. Symmetric coverage for `b` closes
+        // that gap; `a`'s negative case is included too so both
+        // parameters are proven symmetric, not just individually
+        // guarded in different ways.
+        assert!(TriangleSideRange::for_two_fixed_sides(0.0, 50.0).is_err());
+        assert!(TriangleSideRange::for_two_fixed_sides(30.0, 0.0).is_err());
+        assert!(TriangleSideRange::for_two_fixed_sides(-30.0, 50.0).is_err());
+        assert!(TriangleSideRange::for_two_fixed_sides(30.0, f64::NAN).is_err());
+        assert!(TriangleSideRange::for_two_fixed_sides(30.0, f64::INFINITY).is_err());
+    }
+
+    #[test]
     fn boundary_values_are_infeasible_not_feasible() {
         // Task 098: exact boundary-value regression coverage. At exactly
         // |a-b| or a+b the "triangle" collapses to a straight line.

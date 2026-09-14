@@ -1074,9 +1074,11 @@ dependencies = [
  "craftloop-ink-intent",
  "craftloop-input",
  "craftloop-recognition",
+ "craftloop-serialization",
  "craftloop-sketch",
  "craftloop-units",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

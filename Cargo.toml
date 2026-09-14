@@ -50,6 +50,17 @@ criterion = "0.5"
 # execution has already been enforcing manually since Phase 01.
 [workspace.lints.rust]
 warnings = "deny"
+# Execution 01, Phase 31, Task 228: "minimize unsafe Rust and document
+# every necessary unsafe boundary." A `grep -rn unsafe` across every
+# crate and app in this workspace found zero `unsafe` blocks anywhere in
+# code this execution wrote -- this lint makes that fact self-enforcing
+# going forward rather than a one-time observation. Any crate that later
+# needs a real, reviewed unsafe boundary (most plausibly
+# `craftloop-mobile-ffi`, once real cross-compiled FFI glue is added)
+# overrides this with a crate-level `#![allow(unsafe_code)]` carrying its
+# own doc comment explaining exactly why -- documented at the boundary
+# itself, per the task's own wording, not silently permitted workspace-wide.
+unsafe_code = "forbid"
 
 [workspace.lints.clippy]
 all = "deny"
