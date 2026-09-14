@@ -14,9 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -63,24 +61,36 @@ class MainActivity : ComponentActivity() {
                 }
 
                 override fun onSingleTapUp(e: MotionEvent): Boolean {
-                    // Task 055: select on a stylus tap only. Real bug
-                    // found and fixed here: this same `gestureDetector`
-                    // is also fed finger events (for `onScroll` pan), so
-                    // a plain finger tap -- zero movement, same as any
-                    // pan gesture's degenerate case -- also satisfies
-                    // Android's own `onSingleTapUp` contract and would
-                    // select too if this checked nothing. The tool-type
-                    // check is against this exact event, not which
+                    // Task 055/Eraser: select or erase on a stylus tap
+                    // only. Real bug found and fixed here (Phase 08):
+                    // this same `gestureDetector` is also fed finger
+                    // events (for `onScroll` pan), so a plain finger tap
+                    // -- zero movement, same as any pan gesture's
+                    // degenerate case -- also satisfies Android's own
+                    // `onSingleTapUp` contract and would select/erase
+                    // too if this checked nothing. The tool-type check
+                    // is against this exact event, not which
                     // dispatchTouchEvent branch happened to feed the
                     // detector, so it holds regardless of call site.
                     if (e.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
-                        viewModel.selectAt(e.x, e.y)
+                        if (viewModel.uiState.value.activeTool == Tool.ERASER) {
+                            viewModel.eraseAt(e.x, e.y)
+                        } else {
+                            viewModel.selectAt(e.x, e.y)
+                        }
                     }
                     return true
                 }
             },
         )
     }
+
+    // Task 060: Line/Circle/Rectangle's real drawing mode -- a stylus
+    // down/up pair captured directly in dispatchTouchEvent (not routed
+    // through InProgressStrokes/Jetpack Ink at all, since these tools
+    // create one direct primitive from two points, not a freeform ink
+    // stroke). `null` outside an active drag.
+    private var shapeDragStart: Pair<Float, Float>? = null
     private val scaleGestureDetector by lazy {
         ScaleGestureDetector(
             this,
@@ -173,11 +183,31 @@ class MainActivity : ComponentActivity() {
         }
 
         val isStylus = toolType == MotionEvent.TOOL_TYPE_STYLUS || toolType == MotionEvent.TOOL_TYPE_ERASER
-        val drawingToolActive = viewModel.uiState.value.activeTool == Tool.PEN
-        return if (isStylus && drawingToolActive) {
+        val activeTool = viewModel.uiState.value.activeTool
+        val shapeToolActive = activeTool == Tool.LINE || activeTool == Tool.CIRCLE || activeTool == Tool.RECTANGLE
+
+        return if (isStylus && activeTool == Tool.PEN) {
             super.dispatchTouchEvent(ev)
+        } else if (isStylus && shapeToolActive) {
+            // Task 060: Line/Circle/Rectangle -- capture the drag's
+            // down/up points directly, never reaching InProgressStrokes
+            // (this is not freeform ink, so it must not create any).
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_DOWN -> shapeDragStart = ev.x to ev.y
+                MotionEvent.ACTION_UP -> {
+                    val start = shapeDragStart
+                    shapeDragStart = null
+                    if (start != null) {
+                        viewModel.createShapeFromDrag(activeTool, start.first, start.second, ev.x, ev.y)
+                    }
+                }
+                MotionEvent.ACTION_CANCEL -> shapeDragStart = null
+            }
+            true
         } else if (isStylus) {
-            // Select tool: real stylus tap, hit-test instead of ink.
+            // Select/Eraser tool: real stylus tap, hit-test instead of
+            // ink (which one happens is decided in onSingleTapUp above,
+            // by the same real active-tool state).
             gestureDetector.onTouchEvent(ev)
             true
         } else {
@@ -230,23 +260,9 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
                     viewModel.canvasBoundsPx = coordinates.boundsInWindow()
                 },
         )
-        // Phase 08 temporary controls (Tasks 055-057) -- functional
-        // triggers only, no icon/visual design (Article 7, Phase 09).
-        Row(modifier = Modifier.padding(4.dp)) {
-            Button(onClick = {
-                viewModel.setActiveTool(if (uiState.activeTool == Tool.PEN) Tool.SELECT else Tool.PEN)
-            }) { Text(if (uiState.activeTool == Tool.PEN) "Pen" else "Select") }
-            Button(onClick = { viewModel.deleteSelected() }) { Text("Delete") }
-            // Phase 08 verification-only helper -- see the ViewModel
-            // method's own doc comment. Not a Phase 09 toolbar tool.
-            Button(onClick = { viewModel.debugInsertTestLine() }) { Text("TestLine") }
-            Button(onClick = {
-                val bounds = viewModel.canvasBoundsPx
-                if (bounds != null) viewModel.fitToContent(bounds.width, bounds.height)
-            }) { Text("Fit") }
-            Button(onClick = { viewModel.undo() }, enabled = debugState.canUndo) { Text("Undo") }
-            Button(onClick = { viewModel.redo() }, enabled = debugState.canRedo) { Text("Redo") }
-        }
+        // Phase 09's real icon-first toolbar (Article 7) replaces
+        // Phase 08's temporary text-button row.
+        PrimaryToolbar(viewModel)
         if (uiState.debugOverlayVisible) {
             DebugRegion(
                 lastPointerSource = uiState.lastPointerSource,
@@ -260,6 +276,8 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
                 zoom = uiState.viewport.zoom,
                 panX = uiState.viewport.panX,
                 panY = uiState.viewport.panY,
+                activeTool = uiState.activeTool.name,
+                lastActionMessage = uiState.lastActionMessage,
             )
         }
     }
@@ -280,14 +298,19 @@ fun DebugRegion(
     zoom: Float,
     panX: Float,
     panY: Float,
+    activeTool: String,
+    lastActionMessage: String,
 ) {
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.padding(8.dp)) {
-            Text("Debug: pointer=$lastPointerSource revision=$revision")
+            Text("Debug: pointer=$lastPointerSource revision=$revision tool=$activeTool")
             Text("txCount=$transactionCount canUndo=$canUndo canRedo=$canRedo")
             Text("unresolvedConflicts=$unresolvedConflictCount")
             Text("selected=$selectedCount primitives=$primitiveCount")
             Text("zoom=%.2f pan=(%.0f, %.0f)".format(zoom, panX, panY))
+            if (lastActionMessage.isNotEmpty()) {
+                Text("last=$lastActionMessage")
+            }
         }
     }
 }

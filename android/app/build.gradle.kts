@@ -138,6 +138,13 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.09.02"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
+    // Execution 02, Phase 09, Task 058. The default material3 icon set
+    // is small; this pulls in the full Material icon catalog (version
+    // resolved by the compose-bom platform above, matching every other
+    // androidx.compose.* dependency in this file) for the toolbar's
+    // Edit/Timeline/Circle/CropSquare/Straighten/Link/Visibility/GridOn/
+    // Undo/Redo/Save/Backspace/NearMe/MoreVert icons.
+    implementation("androidx.compose.material:material-icons-extended")
     // UniFFI's generated Kotlin bindings need the JNA runtime to call
     // into the native craftloop_mobile_ffi library.
     implementation("net.java.dev.jna:jna:5.14.0@aar")
