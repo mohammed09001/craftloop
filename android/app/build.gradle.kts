@@ -133,10 +133,25 @@ kotlin {
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation(platform("androidx.compose:compose-bom:2024.09.02"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     // UniFFI's generated Kotlin bindings need the JNA runtime to call
     // into the native craftloop_mobile_ffi library.
     implementation("net.java.dev.jna:jna:5.14.0@aar")
+
+    // Execution 02, Phase 07, Task 044. Verified via WebSearch/WebFetch
+    // against developer.android.com on 2026-09-14: 1.0.0 is the current
+    // stable line (released 2025-12-17), NOT an alpha -- Article 10's
+    // "prefer stable 1.0 ... do not use an alpha simply because it is
+    // newer" is satisfied by this version, not overridden by it. Only
+    // the modules this phase's ink surface actually uses are declared.
+    implementation("androidx.ink:ink-authoring:1.0.0")
+    implementation("androidx.ink:ink-authoring-compose:1.0.0")
+    implementation("androidx.ink:ink-brush:1.0.0")
+    implementation("androidx.ink:ink-geometry:1.0.0")
+    implementation("androidx.ink:ink-rendering:1.0.0")
+    implementation("androidx.ink:ink-strokes:1.0.0")
 }
