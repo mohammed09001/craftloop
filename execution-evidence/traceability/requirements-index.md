@@ -547,3 +547,22 @@ command output and `execution-evidence/architecture-decisions/` for ADRs.
 - Second (and final, per the governing plan) expected true blocker:
   macOS/Xcode/Swift toolchain unavailable in this sandbox, confirmed
   directly, documented rather than silently skipped.
+
+### Phase 30 — closed 2026-09-14
+- Evidence: `32-phase-30-end-to-end-integration.md`;
+  `test-reports/phase-30-cargo-{test,clippy,fmt}.txt`.
+- Code: new test-only crate `crates/craftloop-scenarios`
+  (`tests/scenario_213..221_*.rs`, nine end-to-end integration scenarios
+  wiring together input/stroke/recognition/beautification/transactions/
+  undo/persistence/handwriting/association/solver/annotation/
+  orthographic-views/multiview-propagation/cross-view-conflict/command-
+  bus/note-safety).
+- Tests: 745/745 passing workspace-wide (16 new). One real floating-point
+  precision fact (not a bug) fixed via tolerance instead of exact
+  equality. One environment incident: the `C:` drive hit 20MB free
+  mid-phase (`os error 112`), resolved with `cargo clean` (15.2GiB
+  reclaimed, fully regenerable); disk remains tight (11GB free) and
+  flagged to the user as a system-level concern beyond this project.
+- Lint/format: both clean, no clippy findings.
+
+

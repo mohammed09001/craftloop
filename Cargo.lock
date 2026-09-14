@@ -1058,6 +1058,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-scenarios"
+version = "0.1.0"
+dependencies = [
+ "craftloop-command",
+ "craftloop-consistency",
+ "craftloop-constraint",
+ "craftloop-dimension",
+ "craftloop-document",
+ "craftloop-errors",
+ "craftloop-geometry",
+ "craftloop-handwriting",
+ "craftloop-ids",
+ "craftloop-ink",
+ "craftloop-ink-intent",
+ "craftloop-input",
+ "craftloop-recognition",
+ "craftloop-sketch",
+ "craftloop-units",
+ "serde",
+]
+
+[[package]]
 name = "craftloop-serialization"
 version = "0.1.0"
 dependencies = [

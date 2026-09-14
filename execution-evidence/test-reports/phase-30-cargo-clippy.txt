@@ -1,0 +1,2 @@
+    Checking craftloop-scenarios v0.1.0 (C:\projects\craftloop\crates\craftloop-scenarios)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.24s

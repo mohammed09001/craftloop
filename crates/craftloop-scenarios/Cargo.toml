@@ -1,0 +1,31 @@
+[package]
+name = "craftloop-scenarios"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "End-to-End Engine Integration scenarios for the Craft Loop shared engineering core (Execution 01, Phase 30). Test-only crate: no production code of its own, wires together the real domain crates the way a real editing session would."
+
+[dependencies]
+
+[dev-dependencies]
+serde.workspace = true
+craftloop-errors = { path = "../craftloop-errors" }
+craftloop-ids = { path = "../craftloop-ids" }
+craftloop-geometry = { path = "../craftloop-geometry" }
+craftloop-input = { path = "../craftloop-input" }
+craftloop-ink = { path = "../craftloop-ink" }
+craftloop-recognition = { path = "../craftloop-recognition" }
+craftloop-units = { path = "../craftloop-units" }
+craftloop-document = { path = "../craftloop-document" }
+craftloop-dimension = { path = "../craftloop-dimension" }
+craftloop-constraint = { path = "../craftloop-constraint" }
+craftloop-sketch = { path = "../craftloop-sketch" }
+craftloop-consistency = { path = "../craftloop-consistency" }
+craftloop-command = { path = "../craftloop-command" }
+craftloop-handwriting = { path = "../craftloop-handwriting" }
+craftloop-ink-intent = { path = "../craftloop-ink-intent" }
+
+[lints]
+workspace = true
