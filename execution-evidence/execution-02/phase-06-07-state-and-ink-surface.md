@@ -257,3 +257,113 @@ could not be completed this session** -- this needs one more physical
 unlock-and-retest pass, the same three commands already documented in
 Part E above (`adb shell input touchscreen swipe ...` immediately
 followed by a screenshot, compared against a screenshot taken first).
+
+## Third attempt (commit after `2aa9522`) -- the `nextBrush` fix ALSO failed, real cause found and fixed for real
+
+The developer unlocked the tablet and the coordinator ran the exact
+controlled test the previous attempt could not complete. Result: **it
+failed too.** Baseline `phase-06-07-gate-fix-baseline.png`:
+`pointer=stylus revision=2 txCount=2` (a real stylus stroke visible).
+After `adb shell input touchscreen swipe 400 900 1800 1300 300`,
+`phase-06-07-gate-fix-after-touch.png`: `pointer=touch revision=3
+txCount=3` -- the transaction count incremented again, meaning the
+`nextBrush` hook did not prevent the shape from starting.
+
+**The real root cause**, found this time by reading the *complete* raw
+text of `InProgressShapes.kt`'s `InProgressShapesImpl` (not a
+paraphrase -- the actual 400-line file, `androidx.ink:
+ink-authoring-compose-android:1.0.0` sources jar from
+maven.google.com) end to end: the composable's own internal `Box`
+chains
+
+```kotlin
+Modifier.fillMaxSize()
+    .pointerInput(nextPointerEventToWorldTransform, nextShapeToWorldTransform) { ... }
+    // Use MotionEvent/View interop APIs to configure ASAP delivery of input events.
+    // Don't add any real touch handling logic here, as the event processing of
+    // pointerInteropFilter relative to pointerInput is inconsistent in its order -
+    // for example by delivering down events in a different order to siblings than
+    // move events, causing ordered event consumption logic to be confusing and
+    // brittle.
+    .pointerInteropFilter { containingView.requestUnbufferedDispatch(it); false }
+```
+
+quoted verbatim from the real source (the comment is the library's own
+authors, not this project's). Both of this project's first two
+attempts (Compose-level `PointerInputChange.consume()` from a sibling,
+then a `nextBrush` hook keyed off a `lastToolType` variable updated by
+that same sibling's Initial-pass observer) are *exactly* the kind of
+"ordered event consumption logic" this exact comment warns is
+"confusing and brittle" against this library's own internal
+`pointerInput`/`pointerInteropFilter` combination. Both attempts
+reasoned correctly about Compose's *documented* pass-ordering contract
+in isolation; neither accounted for the library's own explicit warning
+that its internal View-interop bridge does not reliably honor that
+ordering relative to a sibling composable.
+
+**The real fix**: stop trying to gate the pointer from inside Compose
+at all. `MainActivity.dispatchTouchEvent(ev: MotionEvent)` is called by
+the Android framework before the event reaches the View tree -- before
+the root `ComposeView`, before Compose's own pointer input system,
+before `InProgressShapesImpl`'s internal `pointerInput`/
+`pointerInteropFilter`/`AndroidView` combination ever sees anything.
+Checking `ev.getToolType(0) != MotionEvent.TOOL_TYPE_STYLUS` there and
+returning `false` (swallowing the event, never calling
+`super.dispatchTouchEvent`) means a non-stylus pointer never reaches
+Compose at all, so no ordering assumption between two independent
+input systems is needed. `InkCanvas.kt`'s now-provably-ineffective
+Compose-level consumption/`nextBrush` logic was removed entirely rather
+than left in place as inert, misleading dead code; the observed
+pointer-type reporting for the Debug Region moved into
+`dispatchTouchEvent` itself (recorded even for a swallowed event, so a
+rejected touch is still visible diagnostic evidence, not silently
+invisible).
+
+**Verification -- real, double-checked, this time actually completed**:
+rebuilt (`gradlew installDebug`, `BUILD SUCCESSFUL in 1m 14s`, 38
+tasks), force-stopped and relaunched fresh. The tablet locked a third
+time before this test could run; the developer unlocked it again
+(confirmed via `adb shell dumpsys window` showing `isKeyguardShowing=
+false` and the app itself focused) and the coordinator ran the test
+directly:
+
+- Fresh-launch baseline (`phase-07-real-fix-baseline.png`):
+  `pointer=none revision=0 txCount=0`.
+- Round 1: `adb shell input touchscreen swipe 400 900 1800 1300 300`
+  then `adb shell input touchscreen tap 1000 700`
+  (`phase-07-real-fix-after-touch.png`): `pointer=touch revision=0
+  txCount=0` -- **unchanged**, blank canvas, no new ink.
+- Round 2, independent gesture shapes
+  (`phase-07-real-fix-after-touch-round2.png`): two more swipes,
+  `pointer=touch revision=0 txCount=0` -- **unchanged again**.
+- `adb logcat` for the app's PID across this entire sequence:
+  `grep -ciE "FATAL|AndroidRuntime"` = `0`.
+
+Both rounds show the Debug Region correctly recording `pointer=touch`
+(diagnostic value preserved -- a rejected touch is still visible, not
+silently invisible) while `revision`/`txCount` never move and no ink
+ever appears. This is the real, measured, double-verified fix. No
+physical stylus was used to re-confirm the positive case (none is
+available in this harness); the fix's safety for real stylus input
+rests on `MotionEvent.TOOL_TYPE_STYLUS` being Android's own documented,
+stable tool-type constant for exactly that hardware class, not a
+guess, and the debug region's `pointer=stylus revision=1/2` readings
+earlier in this same file (from real S Pen strokes, before this bug
+was found) already prove real stylus events reach the canvas and
+commit correctly under the code path this fix did not touch.
+
+**Known, deliberate narrowing to revisit later**: `dispatchTouchEvent`
+gates ALL non-stylus input at the Activity level, which is
+behaviorally identical to gating just the canvas region only because
+this phase's actual screen contains nothing else touch-interactive yet
+(a non-interactive Debug Region `Text`). Phase 08 (pan/zoom) and Phase
+09 (icon toolbar) will need finger input to reach other on-screen
+controls; this gate must narrow to the canvas region specifically at
+that point. Documented here as a known follow-up, not a silently
+deferred gap.
+
+## Files changed (this fix)
+
+`android/app/src/main/java/com/craftloop/shell/MainActivity.kt`
+(`dispatchTouchEvent` override), `InkCanvas.kt` (removed the
+ineffective Compose-level gating entirely).

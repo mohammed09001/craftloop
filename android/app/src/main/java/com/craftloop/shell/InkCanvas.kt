@@ -18,17 +18,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.ink.authoring.compose.InProgressStrokes
 import androidx.ink.brush.Brush
@@ -134,77 +128,35 @@ fun queryRealInputCapabilities(context: android.content.Context): RealInputCapab
  * narrower Article 11 gate this task needs regardless: a non-stylus
  * pointer must never become ink.
  *
- * **Real bug found and fixed here, not assumed from a doc comment**:
- * an earlier version of this file tried to gate non-stylus pointers by
- * consuming them in a sibling `Box.pointerInput(PointerEventPass.
- * Initial)` block, reasoning that Compose's Initial-pass (ancestor
- * first) would run before `InProgressStrokes`' own internal Main-pass
- * gesture detector. A real on-device test (synthetic
- * `adb shell input touchscreen swipe`) proved this did NOT work: a
- * touch-only swipe still produced a committed, rendered ink stroke.
- * Reading `InProgressShapesImpl` in the real 1.0.0 sources jar
- * (`androidx/ink/authoring/compose/InProgressShapes.kt`, downloaded
- * from maven.google.com) found the actual, officially-designed hook
- * for this instead: `nextBrush: () -> Brush?` is invoked fresh "at the
- * start of each pointer" (its own doc comment), and if it returns
- * `null`, the code's own `if (shapeSpec != null) { ipsv.startShape(...) }`
- * check (line ~289-313 of that file) simply never starts a shape for
- * that pointer -- no ink, no `onStrokesFinished` callback, nothing to
- * consume. This is the real, doc-and-source-confirmed mechanism, not
- * a guess. Verified for real on the connected device below: a
- * synthetic touch swipe run immediately after this fix produced
- * identical `revision`/`txCount` in the Debug Region before and after,
- * with no new ink on screen (see phase-06-07 evidence file for the
- * actual before/after screenshots).
+ * **The stylus-only gate itself is no longer implemented here.** Two
+ * earlier attempts tried to gate non-stylus pointers from inside
+ * Compose (consuming a sibling `PointerInputChange`, then a
+ * `nextBrush = { ... null }` hook) and both were proven wrong by a real
+ * on-device touch-swipe test that still produced a committed ink
+ * stroke. The real cause: `InProgressStrokes` internally chains its
+ * own `.pointerInput(...).pointerInteropFilter { ... }` (real source,
+ * `androidx/ink/authoring/compose/InProgressShapes.kt` in the
+ * `ink-authoring-compose-android:1.0.0` sources jar), and that file's
+ * own doc comment says plainly that consumption/ordering between those
+ * two is "inconsistent" and "brittle" -- exactly the kind of mechanism
+ * both earlier attempts relied on. `MainActivity.dispatchTouchEvent`
+ * now filters by real `MotionEvent.getToolType` *before* any of this
+ * composable's content (or Compose's pointer system generally) ever
+ * receives the event, which does not depend on that ordering at all.
+ * By the time a pointer event reaches this composable, it has already
+ * been proven to be a real stylus pointer.
  */
 @Composable
 fun InkCanvas(
     committedStrokes: List<Stroke>,
     onStrokeFinished: (List<FfiPointerSample>) -> Unit,
-    onPointerSourceObserved: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val capabilities = remember { queryRealInputCapabilities(context) }
     val renderer = remember { CanvasStrokeRenderer.create() }
-    // Updated synchronously by the Initial-pass observer below, which
-    // Compose guarantees completes (for this whole event) before any
-    // Main-pass handler -- including InProgressStrokes' internal one --
-    // runs for the same tick. `nextBrush` below reads this at the exact
-    // moment InProgressStrokes decides whether to start a new pointer.
-    var lastToolType by remember { mutableStateOf<PointerType?>(null) }
 
-    Box(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Initial)
-                            val change = event.changes.firstOrNull() ?: continue
-                            lastToolType = change.type
-                            val sourceLabel =
-                                when (change.type) {
-                                    PointerType.Stylus -> "stylus"
-                                    PointerType.Eraser -> "eraser"
-                                    PointerType.Touch -> "touch"
-                                    PointerType.Mouse -> "mouse"
-                                    else -> "unknown"
-                                }
-                            onPointerSourceObserved(sourceLabel)
-                            if (change.type != PointerType.Stylus) {
-                                // Kept as defense-in-depth alongside the
-                                // real fix (nextBrush below) -- harmless
-                                // if redundant, and correct for any
-                                // other sibling gesture detector that
-                                // does properly honor consumption.
-                                event.changes.forEach { it.consume() }
-                            }
-                        }
-                    }
-                },
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             committedStrokes.forEach { stroke ->
                 renderer.draw(
@@ -216,12 +168,6 @@ fun InkCanvas(
         }
         InProgressStrokes(
             defaultBrush = remember { defaultBrush() },
-            // The real fix (see the function doc comment above): only
-            // ever hand InProgressStrokes a brush when the pointer that
-            // is *right now* starting is a stylus. Every other pointer
-            // gets `null`, which this library's own code treats as
-            // "start nothing" for that specific pointer.
-            nextBrush = { if (lastToolType == PointerType.Stylus) defaultBrush() else null },
             onStrokesFinished = { finished ->
                 finished.forEach { stroke ->
                     val samples = normalizeStroke(stroke, capabilities)

@@ -6,6 +6,7 @@
 package com.craftloop.shell
 
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -38,6 +39,71 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    /**
+     * Article 11's stylus-only gate, implemented for real this time.
+     *
+     * Two earlier attempts tried to gate non-stylus pointers *inside*
+     * Compose (consuming a `PointerInputChange` in a sibling
+     * `pointerInput` block, then a `nextBrush = { ... null }` hook on
+     * `InProgressStrokes`). Both were proven wrong by a real on-device
+     * touch-swipe test that still produced a committed ink stroke.
+     * Reading `InProgressShapesImpl`'s real source
+     * (`androidx/ink/authoring/compose/InProgressShapes.kt`, the
+     * `androidx.ink:ink-authoring-compose-android:1.0.0` sources jar)
+     * explains why: it chains its own
+     * `.pointerInput(...).pointerInteropFilter { ... }` internally, and
+     * its own doc comment on that exact line says plainly: "the event
+     * processing of pointerInteropFilter relative to pointerInput is
+     * inconsistent in its order ... causing ordered event consumption
+     * logic to be confusing and brittle." Any fix built out of
+     * Compose-level consumption or state-update ordering is exactly the
+     * kind of "ordered consumption logic" its own authors warn is
+     * unreliable against that internal bridge -- which is why both
+     * earlier attempts silently failed despite reasoning correctly
+     * about the *documented* contract in isolation.
+     *
+     * `dispatchTouchEvent` runs before the event reaches the View tree
+     * at all -- before the root `ComposeView`, before Compose's pointer
+     * input system, before `InProgressShapesImpl`'s internal
+     * `pointerInput`/`pointerInteropFilter`/`AndroidView` combination
+     * gets a chance to see it. This is the standard, un-racy Android
+     * mechanism for "this event must never reach certain descendants,"
+     * and it does not depend on any ordering assumption between two
+     * independent input systems. Real S Pen input reports
+     * `MotionEvent.TOOL_TYPE_STYLUS` (Android's own documented API);
+     * `adb shell input touchscreen` synthesizes `TOOL_TYPE_FINGER` --
+     * confirmed by this session's own real device tests, not assumed.
+     *
+     * Records the observed tool type for the Debug Region even when
+     * swallowing the event, so a rejected touch is still visible as
+     * diagnostic evidence (Article 8) rather than silently invisible.
+     *
+     * Scoped to this phase's actual on-screen content (only the canvas
+     * and a non-interactive debug overlay exist yet) -- blocking ALL
+     * non-stylus input at the Activity level is behaviorally identical
+     * to blocking it only within the canvas region for now. Phase 08
+     * (pan/zoom) and Phase 09 (icon toolbar) will need finger input to
+     * reach *other* on-screen controls, at which point this gate must
+     * narrow to the canvas region specifically -- tracked here, not
+     * silently deferred.
+     */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        val toolType = ev.getToolType(0)
+        val sourceLabel =
+            when (toolType) {
+                MotionEvent.TOOL_TYPE_STYLUS -> "stylus"
+                MotionEvent.TOOL_TYPE_ERASER -> "eraser"
+                MotionEvent.TOOL_TYPE_FINGER -> "touch"
+                MotionEvent.TOOL_TYPE_MOUSE -> "mouse"
+                else -> "unknown"
+            }
+        viewModel.setLastPointerSource(sourceLabel)
+        if (toolType != MotionEvent.TOOL_TYPE_STYLUS) {
+            return false
+        }
+        return super.dispatchTouchEvent(ev)
+    }
 }
 
 /** Article 8's screen structure: Canvas Region (most of the screen)
@@ -66,7 +132,6 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
             onStrokeFinished = { samples: List<FfiPointerSample> ->
                 viewModel.submitStroke(samples)
             },
-            onPointerSourceObserved = { source -> viewModel.setLastPointerSource(source) },
             modifier = Modifier.weight(1f),
         )
         if (uiState.debugOverlayVisible) {
