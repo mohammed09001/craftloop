@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.automirrored.filled.Redo
@@ -39,6 +40,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,19 +49,25 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import uniffi.craftloop_mobile_ffi.FfiConstraintKind
+import uniffi.craftloop_mobile_ffi.FfiDimensionKind
 import uniffi.craftloop_mobile_ffi.FfiPrincipalViewIdentity
 
-/** One primary toolbar entry: Article 7's fixed icon list. Popover-
- * opening entries (`Constraint`, `ViewIdentity`) and the two phases-
- * deferred entries (`Dimension`, `Orthographic`) still get a real
- * `onClick`, just one this phase scopes narrowly (see
- * [CraftLoopViewModel.dimensionToolNotYetAvailable]/`enterOrthographic`). */
+/** One primary toolbar entry: Article 7's fixed icon list.
+ * `Constraint`/`ViewIdentity` open popovers; `Dimension` (Phase 10)
+ * opens the real numeric-entry dialog; `Orthographic` calls the real,
+ * already-built `enterOrthographic` narrowly (see its own doc comment
+ * in `CraftLoopViewModel` for exactly what this phase does and does
+ * not do with the result). */
 private data class ToolbarEntry(
     val tool: Tool?,
     val icon: ImageVector,
@@ -77,7 +85,7 @@ private val primaryEntries =
         ToolbarEntry(Tool.RECTANGLE, Icons.Filled.CropSquare, "Rectangle") { it.setActiveTool(Tool.RECTANGLE) },
         ToolbarEntry(Tool.DIMENSION, Icons.Filled.Straighten, "Dimension") {
             it.setActiveTool(Tool.DIMENSION)
-            it.dimensionToolNotYetAvailable()
+            it.openDimensionDialogForCreate()
         },
         ToolbarEntry(Tool.CONSTRAINT, Icons.Filled.Link, "Constraint") {
             it.setActiveTool(Tool.CONSTRAINT)
@@ -146,6 +154,12 @@ fun PrimaryToolbar(viewModel: CraftLoopViewModel) {
     if (uiState.alphaSettingsDialogVisible) {
         AlphaSettingsDialog(viewModel)
     }
+    if (uiState.dimensionDialogVisible) {
+        DimensionDialog(viewModel)
+    }
+    if (uiState.dimensionListVisible) {
+        DimensionAndConflictList(viewModel)
+    }
 }
 
 /** Task 059 (real contentDescription, checked against the actual
@@ -213,6 +227,10 @@ private fun AlphaOverflowButton(viewModel: CraftLoopViewModel) {
             DropdownMenuItem(text = { Text("Debug Inspector") }, onClick = {
                 viewModel.setOverflowMenuVisible(false)
                 viewModel.toggleDebugOverlay()
+            })
+            DropdownMenuItem(text = { Text("Dimensions & Conflicts") }, onClick = {
+                viewModel.setOverflowMenuVisible(false)
+                viewModel.setDimensionListVisible(true)
             })
             DropdownMenuItem(text = { Text("Input Capability Inspector") }, onClick = {
                 viewModel.setOverflowMenuVisible(false)
@@ -347,6 +365,102 @@ private fun AlphaSettingsDialog(viewModel: CraftLoopViewModel) {
         text = { Text("No settings exist yet in this Engineering Alpha.") },
         confirmButton = {
             DropdownMenuItem(text = { Text("Close") }, onClick = { viewModel.setAlphaSettingsDialogVisible(false) })
+        },
+    )
+}
+
+/** Task 065/066/067: Article 14's "compact numeric input" -- one plain
+ * `OutlinedTextField` plus a kind selector, no design polish. Reused
+ * for both create (Task 065/066, `dimensionEditTargetId == null`) and
+ * edit (Task 067, pre-filled with the existing value) since both are
+ * "one real number crossing the FFI boundary," differing only in
+ * which `CraftLoopSession` call [CraftLoopViewModel.submitDimension]
+ * ends up making. `FfiDimensionKind`'s four real variants (checked in
+ * `session.rs`, not guessed) have no arity restriction of their own in
+ * `create_dimension` -- any kind may target 1 or 2 primitives -- so all
+ * four are always offered rather than second-guessing which kinds
+ * "should" pair with which selection count. */
+@Composable
+private fun DimensionDialog(viewModel: CraftLoopViewModel) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isEdit = uiState.dimensionEditTargetId != null
+    var valueText by remember(uiState.dimensionEditTargetId) {
+        mutableStateOf(if (isEdit) uiState.dimensionEditCurrentValue.toString() else "")
+    }
+    var kind by remember { mutableStateOf(FfiDimensionKind.LINEAR) }
+    AlertDialog(
+        onDismissRequest = { viewModel.dismissDimensionDialog() },
+        title = { Text(if (isEdit) "Edit Dimension" else "New Dimension") },
+        text = {
+            Column {
+                if (!isEdit) {
+                    for (option in FfiDimensionKind.entries) {
+                        DropdownMenuItem(
+                            text = { Text(if (option == kind) "✓ $option" else "$option") },
+                            onClick = { kind = option },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = valueText,
+                    onValueChange = { valueText = it },
+                    label = { Text("Value") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+            }
+        },
+        confirmButton = {
+            DropdownMenuItem(
+                text = { Text("Commit") },
+                onClick = {
+                    val value = valueText.toDoubleOrNull()
+                    if (value != null) viewModel.submitDimension(kind, value)
+                },
+            )
+        },
+        dismissButton = {
+            DropdownMenuItem(text = { Text("Cancel") }, onClick = { viewModel.dismissDimensionDialog() })
+        },
+    )
+}
+
+/** Task 067/068: a plain list of every current dimension (tap to edit)
+ * and every current conflict (Task 068 -- "show invalid dimension
+ * conflict," visibility only, no resolution UI before Phase 14/18). No
+ * canvas annotation rendering exists yet (Phase 06-07's documented
+ * gap) for either to be reached by tapping the canvas directly, so
+ * this list is the Alpha's one real way to reach an existing
+ * dimension, and the one real way to *see* a conflict Task 068
+ * requires be visible. */
+@Composable
+private fun DimensionAndConflictList(viewModel: CraftLoopViewModel) {
+    val sceneSnapshot by viewModel.sceneSnapshot.collectAsStateWithLifecycle()
+    AlertDialog(
+        onDismissRequest = { viewModel.setDimensionListVisible(false) },
+        title = { Text("Dimensions & Conflicts") },
+        text = {
+            Column {
+                Text("Dimensions", style = MaterialTheme.typography.titleSmall)
+                if (sceneSnapshot.dimensions.isEmpty()) {
+                    Text("(none)")
+                }
+                for (dim in sceneSnapshot.dimensions) {
+                    DropdownMenuItem(
+                        text = { Text("${dim.kind} = ${dim.value} (${dim.id.take(8)})") },
+                        onClick = { viewModel.openDimensionDialogForEdit(dim.id, dim.value) },
+                    )
+                }
+                Text("Conflicts", style = MaterialTheme.typography.titleSmall)
+                if (sceneSnapshot.conflicts.isEmpty()) {
+                    Text("(none)")
+                }
+                for (conflict in sceneSnapshot.conflicts) {
+                    Text("${conflict.kind} unresolved=${conflict.unresolved} (${conflict.id.take(8)})")
+                }
+            }
+        },
+        confirmButton = {
+            DropdownMenuItem(text = { Text("Close") }, onClick = { viewModel.setDimensionListVisible(false) })
         },
     )
 }

@@ -24,12 +24,11 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** Task 039/040/058: the tools a user can select, now covering every
- * primary toolbar icon Article 7 requires. `DIMENSION`/`ORTHOGRAPHIC`
- * exist as real toolbar entries (Task 058/060 -- a highlightable
- * active-tool state) but their full workflows (typed numeric entry,
- * linked-view rendering) are Phase 10/11's scope, not this one's --
- * see [dimensionToolNotYetAvailable]/`enterOrthographic`'s own doc
- * comments for exactly what each does today. `CONSTRAINT`/
+ * primary toolbar icon Article 7 requires. `DIMENSION` (Phase 10) opens
+ * a real numeric-entry dialog (Task 065-068); `ORTHOGRAPHIC` calls the
+ * already-built `enterOrthographic` narrowly -- see its own doc
+ * comment for exactly what this phase does and does not do with the
+ * result (full linked-view rendering is Phase 11's scope). `CONSTRAINT`/
  * `VIEW_IDENTITY` are popover triggers (Task 062/063), not drawing
  * modes a stylus stroke continues in, but still get an active-tool
  * highlight while their popover is open. */
@@ -87,6 +86,22 @@ data class EphemeralUiState(
     // snackbar design system, so this is read directly by a plain
     // `Text` in the Debug Region rather than a styled transient banner.
     val lastActionMessage: String = "",
+    // Task 065/067: the numeric-entry dialog's visibility and mode --
+    // `dimensionEditTargetId == null` means "create a new dimension
+    // from the current selection" (Task 065/066); non-null means "edit
+    // this existing dimension's value" (Task 067), reusing the same
+    // dialog rather than building a second one, since both end in one
+    // real number crossing the FFI boundary either way.
+    val dimensionDialogVisible: Boolean = false,
+    val dimensionEditTargetId: String? = null,
+    val dimensionEditCurrentValue: Double = 0.0,
+    // Task 067/068: a plain list of current dimensions/conflicts --
+    // Article 7 forbids design polish, and no canvas annotation
+    // rendering exists yet for dimensions to be tapped in place (Phase
+    // 06-07's own documented gap), so this is the Alpha's one real way
+    // to reach an existing dimension to edit, and to see a conflict
+    // Task 068 requires be visible, not just logged.
+    val dimensionListVisible: Boolean = false,
 )
 
 class CraftLoopViewModel : ViewModel() {
@@ -330,8 +345,23 @@ class CraftLoopViewModel : ViewModel() {
     fun applyConstraint(kind: FfiConstraintKind) {
         viewModelScope.launch {
             session.applyConstraint(kind)
+            // Task 070: nothing before this session ever actually
+            // invoked the solver, so a real solver conflict could never
+            // have been observed -- solving immediately after every
+            // applied constraint is what makes one possible to see at
+            // all through this toolbar (see `solveConstraints`' own doc
+            // comment for exactly how that outcome is reported).
+            val outcome = runCatching { session.solveConstraints() }
             refreshSnapshots()
-            _uiState.value = _uiState.value.copy(constraintPopoverVisible = false)
+            _uiState.value =
+                _uiState.value.copy(
+                    constraintPopoverVisible = false,
+                    lastActionMessage =
+                        outcome.fold(
+                            onSuccess = { o -> "Constraint added; solve: ${o.status}" },
+                            onFailure = { err -> "Constraint added; solve failed: ${err.message}" },
+                        ),
+                )
         }
     }
 
@@ -386,11 +416,137 @@ class CraftLoopViewModel : ViewModel() {
         }
     }
 
-    /** Task 060: Dimension's Phase-10-deferred status, made explicit
-     * rather than the icon silently doing nothing when tapped. */
-    fun dimensionToolNotYetAvailable() {
+    /** Task 065: opens the numeric-entry dialog to create a new
+     * dimension from the current selection -- Article 14's flow
+     * ("Select eligible geometry. Show compact numeric input.") needs a
+     * real target before there is anything to dimension, so 0 or >2
+     * selected primitives shows a message instead of an empty dialog
+     * (`create_dimension`'s own real arity, `DimensionTarget::Single`/
+     * `Pair`, checked in `session.rs` -- not guessed). */
+    fun openDimensionDialogForCreate() {
+        val selected = _sceneSnapshot.value.selectedEntityIds
+        if (selected.isEmpty() || selected.size > 2) {
+            _uiState.value =
+                _uiState.value.copy(
+                    lastActionMessage = "Select 1 or 2 primitives to dimension first",
+                )
+            return
+        }
         _uiState.value =
-            _uiState.value.copy(lastActionMessage = "Dimension entry is Phase 10 -- not built yet")
+            _uiState.value.copy(
+                dimensionDialogVisible = true,
+                dimensionEditTargetId = null,
+                dimensionEditCurrentValue = 0.0,
+            )
+    }
+
+    /** Task 067: opens the same dialog pre-filled with an existing
+     * dimension's current value, from [Toolbar]'s dimension list. */
+    fun openDimensionDialogForEdit(
+        dimensionId: String,
+        currentValue: Double,
+    ) {
+        _uiState.value =
+            _uiState.value.copy(
+                dimensionDialogVisible = true,
+                dimensionEditTargetId = dimensionId,
+                dimensionEditCurrentValue = currentValue,
+            )
+    }
+
+    fun dismissDimensionDialog() {
+        _uiState.value = _uiState.value.copy(dimensionDialogVisible = false)
+    }
+
+    fun setDimensionListVisible(visible: Boolean) {
+        _uiState.value = _uiState.value.copy(dimensionListVisible = visible)
+    }
+
+    /** Task 065/066/067/068: create or edit a dimension depending on
+     * [EphemeralUiState.dimensionEditTargetId]. Article 14 Task 068 /
+     * Gate G: an invalid edit's real failure path
+     * (`CraftLoopSession.edit_dimension`, `session.rs`) leaves the
+     * dimension's own value unchanged but still *commits* a real
+     * `Conflict` entity (`ConflictKind::DimensionConstraintMismatch`)
+     * before returning `Err` -- so this catches the exception, still
+     * refreshes snapshots (the conflict is real committed state even
+     * though the edit itself was rejected), and reports the real
+     * failure message rather than silently swallowing it. */
+    fun submitDimension(
+        kind: uniffi.craftloop_mobile_ffi.FfiDimensionKind,
+        value: Double,
+    ) {
+        val editId = _uiState.value.dimensionEditTargetId
+        val selected = _sceneSnapshot.value.selectedEntityIds
+        viewModelScope.launch {
+            val result =
+                runCatching {
+                    if (editId != null) {
+                        session.editDimension(editId, value)
+                    } else {
+                        session.createDimension(kind, selected, value)
+                    }
+                }
+            refreshSnapshots()
+            _uiState.value =
+                _uiState.value.copy(
+                    dimensionDialogVisible = false,
+                    lastActionMessage =
+                        result.fold(
+                            onSuccess = { if (editId != null) "Dimension updated" else "Dimension created" },
+                            onFailure = { err -> "Dimension rejected: ${err.message}" },
+                        ),
+                )
+        }
+    }
+
+    /** Task 069/070: solve the current sketch's constraints for real
+     * (Task 069 is otherwise already done by [applyConstraint] alone --
+     * nothing before this method ever actually invoked the solver, so
+     * no real solver conflict could ever have been observed). Unlike
+     * an invalid dimension edit, `solve_constraints` does **not** commit
+     * a `Conflict` entity for an unsatisfied/failed solve (confirmed by
+     * reading its real body in `session.rs`: it returns early with
+     * `updated_primitive_count: 0` and no document change at all when
+     * `SolveStatus::Failed`, and otherwise only ever commits the
+     * primitives that actually moved) -- so an unsatisfied/failed solve
+     * is reported the same way Orthographic's own outcome already is,
+     * via `lastActionMessage`, not through the conflict list. */
+    fun solveConstraints() {
+        viewModelScope.launch {
+            val result = runCatching { session.solveConstraints() }
+            refreshSnapshots()
+            _uiState.value =
+                _uiState.value.copy(
+                    lastActionMessage =
+                        result.fold(
+                            onSuccess = { outcome ->
+                                "Solve: ${outcome.status} (${outcome.updatedPrimitiveCount} moved" +
+                                    if (outcome.unsatisfiedConstraintIds.isNotEmpty()) {
+                                        ", ${outcome.unsatisfiedConstraintIds.size} unsatisfied)"
+                                    } else {
+                                        ")"
+                                    }
+                            },
+                            onFailure = { err -> "Solve failed: ${err.message}" },
+                        ),
+                )
+        }
+    }
+
+    /** Phase 08/10 on-device verification helper only -- selects the
+     * first current primitive, the same real `CraftLoopSession.select`
+     * path a real stylus tap on it would take (`selectAt`), so
+     * Dimension/Constraint's selection-gated dialogs/popovers are
+     * exercisable on a real device without a physical stylus. Not a
+     * product feature -- see [debugInsertTestLine]'s own doc comment
+     * for why this class of helper is legitimate here. */
+    fun debugSelectFirstPrimitive() {
+        val first = _sceneSnapshot.value.primitives.firstOrNull() ?: return
+        viewModelScope.launch {
+            session.select(listOf(first.id))
+            refreshSnapshots()
+        }
     }
 
     /** Task 064: Save to the fixed Alpha document path. */

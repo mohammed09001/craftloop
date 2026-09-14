@@ -64,8 +64,8 @@ use craftloop_document::{
 use craftloop_errors::{DomainError, Severity};
 use craftloop_geometry::{Circle2, Point2, RelationalRectangle, Segment2};
 use craftloop_ids::{
-    ConflictId, ConstraintId, CraftLoopId, DimensionId, OrthographicSetId, PrimitiveId, StrokeId,
-    ViewId,
+    ConflictId, ConstraintId, CraftLoopId, DimensionId, NoteId, OrthographicSetId, PrimitiveId,
+    StrokeId, ViewId,
 };
 use craftloop_ink::Stroke;
 use craftloop_input::PointerSample;
@@ -133,9 +133,61 @@ fn parse_id<T: CraftLoopId>(raw: &str) -> Result<T, FfiSessionError> {
     Ok(T::from_u128(uuid.as_u128()))
 }
 
-fn parse_entity_id(raw: &str) -> Result<EntityId, FfiSessionError> {
-    raw.parse()
-        .map_err(|err: String| FfiSessionError::Domain { detail: err })
+/// Resolve a bare-UUID entity id -- exactly the format every
+/// `Ffi*Summary.id` field this module builds actually emits
+/// (`id.to_string()` on a typed id, no kind prefix) -- against the
+/// entities that actually exist on `page`, by constructing each
+/// `EntityId` variant's own id type from the same UUID bits and
+/// checking which one `page.get` finds.
+///
+/// **Real bug this replaces** (found via a real on-device selection
+/// test, not a review): `select`/`delete_selected` previously parsed
+/// `raw` with `raw.parse::<EntityId>()` (`EntityId`'s `FromStr`, the
+/// composite `"Kind:uuid"` format `EntityId::Display` produces) --  but
+/// nothing in this crate has ever produced that format for a caller to
+/// pass back in. Every summary (`FfiPrimitiveSummary`,
+/// `FfiStrokeSummary`, `FfiConflictSummary`, ...) uses a bare
+/// `id.to_string()`, matching every other `Ffi*` id field in this
+/// module (dimensions, views, constraints all take bare ids via
+/// `parse_id::<T>`). So any real selection crashed immediately
+/// (`FfiSessionException.Domain: invalid EntityId string: "<uuid>"`)
+/// the first time a real hit-test ever reached `select` with a real
+/// match -- every earlier verification pass exercised only the "no
+/// hit" path (`clear_selection`, which never parses anything).
+fn resolve_entity_id(
+    page: &craftloop_document::Page,
+    raw: &str,
+) -> Result<EntityId, FfiSessionError> {
+    let uuid = uuid::Uuid::parse_str(raw).map_err(|err| FfiSessionError::Domain {
+        detail: format!("invalid id {raw:?}: {err}"),
+    })?;
+    let bits = uuid.as_u128();
+    let candidates = [
+        EntityId::Stroke(StrokeId::from_u128(bits)),
+        EntityId::Primitive(PrimitiveId::from_u128(bits)),
+        EntityId::Note(NoteId::from_u128(bits)),
+        EntityId::Dimension(DimensionId::from_u128(bits)),
+        EntityId::Conflict(ConflictId::from_u128(bits)),
+    ];
+    candidates
+        .into_iter()
+        .find(|candidate| page.get(*candidate).is_some())
+        .ok_or_else(|| missing("entity", raw))
+}
+
+/// The exact inverse of [`resolve_entity_id`]: every concrete id type
+/// `EntityId` wraps already `Display`s as a bare UUID (the same
+/// `id.to_string()` every other `Ffi*Summary.id` field in this module
+/// uses) -- this only needs to unwrap the variant, not reformat
+/// anything.
+fn entity_id_bare_uuid(id: EntityId) -> String {
+    match id {
+        EntityId::Stroke(inner) => inner.to_string(),
+        EntityId::Primitive(inner) => inner.to_string(),
+        EntityId::Note(inner) => inner.to_string(),
+        EntityId::Dimension(inner) => inner.to_string(),
+        EntityId::Conflict(inner) => inner.to_string(),
+    }
 }
 
 fn now_seconds() -> f64 {
@@ -753,7 +805,21 @@ impl CraftLoopSession {
                 view_ids: set.views().iter().map(|id| id.to_string()).collect(),
             })
             .collect();
-        let selected_entity_ids = state.selection.iter().map(|id| id.to_string()).collect();
+        // Real bug fixed alongside `resolve_entity_id` (see its own doc
+        // comment): `EntityId`'s own `Display` produces the composite
+        // "Kind:uuid" format, inconsistent with every bare-UUID id
+        // string every other field in this snapshot emits
+        // (`FfiPrimitiveSummary.id`, etc.) and with what
+        // `apply_constraint`/`create_dimension` (`parse_id::<T>`, bare
+        // UUID only) actually accept -- a caller round-tripping a
+        // `selected_entity_ids` value straight into either of those
+        // would fail the same way `select` itself used to. Bare
+        // `entity_id_bare_uuid` matches every other id field instead.
+        let selected_entity_ids = state
+            .selection
+            .iter()
+            .map(|id| entity_id_bare_uuid(*id))
+            .collect();
 
         FfiSceneSnapshot {
             strokes,
@@ -944,9 +1010,16 @@ impl CraftLoopSession {
 
     pub fn select(&self, ids: Vec<String>) -> Result<(), FfiSessionError> {
         let mut state = self.lock();
+        let page_id = state.active_page()?;
         let mut parsed = BTreeSet::new();
-        for raw in &ids {
-            parsed.insert(parse_entity_id(raw)?);
+        {
+            let page = state
+                .document
+                .page(page_id)
+                .ok_or_else(|| missing("page", page_id))?;
+            for raw in &ids {
+                parsed.insert(resolve_entity_id(page, raw)?);
+            }
         }
         state.submit(
             CommandAction::Select,
@@ -967,14 +1040,13 @@ impl CraftLoopSession {
         let mut changes = Vec::new();
         let mut parsed_ids = Vec::new();
         for raw in &ids {
-            let entity_id = parse_entity_id(raw)?;
-            parsed_ids.push(entity_id);
-            if let Some(entity) = state
+            let page = state
                 .document
                 .page(page_id)
-                .and_then(|p| p.get(entity_id))
-                .cloned()
-            {
+                .ok_or_else(|| missing("page", page_id))?;
+            let entity_id = resolve_entity_id(page, raw)?;
+            parsed_ids.push(entity_id);
+            if let Some(entity) = page.get(entity_id).cloned() {
                 changes.push(DocumentChange::RemoveEntity { page_id, entity });
             }
         }
@@ -1938,23 +2010,44 @@ mod tests {
 
     #[test]
     fn select_and_delete_selected_removes_entities_and_clears_selection() {
+        // Real bug, found via a real on-device selection test, not
+        // review: `select`/`delete_selected` must accept exactly the
+        // bare-UUID id string `scene_snapshot()` itself emits
+        // (`FfiPrimitiveSummary.id`, matching every other `Ffi*` id
+        // field) -- this test previously hand-built a
+        // `"Primitive:{uuid}"` composite string that nothing in this
+        // crate has ever actually produced, masking the real crash a
+        // physical device hit the first time a real hit-test reached
+        // `select` with a real match. `line_id` here is exactly what a
+        // real caller has: `create_primitive_line`'s own return value,
+        // identical in shape to `scene_snapshot().primitives[_].id`.
         let session = CraftLoopSession::new();
         let line_id = session.create_primitive_line(0.0, 0.0, 1.0, 0.0).unwrap();
-        let entity_id = format!("Primitive:{line_id}");
 
-        session.select(vec![entity_id.clone()]).unwrap();
+        session.select(vec![line_id.clone()]).unwrap();
         assert_eq!(
             session.scene_snapshot().selected_entity_ids,
-            vec![entity_id.clone()]
+            vec![line_id.clone()]
         );
 
         session.clear_selection();
         assert!(session.scene_snapshot().selected_entity_ids.is_empty());
 
-        session.select(vec![entity_id.clone()]).unwrap();
-        session.delete_selected(vec![entity_id]).unwrap();
+        session.select(vec![line_id.clone()]).unwrap();
+        session.delete_selected(vec![line_id]).unwrap();
         assert!(session.scene_snapshot().primitives.is_empty());
         assert!(session.scene_snapshot().selected_entity_ids.is_empty());
+    }
+
+    #[test]
+    fn select_rejects_an_id_with_no_matching_entity_on_the_active_page() {
+        let session = CraftLoopSession::new();
+        let bogus = uuid::Uuid::new_v4().to_string();
+        let result = session.select(vec![bogus]);
+        assert!(
+            result.is_err(),
+            "a bare UUID matching no real entity must fail, not silently select nothing"
+        );
     }
 
     #[test]

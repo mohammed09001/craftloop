@@ -278,6 +278,8 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
                 panY = uiState.viewport.panY,
                 activeTool = uiState.activeTool.name,
                 lastActionMessage = uiState.lastActionMessage,
+                onInsertTestLine = { viewModel.debugInsertTestLine() },
+                onSelectFirstPrimitive = { viewModel.debugSelectFirstPrimitive() },
             )
         }
     }
@@ -300,6 +302,8 @@ fun DebugRegion(
     panY: Float,
     activeTool: String,
     lastActionMessage: String,
+    onInsertTestLine: () -> Unit,
+    onSelectFirstPrimitive: () -> Unit,
 ) {
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.padding(8.dp)) {
@@ -310,6 +314,15 @@ fun DebugRegion(
             Text("zoom=%.2f pan=(%.0f, %.0f)".format(zoom, panX, panY))
             if (lastActionMessage.isNotEmpty()) {
                 Text("last=$lastActionMessage")
+            }
+            // Debug-only verification helpers (see CraftLoopViewModel's
+            // own doc comments on debugInsertTestLine/
+            // debugSelectFirstPrimitive) -- no physical stylus exists
+            // in this harness to draw/select a real primitive, so these
+            // stand in for it. Alpha-only diagnostic, not product UI.
+            androidx.compose.foundation.layout.Row {
+                androidx.compose.material3.TextButton(onClick = onInsertTestLine) { Text("+Line") }
+                androidx.compose.material3.TextButton(onClick = onSelectFirstPrimitive) { Text("Select 1st") }
             }
         }
     }
