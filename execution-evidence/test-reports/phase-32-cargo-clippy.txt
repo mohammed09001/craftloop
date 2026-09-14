@@ -1,0 +1,11 @@
+    Checking craftloop-recognition v0.1.0 (C:\projects\craftloop\crates\craftloop-recognition)
+    Checking craftloop-dimension v0.1.0 (C:\projects\craftloop\crates\craftloop-dimension)
+    Checking craftloop-consistency v0.1.0 (C:\projects\craftloop\crates\craftloop-consistency)
+    Checking craftloop-document v0.1.0 (C:\projects\craftloop\crates\craftloop-document)
+    Checking craftloop-sketch v0.1.0 (C:\projects\craftloop\crates\craftloop-sketch)
+    Checking craftloop-handwriting v0.1.0 (C:\projects\craftloop\crates\craftloop-handwriting)
+    Checking craftloop-ink-intent v0.1.0 (C:\projects\craftloop\crates\craftloop-ink-intent)
+    Checking craftloop-standards v0.1.0 (C:\projects\craftloop\crates\craftloop-standards)
+    Checking craftloop-export v0.1.0 (C:\projects\craftloop\crates\craftloop-export)
+    Checking craftloop-scenarios v0.1.0 (C:\projects\craftloop\crates\craftloop-scenarios)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.94s

@@ -50,10 +50,23 @@ fn solve_3x3(a: [[f64; 3]; 3], b: [f64; 3]) -> Option<[f64; 3]> {
 }
 
 /// Fit the best-fit circle through `points` via the Kåsa method. Returns
-/// `None` for fewer than 3 points or a (near-)degenerate (collinear) point
-/// set, for which no circle is well defined.
+/// `None` for fewer than 3 points, a (near-)degenerate (collinear) point
+/// set, or any non-finite (NaN/infinite) input point -- an independent
+/// review (Execution 01, Phase 32, Task 231) found that without this
+/// explicit guard, a NaN input point drives `det3`'s result to NaN,
+/// `det.abs() < 1e-12` is `false` for NaN (NaN never compares as `<`
+/// anything), so the near-singular check silently fails to reject it,
+/// and a `Some(CircleCandidate { center: NaN, .. })` would be fabricated
+/// from garbage input instead of returning `None`. Rejecting non-finite
+/// input at this boundary, before any arithmetic runs on it, is the same
+/// "reject at the boundary" convention this workspace already applies
+/// everywhere else (e.g. `craftloop_geometry::Circle2::new`'s own
+/// non-finite-radius check).
 pub fn fit_circle(points: &[Point2]) -> Option<CircleCandidate> {
     if points.len() < 3 {
+        return None;
+    }
+    if points.iter().any(|p| !p.x.is_finite() || !p.y.is_finite()) {
         return None;
     }
 
@@ -79,7 +92,7 @@ pub fn fit_circle(points: &[Point2]) -> Option<CircleCandidate> {
 
     let center = Point2::new(d / 2.0, e / 2.0);
     let radius_sq = f + center.x * center.x + center.y * center.y;
-    if radius_sq <= 0.0 {
+    if !(radius_sq.is_finite() && radius_sq > 0.0) {
         return None;
     }
     let radius = radius_sq.sqrt();
@@ -127,6 +140,32 @@ mod tests {
         let points: Vec<Point2> = (0..10)
             .map(|i| Point2::new(i as f64, 2.0 * i as f64))
             .collect();
+        assert!(fit_circle(&points).is_none());
+    }
+
+    #[test]
+    fn a_nan_input_point_is_rejected_not_fabricated_into_a_nan_circle() {
+        // Execution 01, Phase 32, Task 231 (independent review): without
+        // the explicit finiteness guard, `det.abs() < 1e-12` is `false`
+        // for a NaN determinant (NaN never compares less than anything),
+        // so the near-singular check alone does not catch this -- a
+        // `Some(CircleCandidate { center: NaN, .. })` would have been
+        // fabricated from garbage input instead.
+        let points = vec![
+            Point2::new(0.0, 0.0),
+            Point2::new(1.0, 0.0),
+            Point2::new(f64::NAN, 1.0),
+        ];
+        assert!(fit_circle(&points).is_none());
+    }
+
+    #[test]
+    fn an_infinite_input_point_is_rejected() {
+        let points = vec![
+            Point2::new(0.0, 0.0),
+            Point2::new(1.0, 0.0),
+            Point2::new(f64::INFINITY, 1.0),
+        ];
         assert!(fit_circle(&points).is_none());
     }
 
