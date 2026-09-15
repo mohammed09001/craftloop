@@ -14,3 +14,8 @@ Planned members (added when their phase begins):
 - Android and iPad adapters are native Kotlin/Swift projects and will live in
   their own top-level directories (e.g. `android/`, `ios/`) once Phases 28–29
   begin, not under this Rust `apps/` directory.
+- `web-live` — Execution 03 Phase 02, a React/TypeScript/Vite browser
+  harness backed by the shared Rust core through `crates/craftloop-web-bridge`
+  (Wasm). Same rule applies: it is a live engineering/UI test harness, not a
+  parallel engineering model or a production Craft Loop product (Execution 03
+  Article 8).
