@@ -10,10 +10,15 @@
 //! solved line's endpoints actually end up at equal Y, the solver's real
 //! numerical code ran on `wasm32-unknown-unknown`, not a stub.
 //!
-//! This crate does not yet expose a full `CraftLoopSession`-equivalent
-//! API -- that is Phase 04 (Article 10: "a session API conceptually
-//! aligned with native `CraftLoopSession`"). Phase 03's job is narrower:
-//! prove the target works at all before building a UI against it.
+//! Phase 04's real session API lives in [`session`]; this module keeps
+//! its original narrow proof rather than folding it into that session,
+//! since it is still useful as a minimal, dependency-light compile/run
+//! smoke check independent of the full session surface.
+
+pub mod session;
+pub mod types;
+
+pub use session::CraftLoopSession;
 
 use craftloop_geometry::{Point2, Segment2};
 use craftloop_ids::{ConstraintId, CraftLoopId, PrimitiveId};

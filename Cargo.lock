@@ -1157,13 +1157,24 @@ dependencies = [
 name = "craftloop-web-bridge"
 version = "0.1.0"
 dependencies = [
+ "craftloop-command",
+ "craftloop-consistency",
+ "craftloop-constraint",
+ "craftloop-dimension",
+ "craftloop-document",
+ "craftloop-errors",
  "craftloop-geometry",
  "craftloop-ids",
+ "craftloop-ink",
+ "craftloop-input",
  "craftloop-recognition",
  "craftloop-serialization",
  "craftloop-sketch",
+ "js-sys",
  "serde",
  "serde_json",
+ "thiserror 2.0.20",
+ "uuid",
  "wasm-bindgen",
 ]
 

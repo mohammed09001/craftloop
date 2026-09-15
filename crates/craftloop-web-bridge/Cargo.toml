@@ -14,12 +14,31 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
 wasm-bindgen = "0.2"
 craftloop-ids = { path = "../craftloop-ids" }
+craftloop-errors = { path = "../craftloop-errors" }
 craftloop-geometry = { path = "../craftloop-geometry" }
 craftloop-serialization = { path = "../craftloop-serialization" }
 craftloop-recognition = { path = "../craftloop-recognition" }
 craftloop-sketch = { path = "../craftloop-sketch" }
+craftloop-constraint = { path = "../craftloop-constraint" }
+craftloop-document = { path = "../craftloop-document" }
+craftloop-dimension = { path = "../craftloop-dimension" }
+craftloop-consistency = { path = "../craftloop-consistency" }
+craftloop-command = { path = "../craftloop-command" }
+craftloop-input = { path = "../craftloop-input" }
+craftloop-ink = { path = "../craftloop-ink" }
+
+# Execution 03, Phase 04: `now_seconds()` needs a real wall-clock source.
+# `std::time::SystemTime::now()` panics at runtime on
+# `wasm32-unknown-unknown` (no OS clock), so the wasm32 build reads
+# `Date.now()` through the browser instead -- additive per-target, same
+# pattern Phase 03 already established for `uuid`. Native builds (this
+# crate's own `cargo test`, Android, Windows) keep using `SystemTime`.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3"
 
 [lints]
 workspace = true
