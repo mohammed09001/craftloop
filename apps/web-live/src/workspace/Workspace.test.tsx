@@ -19,10 +19,13 @@ describe('Workspace', () => {
     expect(screen.getByTestId('ink-canvas')).toBeInTheDocument()
   })
 
-  it('keeps the toolbar host empty (Task 016 invariant, until Phase 07)', () => {
+  it('renders the real Phase 07 toolbar inside the reserved top-center anchor', () => {
     render(<Workspace />)
 
-    expect(screen.getByTestId('toolbar-host')).toBeEmptyDOMElement()
+    const host = screen.getByTestId('toolbar-host')
+    const toolbar = screen.getByTestId('main-toolbar')
+    expect(host).toContainElement(toolbar)
+    expect(screen.getByTestId('tool-pen')).toBeInTheDocument()
   })
 
   it('renders no fake engineering geometry before a real session is ready', () => {

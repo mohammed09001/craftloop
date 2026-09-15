@@ -1,0 +1,67 @@
+/*
+ * Task 055 (canvas-dominance review): height is capped at 44px content
+ * + 12px padding -- far below a ribbon's typical 80-120px, and width
+ * is intrinsic to its buttons (`fit-content`), never `100%`. Sits
+ * inside the reserved anchor (Workspace.module.css's `.toolbarHost`),
+ * which stays `pointer-events: none`; this surface re-enables pointer
+ * events for itself only.
+ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e4e1;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(8, 6, 13, 0.08);
+  pointer-events: auto;
+  width: fit-content;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: #e5e4e1;
+  margin: 0 4px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #3a3a38;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: #f4f3ef;
+}
+
+.button[aria-pressed='true'] {
+  background: #e8edff;
+  border-color: #b9c8ff;
+  color: #2563eb;
+}
+
+.button:disabled {
+  color: #b9b8b3;
+  cursor: not-allowed;
+}
+
+.button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
