@@ -189,6 +189,11 @@ pub struct CraftLoopSession {
     /// cross-session limitation.
     pending_shared_value_proposals:
         std::collections::BTreeMap<ConflictId, (ViewId, SharedAxis, f64)>,
+    /// Execution 03, Phase 08, Task 056: ephemeral interaction state,
+    /// same rule as `selection` -- never a `DocumentChange`, never
+    /// touches `history`. See `types::WebWorkspaceMode`'s own doc
+    /// comment for why this is its own small type.
+    workspace_mode: WebWorkspaceMode,
 }
 
 impl CraftLoopSession {
@@ -269,6 +274,7 @@ impl CraftLoopSession {
             command_bus: CommandBus::new(),
             selection: BTreeSet::new(),
             pending_shared_value_proposals: std::collections::BTreeMap::new(),
+            workspace_mode: WebWorkspaceMode::Creative,
         }
     }
 
@@ -286,6 +292,7 @@ impl CraftLoopSession {
             command_bus: CommandBus::new(),
             selection: BTreeSet::new(),
             pending_shared_value_proposals: std::collections::BTreeMap::new(),
+            workspace_mode: WebWorkspaceMode::Creative,
         })
     }
 
@@ -462,6 +469,7 @@ impl CraftLoopSession {
             revision: document.revision(),
             can_undo: self.history.can_undo(),
             can_redo: self.history.can_redo(),
+            workspace_mode: self.workspace_mode,
         };
         // Infallible: every field above is already-valid, already-owned
         // data (no interior `NaN`/cycles serde_json would choke on).
@@ -1288,6 +1296,41 @@ impl CraftLoopSession {
         Ok(())
     }
 
+    // -- Workspace mode (Article 19-21) ------------------------------------
+
+    /// Task 057: one semantic action shared by every entry source
+    /// (toolbar click, keyboard `S`, a future ink/voice command) --
+    /// every caller ends up here rather than each inventing its own
+    /// mode-flip logic. Submits `CommandAction::Sketch` through the
+    /// real Command Bus (same validation every other command goes
+    /// through) before flipping the ephemeral mode; never calls
+    /// `self.commit(...)`, so `DocumentHistory` is untouched (Task 063).
+    #[wasm_bindgen(js_name = enterSketchMode)]
+    pub fn enter_sketch_mode(&mut self) -> Result<(), WebSessionError> {
+        self.submit(
+            CommandAction::Sketch,
+            craftloop_command::CommandNamespace::Notebook,
+            "Entered Sketch Mode",
+        )?;
+        self.workspace_mode = WebWorkspaceMode::Sketch2D;
+        Ok(())
+    }
+
+    /// Task 058: the return-side counterpart. Submits
+    /// `CommandAction::ExitSketch` (the real Article 237 Sketch-context
+    /// word for this) through the Command Bus before flipping back to
+    /// `Creative` -- also never touches `DocumentHistory`.
+    #[wasm_bindgen(js_name = enterCreativePenMode)]
+    pub fn enter_creative_pen_mode(&mut self) -> Result<(), WebSessionError> {
+        self.submit(
+            CommandAction::ExitSketch,
+            craftloop_command::CommandNamespace::Sketch,
+            "Returned to Pen",
+        )?;
+        self.workspace_mode = WebWorkspaceMode::Creative;
+        Ok(())
+    }
+
     // -- Undo/redo --------------------------------------------------------
 
     pub fn undo(&mut self) -> Result<(), WebSessionError> {
@@ -1315,6 +1358,31 @@ impl Default for CraftLoopSession {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Task 062: "injected recognized text uses the real resolver/Command
+/// Bus" -- a free function (not tied to a live session) exposing the
+/// real `craftloop_command::grammar::resolve` directly, so a caller can
+/// see exactly what the shared grammar does with a piece of recognized
+/// text before deciding whether to act on it. Deliberately returns the
+/// raw match rather than performing any action itself: a dedicated
+/// command-simulator UI that turns this into visible/actionable results
+/// (including confirmation for an `Ambiguous` match) is Phase 15's job
+/// (Article 45); this function is the infrastructure that phase's UI
+/// will call, proven correct here first.
+///
+/// Note this is deliberately *not* how `S`/`B` keyboard shortcuts work
+/// (`enterSketchMode`/`enterCreativePenMode`, wired directly to a
+/// literal keypress): grammar resolution answers "what does the text
+/// 's' mean," and in the real, tested `Notebook` vocabulary that is
+/// genuinely ambiguous between "select" and "sketch" (Execution 01's
+/// own `an_ambiguous_prefix_never_guesses_and_names_every_candidate`
+/// test) -- a discrete keyboard key is not ambiguous text and is
+/// handled as its own deterministic path instead.
+#[wasm_bindgen(js_name = resolveCommand)]
+pub fn resolve_command(input: &str, namespace: WebCommandNamespace) -> String {
+    let result: WebGrammarMatch = craftloop_command::resolve(input, namespace.into()).into();
+    to_json(&result).unwrap_or_else(|_| "\"NoMatch\"".to_string())
 }
 
 #[cfg(test)]
@@ -1595,6 +1663,86 @@ mod tests {
             stroke["points"],
             json!([{"x": 0.0, "y": 0.0}, {"x": 3.0, "y": 4.0}])
         );
+    }
+
+    // -- Execution 03, Phase 08: WorkspaceMode / commands --------------
+
+    #[test]
+    fn a_new_session_starts_in_creative_mode() {
+        let session = CraftLoopSession::new();
+        assert_eq!(snapshot(&session)["workspace_mode"], "Creative");
+    }
+
+    #[test]
+    fn enter_sketch_mode_and_back_round_trips_through_the_real_command_bus() {
+        let mut session = CraftLoopSession::new();
+        session.enter_sketch_mode().unwrap();
+        assert_eq!(snapshot(&session)["workspace_mode"], "Sketch2D");
+
+        session.enter_creative_pen_mode().unwrap();
+        assert_eq!(snapshot(&session)["workspace_mode"], "Creative");
+    }
+
+    /// Task 063: mode switching must never mutate engineering document
+    /// history -- checked against the real `revision`/`can_undo`, not
+    /// inferred.
+    #[test]
+    fn mode_switching_does_not_touch_document_history() {
+        let mut session = CraftLoopSession::new();
+        session.create_primitive_line(0.0, 0.0, 1.0, 0.0).unwrap();
+        let before = snapshot(&session);
+        let revision_before = before["revision"].as_u64().unwrap();
+
+        session.enter_sketch_mode().unwrap();
+        session.enter_creative_pen_mode().unwrap();
+        session.enter_sketch_mode().unwrap();
+
+        let after = snapshot(&session);
+        assert_eq!(
+            after["revision"], revision_before,
+            "mode switches must not bump the document revision"
+        );
+        assert_eq!(after["primitives"], before["primitives"]);
+        assert_eq!(
+            after["can_undo"], true,
+            "the earlier real edit is still the only undo entry"
+        );
+
+        session.undo().unwrap();
+        assert!(
+            snapshot(&session)["primitives"]
+                .as_array()
+                .unwrap()
+                .is_empty(),
+            "undo must still only affect the one real document edit, not any mode switch"
+        );
+    }
+
+    #[test]
+    fn resolve_command_uses_the_real_grammar_and_never_guesses_an_ambiguous_prefix() {
+        // Exact word.
+        let exact: Value =
+            serde_json::from_str(&resolve_command("sketch", WebCommandNamespace::Notebook))
+                .unwrap();
+        assert_eq!(exact["Exact"]["action"], "Sketch");
+
+        // Unambiguous prefix.
+        let prefix: Value =
+            serde_json::from_str(&resolve_command("sk", WebCommandNamespace::Notebook)).unwrap();
+        assert_eq!(prefix["UniquePrefix"]["action"], "Sketch");
+
+        // Genuinely ambiguous in the real, tested Notebook vocabulary
+        // ("select" and "sketch" both start with "s") -- must name both
+        // candidates, never guess one.
+        let ambiguous: Value =
+            serde_json::from_str(&resolve_command("s", WebCommandNamespace::Notebook)).unwrap();
+        let candidates = ambiguous["Ambiguous"]["candidates"].as_array().unwrap();
+        assert!(candidates.iter().any(|c| c == "select"));
+        assert!(candidates.iter().any(|c| c == "sketch"));
+
+        let no_match: Value =
+            serde_json::from_str(&resolve_command("zzz", WebCommandNamespace::Notebook)).unwrap();
+        assert_eq!(no_match, json!("NoMatch"));
     }
 
     #[test]

@@ -10,6 +10,7 @@ import { expect, test } from '@playwright/test'
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('main-toolbar')).toBeVisible()
+  await expect(page.locator('[data-session-ready="true"]')).toBeAttached()
 })
 
 test('the toolbar sits top-center over the canvas, never at the bottom (Task 050/051)', async ({
@@ -90,10 +91,10 @@ test('Undo/Redo are disabled until there is real history, then work', async ({ p
   await expect(page.locator('[data-testid="geometry-layer"] polyline')).toHaveCount(1)
 })
 
-test('deferred tools (Sketch/View/Save/More) are disabled, not fake-functional', async ({
-  page,
-}) => {
-  for (const id of ['sketch', 'view', 'save', 'more']) {
+test('deferred tools (View/Save/More) are disabled, not fake-functional', async ({ page }) => {
+  // Sketch became real in Phase 08 (Execution 03, Task 057) -- see
+  // workspace-mode.spec.ts for its coverage.
+  for (const id of ['view', 'save', 'more']) {
     await expect(page.getByTestId(`tool-${id}`)).toBeDisabled()
   }
 })

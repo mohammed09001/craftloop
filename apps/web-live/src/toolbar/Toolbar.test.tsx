@@ -8,6 +8,9 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof Toolbar>> 
   const props = {
     activeTool: 'pen' as const,
     onSelectTool: vi.fn(),
+    workspaceMode: 'Creative' as const,
+    onEnterSketchMode: vi.fn(),
+    onEnterCreativePenMode: vi.fn(),
     canUndo: false,
     canRedo: false,
     onUndo: vi.fn(),
@@ -65,5 +68,30 @@ describe('Toolbar', () => {
       expect(button).toBeDisabled()
       expect(button).toHaveAttribute('title', expect.stringContaining(tool.deferredUntil!))
     }
+  })
+
+  it('calls onEnterSketchMode when Sketch is clicked, and shows it pressed once in Sketch2D (Task 061)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar()
+    expect(screen.getByTestId('tool-sketch')).toBeEnabled()
+    await user.click(screen.getByTestId('tool-sketch'))
+    expect(props.onEnterSketchMode).toHaveBeenCalledTimes(1)
+
+    renderToolbar({ workspaceMode: 'Sketch2D' })
+    expect(screen.getAllByTestId('tool-sketch').at(-1)).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('pauses Select/Eraser while in Sketch2D, and keeps Pen available (Article 26)', () => {
+    renderToolbar({ workspaceMode: 'Sketch2D' })
+    expect(screen.getByTestId('tool-select')).toBeDisabled()
+    expect(screen.getByTestId('tool-eraser')).toBeDisabled()
+    expect(screen.getByTestId('tool-pen')).toBeEnabled()
+  })
+
+  it('clicking Pen while in Sketch2D calls onEnterCreativePenMode', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar({ workspaceMode: 'Sketch2D' })
+    await user.click(screen.getByTestId('tool-pen'))
+    expect(props.onEnterCreativePenMode).toHaveBeenCalledTimes(1)
   })
 })

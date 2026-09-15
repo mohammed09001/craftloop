@@ -8,14 +8,18 @@
  * don't stay "on."
  *
  * Which tools are real yet: `Pen`/`Select`/`Eraser` change real
- * `CanvasStack` interaction behavior this phase (a small, natural
- * extension of Phase 06's drawing/selection code). `Undo`/`Redo` call
+ * `CanvasStack` interaction behavior (Phase 06/07). `Undo`/`Redo` call
  * the real `CraftLoopSession` methods Phase 04 already exposed.
- * `Sketch`, `View`, `Save`, and `More` are deliberately disabled here
- * -- their real behavior depends on infrastructure later phases build
- * (Sketch Mode's toolbar morph: Phase 08-09; Orthographic View Block
- * rendering: Phase 13; browser persistence: Phase 14; an overflow
- * menu with real contents: Phase 09's "Keep history actions
+ * `Sketch` is real as of Phase 08 (`enterSketchMode`, the same session
+ * method the `S` keyboard shortcut calls) -- clicking it toggles real
+ * `WorkspaceMode`, even though Phase 09's dedicated Sketch toolbar
+ * (Line/Arc/Circle/... tools) does not exist yet, so entering Sketch
+ * today only changes which Notebook-only tools (Select/Eraser) are
+ * available; Pen keeps working, per Article 26. `View`, `Save`, and
+ * `More` are still deliberately disabled -- their real behavior
+ * depends on infrastructure later phases build (Orthographic View
+ * Block rendering: Phase 13; browser persistence: Phase 14; an
+ * overflow menu with real contents: Phase 09's "Keep history actions
  * reachable"/Article 76). Registering them now (rather than omitting
  * them) keeps Task 052's registry complete and honest about what
  * exists versus what is coming, instead of a toolbar that silently
@@ -40,13 +44,7 @@ export const TOOL_REGISTRY: readonly ToolDefinition[] = [
   { id: 'pen', label: 'Pen', group: 'primary', kind: 'toggle' },
   { id: 'select', label: 'Select', group: 'primary', kind: 'toggle' },
   { id: 'eraser', label: 'Eraser', group: 'primary', kind: 'toggle' },
-  {
-    id: 'sketch',
-    label: 'Sketch',
-    group: 'primary',
-    kind: 'toggle',
-    deferredUntil: 'Phase 08-09 (Sketch Mode)',
-  },
+  { id: 'sketch', label: 'Sketch', group: 'primary', kind: 'toggle' },
   {
     id: 'view',
     label: 'View',

@@ -16,8 +16,10 @@ export function getCraftLoopSession(): Promise<CraftLoopSession> {
 
 export type { CraftLoopSession }
 export {
+  WebCommandNamespace,
   WebDimensionKind,
   WebPrincipalViewIdentity,
   WebResolutionChoice,
   WebSharedAxis,
+  resolveCommand,
 } from '../wasm-bridge/craftloop_web_bridge.js'

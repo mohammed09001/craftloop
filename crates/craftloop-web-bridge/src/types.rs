@@ -458,6 +458,7 @@ pub struct WebSceneSnapshot {
     pub revision: u64,
     pub can_undo: bool,
     pub can_redo: bool,
+    pub workspace_mode: WebWorkspaceMode,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -522,4 +523,125 @@ pub struct WebSolveOutcome {
 pub enum WebPropagateOutcome {
     Propagated { affected_views: Vec<String> },
     Conflict { conflict_id: String },
+}
+
+// ---------------------------------------------------------------------
+// Workspace mode and command grammar (Execution 03, Phase 08).
+// ---------------------------------------------------------------------
+
+/// Task 056: Creative and Sketch2D as ephemeral session interaction
+/// state -- the same ephemeral-vs-semantic distinction `selection`
+/// already established (Phase 04's `CraftLoopSession` doc comment):
+/// never a `DocumentChange`, never touches `DocumentHistory` (Task
+/// 063). Deliberately a small session-owned type of its own rather
+/// than reusing `craftloop_command::CommandNamespace` directly --
+/// `CommandNamespace` is the *command-grammar's* concept (three
+/// values, including `Orthographic`, which is not a toolbar drawing
+/// mode); `WorkspaceMode` is the narrower UI-facing "what does the
+/// canvas/toolbar currently look like" concept Article 19-21 describe.
+/// `enter_sketch_mode`/`enter_creative_pen_mode` map each transition
+/// onto the one real `CommandNamespace` it corresponds to when
+/// submitting through the Command Bus, so the two concepts stay in
+/// lockstep without literally being the same type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum WebWorkspaceMode {
+    Creative,
+    Sketch2D,
+}
+
+/// Mirrors `craftloop_command::CommandNamespace`, exposed as a real
+/// wasm-bindgen enum since it crosses as a plain function parameter
+/// (`resolveCommand`'s second argument) with no associated data.
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WebCommandNamespace {
+    Notebook,
+    Sketch,
+    Orthographic,
+}
+
+impl From<WebCommandNamespace> for craftloop_command::CommandNamespace {
+    fn from(namespace: WebCommandNamespace) -> Self {
+        match namespace {
+            WebCommandNamespace::Notebook => craftloop_command::CommandNamespace::Notebook,
+            WebCommandNamespace::Sketch => craftloop_command::CommandNamespace::Sketch,
+            WebCommandNamespace::Orthographic => craftloop_command::CommandNamespace::Orthographic,
+        }
+    }
+}
+
+/// Mirrors every `craftloop_command::CommandAction` variant -- the
+/// command simulator (Task 062; full UI in Phase 15) needs to report
+/// exactly which real action a piece of recognized text resolved to,
+/// not a narrowed-down subset.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum WebCommandAction {
+    Pen,
+    Eraser,
+    Select,
+    Sketch,
+    Orthographic,
+    Line,
+    Circle,
+    Arc,
+    Rectangle,
+    Dimension,
+    ExitSketch,
+    AddView,
+    LabelView,
+    Link,
+    Resolve,
+}
+
+impl From<craftloop_command::CommandAction> for WebCommandAction {
+    fn from(action: craftloop_command::CommandAction) -> Self {
+        use craftloop_command::CommandAction as A;
+        match action {
+            A::Pen => WebCommandAction::Pen,
+            A::Eraser => WebCommandAction::Eraser,
+            A::Select => WebCommandAction::Select,
+            A::Sketch => WebCommandAction::Sketch,
+            A::Orthographic => WebCommandAction::Orthographic,
+            A::Line => WebCommandAction::Line,
+            A::Circle => WebCommandAction::Circle,
+            A::Arc => WebCommandAction::Arc,
+            A::Rectangle => WebCommandAction::Rectangle,
+            A::Dimension => WebCommandAction::Dimension,
+            A::ExitSketch => WebCommandAction::ExitSketch,
+            A::AddView => WebCommandAction::AddView,
+            A::LabelView => WebCommandAction::LabelView,
+            A::Link => WebCommandAction::Link,
+            A::Resolve => WebCommandAction::Resolve,
+        }
+    }
+}
+
+/// Mirrors `craftloop_command::grammar::GrammarMatch` (Task 059/062):
+/// "never guess" is the whole point of this type existing, so
+/// `Ambiguous`'s candidate list is preserved exactly as the real
+/// resolver produced it, not collapsed to a single guess.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub enum WebGrammarMatch {
+    Exact { action: WebCommandAction },
+    UniquePrefix { action: WebCommandAction },
+    Ambiguous { candidates: Vec<String> },
+    NoMatch,
+}
+
+impl From<craftloop_command::GrammarMatch> for WebGrammarMatch {
+    fn from(grammar_match: craftloop_command::GrammarMatch) -> Self {
+        use craftloop_command::GrammarMatch as G;
+        match grammar_match {
+            G::Exact(action) => WebGrammarMatch::Exact {
+                action: action.into(),
+            },
+            G::UniquePrefix(action) => WebGrammarMatch::UniquePrefix {
+                action: action.into(),
+            },
+            G::Ambiguous(candidates) => WebGrammarMatch::Ambiguous {
+                candidates: candidates.iter().map(|s| s.to_string()).collect(),
+            },
+            G::NoMatch => WebGrammarMatch::NoMatch,
+        }
+    }
 }

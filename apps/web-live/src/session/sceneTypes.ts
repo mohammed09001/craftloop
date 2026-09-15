@@ -126,6 +126,9 @@ export interface OrthographicSetSummary {
   view_ids: string[]
 }
 
+/** Mirrors `craftloop_web_bridge::types::WebWorkspaceMode` (Execution 03, Phase 08, Task 056). */
+export type WorkspaceModeName = 'Creative' | 'Sketch2D'
+
 export interface SceneSnapshot {
   strokes: StrokeSummary[]
   primitives: PrimitiveSummary[]
@@ -138,6 +141,7 @@ export interface SceneSnapshot {
   revision: number
   can_undo: boolean
   can_redo: boolean
+  workspace_mode: WorkspaceModeName
 }
 
 export const EMPTY_SNAPSHOT: SceneSnapshot = {
@@ -152,4 +156,5 @@ export const EMPTY_SNAPSHOT: SceneSnapshot = {
   revision: 0,
   can_undo: false,
   can_redo: false,
+  workspace_mode: 'Creative',
 }

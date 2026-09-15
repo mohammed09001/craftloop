@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   getCraftLoopSession,
+  resolveCommand as resolveCommandWasm,
   type CraftLoopSession,
+  type WebCommandNamespace,
   type WebDimensionKind,
 } from './craftLoopSession'
+import type { GrammarMatch } from './commandTypes'
 import { EMPTY_SNAPSHOT, type SceneSnapshot } from './sceneTypes'
 import type { PointerSampleInput } from './pointerTypes'
 
@@ -111,6 +114,29 @@ export function useCraftLoopSession() {
   const undo = useCallback(() => guard((session) => session.undo()), [guard])
   const redo = useCallback(() => guard((session) => session.redo()), [guard])
 
+  const enterSketchMode = useCallback(
+    () => guard((session) => session.enterSketchMode()),
+    [guard],
+  )
+  const enterCreativePenMode = useCallback(
+    () => guard((session) => session.enterCreativePenMode()),
+    [guard],
+  )
+
+  /**
+   * Task 062: resolve recognized text against the real Command Bus
+   * grammar without performing any action -- a read-only lookup, so it
+   * does not go through `guard`/`refresh` (nothing about the document
+   * or session state changes).
+   */
+  const resolveCommand = useCallback(
+    (input: string, namespace: WebCommandNamespace): GrammarMatch | undefined => {
+      if (!sessionRef.current) return undefined
+      return JSON.parse(resolveCommandWasm(input, namespace)) as GrammarMatch
+    },
+    [],
+  )
+
   return {
     ready,
     snapshot,
@@ -125,6 +151,9 @@ export function useCraftLoopSession() {
     deleteSelected,
     undo,
     redo,
+    enterSketchMode,
+    enterCreativePenMode,
+    resolveCommand,
   }
 }
 

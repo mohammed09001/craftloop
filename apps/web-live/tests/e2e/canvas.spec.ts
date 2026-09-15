@@ -9,6 +9,9 @@ import { expect, test } from '@playwright/test'
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('ink-canvas')).toBeVisible()
+  // Wait for the real Wasm CraftLoopSession to finish initializing, so
+  // interactions below aren't racing the async module load.
+  await expect(page.locator('[data-session-ready="true"]')).toBeAttached()
 })
 
 test('a drawn stroke appears in the structured geometry layer with real points', async ({
