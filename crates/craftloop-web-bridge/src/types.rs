@@ -124,6 +124,16 @@ impl From<WebSharedAxis> for craftloop_document::SharedAxis {
     }
 }
 
+impl From<craftloop_document::SharedAxis> for WebSharedAxis {
+    fn from(axis: craftloop_document::SharedAxis) -> Self {
+        match axis {
+            craftloop_document::SharedAxis::Width => WebSharedAxis::Width,
+            craftloop_document::SharedAxis::Height => WebSharedAxis::Height,
+            craftloop_document::SharedAxis::Depth => WebSharedAxis::Depth,
+        }
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WebResolutionChoice {
@@ -148,6 +158,24 @@ impl From<WebResolutionChoice> for craftloop_consistency::ResolutionChoice {
                 craftloop_consistency::ResolutionChoice::RemoveConstraint
             }
             WebResolutionChoice::Cancel => craftloop_consistency::ResolutionChoice::Cancel,
+        }
+    }
+}
+
+impl From<craftloop_consistency::ResolutionChoice> for WebResolutionChoice {
+    fn from(choice: craftloop_consistency::ResolutionChoice) -> Self {
+        match choice {
+            craftloop_consistency::ResolutionChoice::KeepExisting => {
+                WebResolutionChoice::KeepExisting
+            }
+            craftloop_consistency::ResolutionChoice::ReplaceAndPropagate => {
+                WebResolutionChoice::ReplaceAndPropagate
+            }
+            craftloop_consistency::ResolutionChoice::Unlink => WebResolutionChoice::Unlink,
+            craftloop_consistency::ResolutionChoice::RemoveConstraint => {
+                WebResolutionChoice::RemoveConstraint
+            }
+            craftloop_consistency::ResolutionChoice::Cancel => WebResolutionChoice::Cancel,
         }
     }
 }
@@ -242,6 +270,16 @@ pub struct WebStrokeSummary {
     pub sample_count: u32,
 }
 
+/// Execution 03, Phase 05, Task 036: `min_*`/`max_*` (Phase 04's
+/// original bounding box, still useful for hit-testing/fit-to-content
+/// per native's own rationale) plus `geometry` -- the real
+/// `craftloop_recognition::BeautifiedPrimitive`, serialized as-is
+/// (`{"Line":{"a":{...},"b":{...}}}`, `{"Circle":{"center":...,
+/// "radius":...}}`, etc.) so the frontend has actual coordinates to
+/// render a Segment/Circle/Arc/Rectangle, not just its box. There is no
+/// `Ellipse` variant here because none exists anywhere in the shared
+/// core yet (`BeautifiedPrimitive` has exactly four variants) -- adding
+/// one would be exactly the fabricated-capability Article 65 forbids.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct WebPrimitiveSummary {
     pub id: String,
@@ -250,6 +288,7 @@ pub struct WebPrimitiveSummary {
     pub min_y: f64,
     pub max_x: f64,
     pub max_y: f64,
+    pub geometry: craftloop_recognition::BeautifiedPrimitive,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -258,6 +297,26 @@ pub struct WebDimensionSummary {
     pub kind: WebDimensionKind,
     pub role: WebDimensionRole,
     pub value: f64,
+    /// Task 037's "anchors": which primitive(s) this dimension targets,
+    /// from the real `DimensionTarget::primitive_ids()`.
+    pub target_primitive_ids: Vec<String>,
+}
+
+/// Task 038: real relation metadata for a stored sketch constraint.
+/// `label` is `SketchConstraintKind`'s own `Debug` rendering (e.g.
+/// `Horizontal(PrimitiveId(..))`) rather than a second, hand-maintained
+/// name for each of its eleven variants -- honest and always in sync
+/// with the real enum, at the cost of not being pretty-printed; a
+/// nicer per-kind label is exactly the kind of presentation polish
+/// Phase 09-12's toolbar/badge work owns, not this read model.
+/// `primitive_ids` comes from the same real `point_refs()` the solver
+/// itself uses to build its variable set (`Sketch::variable_map`), so
+/// it can never disagree with what the constraint actually constrains.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct WebConstraintSummary {
+    pub id: String,
+    pub label: String,
+    pub primitive_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -287,18 +346,85 @@ impl From<craftloop_consistency::ConflictKind> for WebConflictKind {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum WebSeverity {
+    Info,
+    Warning,
+    Error,
+    Blocker,
+}
+
+impl From<craftloop_errors::Severity> for WebSeverity {
+    fn from(severity: craftloop_errors::Severity) -> Self {
+        match severity {
+            craftloop_errors::Severity::Info => WebSeverity::Info,
+            craftloop_errors::Severity::Warning => WebSeverity::Warning,
+            craftloop_errors::Severity::Error => WebSeverity::Error,
+            craftloop_errors::Severity::Blocker => WebSeverity::Blocker,
+        }
+    }
+}
+
+/// Task 041: everything a conflict-resolution UI needs, read directly
+/// from the real `craftloop_consistency::Conflict` -- never
+/// reconstructed or guessed at this boundary.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct WebConflictSummary {
     pub id: String,
     pub kind: WebConflictKind,
+    pub severity: WebSeverity,
     pub unresolved: bool,
+    pub affected_entities: Vec<String>,
+    pub existing_truth: String,
+    pub proposed_truth: String,
+    pub evidence: String,
+    pub allowed_resolutions: Vec<WebResolutionChoice>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum WebOrthographicReadiness {
+    DraftReady,
+    IdentityReady,
+    LinkReady,
+    Resolved,
+    Constrained,
+}
+
+impl From<craftloop_document::OrthographicReadiness> for WebOrthographicReadiness {
+    fn from(readiness: craftloop_document::OrthographicReadiness) -> Self {
+        use craftloop_document::OrthographicReadiness as R;
+        match readiness {
+            R::DraftReady => WebOrthographicReadiness::DraftReady,
+            R::IdentityReady => WebOrthographicReadiness::IdentityReady,
+            R::LinkReady => WebOrthographicReadiness::LinkReady,
+            R::Resolved => WebOrthographicReadiness::Resolved,
+            R::Constrained => WebOrthographicReadiness::Constrained,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct WebAxisBinding {
+    pub axis: WebSharedAxis,
+    pub dimension_id: String,
+}
+
+/// Task 039: identity, real member ids (not just a count), and real
+/// readiness/shared-axis state -- the last two computed by the same
+/// `evaluate_readiness`/`MultiviewGraph` calls `enterOrthographic`/
+/// `propagateSharedValue` already use, not a separate approximation.
+/// Deliberately does not include `layout` (`PageLayoutTransform`):
+/// Article 38 puts computing the visual 2D engineering-region layout in
+/// the frontend, not in this read model.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct WebViewBlockSummary {
     pub id: String,
     pub identity: Option<WebPrincipalViewIdentity>,
-    pub geometry_member_count: u32,
+    pub geometry_member_ids: Vec<String>,
+    pub readiness: WebOrthographicReadiness,
+    pub blockers: Vec<String>,
+    pub axis_bindings: Vec<WebAxisBinding>,
+    pub unresolved_axes: Vec<WebSharedAxis>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -316,6 +442,7 @@ pub struct WebSceneSnapshot {
     pub strokes: Vec<WebStrokeSummary>,
     pub primitives: Vec<WebPrimitiveSummary>,
     pub dimensions: Vec<WebDimensionSummary>,
+    pub constraints: Vec<WebConstraintSummary>,
     pub conflicts: Vec<WebConflictSummary>,
     pub view_blocks: Vec<WebViewBlockSummary>,
     pub orthographic_sets: Vec<WebOrthographicSetSummary>,

@@ -216,6 +216,20 @@ impl Sketch {
             .map(|entry| (&entry.kind, &entry.provenance))
     }
 
+    /// Execution 03, Phase 05, Task 038: every stored constraint, for a
+    /// caller (a read-model/summary layer, never a solver) that needs to
+    /// list all of them rather than look one up by id. Iterates the
+    /// underlying `BTreeMap` directly, so order is deterministic given
+    /// the same constraint set -- matching this crate's own
+    /// `variable_map`'s existing determinism rationale.
+    pub fn constraints(
+        &self,
+    ) -> impl Iterator<Item = (ConstraintId, &SketchConstraintKind, &ConstraintProvenance)> {
+        self.constraints
+            .iter()
+            .map(|(id, entry)| (*id, &entry.kind, &entry.provenance))
+    }
+
     /// Every point referenced by at least one stored constraint, mapped to
     /// a fresh dense `VariableId` pair, plus the `Variable`s (with initial
     /// guesses read from current primitive geometry) a `ConstraintSolver`
@@ -406,6 +420,54 @@ mod tests {
             BeautifiedPrimitive::Circle(circle) => *circle,
             other => panic!("expected a Circle, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn constraints_lists_every_stored_constraint() {
+        let mut sketch = Sketch::new();
+        let a = PrimitiveId::new();
+        let b = PrimitiveId::new();
+        sketch.insert_primitive(a, line(Point2::new(0.0, 0.0), Point2::new(1.0, 0.0)));
+        sketch.insert_primitive(b, line(Point2::new(2.0, 0.0), Point2::new(3.0, 1.0)));
+
+        assert_eq!(sketch.constraints().count(), 0);
+
+        let horizontal_id = ConstraintId::new();
+        sketch
+            .add_constraint(
+                horizontal_id,
+                SketchConstraintKind::Horizontal(a),
+                ConstraintProvenance::UserCreated,
+            )
+            .unwrap();
+        let vertical_id = ConstraintId::new();
+        sketch
+            .add_constraint(
+                vertical_id,
+                SketchConstraintKind::Vertical(b),
+                ConstraintProvenance::AcceptedSuggestion,
+            )
+            .unwrap();
+
+        let listed: std::collections::BTreeMap<_, _> = sketch
+            .constraints()
+            .map(|(id, kind, provenance)| (id, (*kind, *provenance)))
+            .collect();
+        assert_eq!(listed.len(), 2);
+        assert_eq!(
+            listed[&horizontal_id],
+            (
+                SketchConstraintKind::Horizontal(a),
+                ConstraintProvenance::UserCreated
+            )
+        );
+        assert_eq!(
+            listed[&vertical_id],
+            (
+                SketchConstraintKind::Vertical(b),
+                ConstraintProvenance::AcceptedSuggestion
+            )
+        );
     }
 
     // --- Task 084: coincident -------------------------------------------

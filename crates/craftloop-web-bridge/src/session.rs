@@ -305,6 +305,7 @@ impl CraftLoopSession {
         let mut strokes = Vec::new();
         let mut primitives = Vec::new();
         let mut conflicts = Vec::new();
+        let mut geometry_by_id = std::collections::BTreeMap::new();
         if let Some(page_id) = document.active_page() {
             if let Some(page) = document.page(page_id) {
                 for entity in page.entities() {
@@ -335,14 +336,26 @@ impl CraftLoopSession {
                                 min_y: bounds.min.y,
                                 max_x: bounds.max.x,
                                 max_y: bounds.max.y,
+                                geometry: beautified.primitive.clone(),
                             });
+                            geometry_by_id.insert(*id, beautified.primitive.clone());
                         }
                         SemanticEntity::Dimension(_) => {}
                         SemanticEntity::Conflict(conflict) => {
                             conflicts.push(WebConflictSummary {
                                 id: conflict.id.to_string(),
                                 kind: conflict.kind.into(),
+                                severity: conflict.severity.into(),
                                 unresolved: conflict.is_unresolved(),
+                                affected_entities: conflict.affected_entities.clone(),
+                                existing_truth: conflict.existing_truth.clone(),
+                                proposed_truth: conflict.proposed_truth.clone(),
+                                evidence: conflict.evidence.clone(),
+                                allowed_resolutions: conflict
+                                    .resolution_choices
+                                    .iter()
+                                    .map(|choice| (*choice).into())
+                                    .collect(),
                             });
                         }
                         SemanticEntity::Note(_) => {}
@@ -358,14 +371,69 @@ impl CraftLoopSession {
                 kind: dimension.kind.into(),
                 role: dimension.role.into(),
                 value: dimension.value(),
+                target_primitive_ids: dimension
+                    .target
+                    .primitive_ids()
+                    .iter()
+                    .map(|id| id.to_string())
+                    .collect(),
+            })
+            .collect();
+        let constraints: Vec<WebConstraintSummary> = document
+            .sketch()
+            .constraints()
+            .map(|(id, kind, _provenance)| {
+                // A single primitive can supply more than one `PointRef`
+                // (e.g. `Horizontal(line)` constrains that line's start
+                // *and* end), so dedupe through a `BTreeSet` -- the
+                // field means "which primitives does this touch," not
+                // "how many points on them."
+                let primitive_ids: std::collections::BTreeSet<PrimitiveId> = kind
+                    .point_refs()
+                    .iter()
+                    .map(|point_ref| point_ref.primitive_id())
+                    .collect();
+                WebConstraintSummary {
+                    id: id.to_string(),
+                    label: format!("{kind:?}"),
+                    primitive_ids: primitive_ids.iter().map(|id| id.to_string()).collect(),
+                }
             })
             .collect();
         let view_blocks = document
             .view_blocks()
-            .map(|view| WebViewBlockSummary {
-                id: view.id.to_string(),
-                identity: view.identity().map(Into::into),
-                geometry_member_count: view.geometry_members.len() as u32,
+            .map(|view| {
+                let (readiness, issues) = evaluate_readiness(view, &geometry_by_id);
+                WebViewBlockSummary {
+                    id: view.id.to_string(),
+                    identity: view.identity().map(Into::into),
+                    geometry_member_ids: view
+                        .geometry_members
+                        .iter()
+                        .map(|id| id.to_string())
+                        .collect(),
+                    readiness: readiness.into(),
+                    blockers: issues
+                        .iter()
+                        .filter(|issue| issue.is_blocker())
+                        .map(|issue| format!("{issue:?}"))
+                        .collect(),
+                    axis_bindings: document
+                        .multiview_graph()
+                        .bindings_for_view(view.id)
+                        .into_iter()
+                        .map(|(axis, dimension_id)| WebAxisBinding {
+                            axis: axis.into(),
+                            dimension_id: dimension_id.to_string(),
+                        })
+                        .collect(),
+                    unresolved_axes: document
+                        .multiview_graph()
+                        .unresolved_axes(view)
+                        .into_iter()
+                        .map(Into::into)
+                        .collect(),
+                }
             })
             .collect();
         let orthographic_sets = document
@@ -385,6 +453,7 @@ impl CraftLoopSession {
             strokes,
             primitives,
             dimensions,
+            constraints,
             conflicts,
             view_blocks,
             orthographic_sets,
@@ -1324,6 +1393,160 @@ mod tests {
         let circle = primitives.iter().find(|p| p["id"] == circle_id).unwrap();
         assert_eq!(circle["min_x"], 7.0);
         assert_eq!(circle["max_x"], 13.0);
+    }
+
+    /// Execution 03, Phase 05, Task 036: the snapshot must carry enough
+    /// to actually render a shape, not just its bounding box.
+    #[test]
+    fn primitives_expose_real_geometry_coordinates_not_just_bounds() {
+        let mut session = CraftLoopSession::new();
+        let line_id = session.create_primitive_line(1.0, 2.0, 5.0, 8.0).unwrap();
+        let circle_id = session.create_primitive_circle(10.0, 10.0, 3.0).unwrap();
+
+        let snap = snapshot(&session);
+        let primitives = snap["primitives"].as_array().unwrap();
+        let line = primitives.iter().find(|p| p["id"] == line_id).unwrap();
+        assert_eq!(line["geometry"]["Line"]["a"], json!({"x": 1.0, "y": 2.0}));
+        assert_eq!(line["geometry"]["Line"]["b"], json!({"x": 5.0, "y": 8.0}));
+
+        let circle = primitives.iter().find(|p| p["id"] == circle_id).unwrap();
+        assert_eq!(
+            circle["geometry"]["Circle"]["center"],
+            json!({"x": 10.0, "y": 10.0})
+        );
+        assert_eq!(circle["geometry"]["Circle"]["radius"], 3.0);
+    }
+
+    /// Task 037: "anchors" -- which primitive(s) a dimension targets.
+    #[test]
+    fn dimensions_expose_target_primitive_ids() {
+        let mut session = CraftLoopSession::new();
+        let line_id = session.create_primitive_line(0.0, 0.0, 10.0, 0.0).unwrap();
+        session
+            .create_dimension(WebDimensionKind::Linear, vec![line_id.clone()], 10.0)
+            .unwrap();
+
+        let snap = snapshot(&session);
+        assert_eq!(
+            snap["dimensions"][0]["target_primitive_ids"],
+            json!([line_id])
+        );
+    }
+
+    /// Task 038: the snapshot must list constraints (native's own
+    /// `FfiSceneSnapshot` never did -- this execution's constraint
+    /// visibility/badge UI needs it, so it is added here rather than
+    /// left absent).
+    #[test]
+    fn constraints_are_listed_in_the_snapshot_with_real_primitive_ids() {
+        let mut session = CraftLoopSession::new();
+        let line_id = session.create_primitive_line(0.0, 0.0, 4.0, 3.0).unwrap();
+        session
+            .apply_constraint(&json!({"Horizontal": {"line": line_id}}).to_string())
+            .unwrap();
+
+        let snap = snapshot(&session);
+        let constraints = snap["constraints"].as_array().unwrap();
+        assert_eq!(constraints.len(), 1);
+        assert!(constraints[0]["label"]
+            .as_str()
+            .unwrap()
+            .starts_with("Horizontal"));
+        assert_eq!(constraints[0]["primitive_ids"], json!([line_id]));
+    }
+
+    /// Task 039: real readiness, real member ids, real shared-axis
+    /// binding/unresolved state -- not a re-derived approximation.
+    #[test]
+    fn view_blocks_expose_readiness_and_axis_bindings() {
+        let mut session = CraftLoopSession::new();
+        let line_id = session.create_primitive_line(0.0, 0.0, 100.0, 0.0).unwrap();
+        let front_id = session
+            .assign_view_identity(None, WebPrincipalViewIdentity::Front)
+            .unwrap();
+        session
+            .add_geometry_to_view(&front_id, vec![line_id.clone()])
+            .unwrap();
+
+        let snap = snapshot(&session);
+        let front = snap["view_blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|v| v["id"] == front_id)
+            .unwrap();
+        assert_eq!(front["geometry_member_ids"], json!([line_id]));
+        assert_eq!(front["readiness"], "LinkReady");
+        assert!(front["axis_bindings"].as_array().unwrap().is_empty());
+
+        session.enter_orthographic(&front_id).unwrap();
+        let snap = snapshot(&session);
+        let top_id = snap["view_blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|v| v["identity"] == "Top")
+            .unwrap()["id"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        session
+            .propagate_shared_value(&top_id, WebSharedAxis::Depth, 40.0)
+            .unwrap();
+
+        let snap = snapshot(&session);
+        let top = snap["view_blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|v| v["id"] == top_id)
+            .unwrap();
+        let bindings = top["axis_bindings"].as_array().unwrap();
+        assert_eq!(bindings.len(), 1);
+        assert_eq!(bindings[0]["axis"], "Depth");
+    }
+
+    /// Task 041: a resolvable conflict must carry enough for a real UI
+    /// (which entities, what's being proposed vs. what exists, which
+    /// resolutions are legal) -- not just a kind and a bool.
+    #[test]
+    fn conflicts_expose_full_resolution_metadata() {
+        let mut session = CraftLoopSession::new();
+        let line_id = session.create_primitive_line(0.0, 0.0, 10.0, 0.0).unwrap();
+        let dimension_id = session
+            .create_dimension(WebDimensionKind::Linear, vec![line_id], 10.0)
+            .unwrap();
+        session.edit_dimension(&dimension_id, -1.0).unwrap_err();
+
+        let snap = snapshot(&session);
+        let conflict = &snap["conflicts"][0];
+        assert_eq!(conflict["kind"], "DimensionConstraintMismatch");
+        assert_eq!(conflict["severity"], "Error");
+        assert!(!conflict["affected_entities"].as_array().unwrap().is_empty());
+        assert!(conflict["proposed_truth"].as_str().unwrap().contains("-1"));
+        assert!(!conflict["allowed_resolutions"]
+            .as_array()
+            .unwrap()
+            .is_empty());
+    }
+
+    /// Task 042: `sceneSnapshot()` returns an owned JSON string, not a
+    /// handle into live state -- there is no way for the JS side to
+    /// write back into the Rust document through it. Proven here by
+    /// mutating the parsed value and re-reading a fresh snapshot: the
+    /// real state is unaffected.
+    #[test]
+    fn scene_snapshot_is_a_disconnected_copy_not_a_mutable_handle() {
+        let mut session = CraftLoopSession::new();
+        session.create_primitive_line(0.0, 0.0, 1.0, 0.0).unwrap();
+
+        let mut snap = snapshot(&session);
+        snap["primitives"] = json!([]);
+        snap["revision"] = json!(999);
+
+        let fresh = snapshot(&session);
+        assert_eq!(fresh["primitives"].as_array().unwrap().len(), 1);
+        assert_ne!(fresh["revision"], 999);
     }
 
     #[test]
