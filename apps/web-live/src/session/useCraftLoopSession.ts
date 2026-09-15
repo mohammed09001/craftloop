@@ -71,7 +71,19 @@ export function useCraftLoopSession() {
 
   const submitStroke = useCallback(
     (samples: PointerSampleInput[]) =>
-      guard((session) => JSON.parse(session.submitStroke(JSON.stringify(samples)))),
+      guard(
+        (session) =>
+          JSON.parse(session.submitStroke(JSON.stringify(samples))) as {
+            stroke_id: string
+            eligible_for_recognition: boolean
+          },
+      ),
+    [guard],
+  )
+
+  /** Task 084: re-runs the real recognizer/beautifier against a stored stroke and, if it beautifies, replaces it with the resulting primitive -- returns the new primitive's id, or `undefined` if it stayed ink. */
+  const acceptRecognition = useCallback(
+    (strokeId: string) => guard((session) => session.acceptRecognition(strokeId)),
     [guard],
   )
 
@@ -160,6 +172,7 @@ export function useCraftLoopSession() {
     snapshot,
     lastError,
     submitStroke,
+    acceptRecognition,
     createPrimitiveLine,
     createPrimitiveCircle,
     createPrimitiveRectangle,

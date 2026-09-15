@@ -1,16 +1,26 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerSampleInput, PointerSourceName } from '../session/pointerTypes'
+import { computeShape, type PreviewKind } from './shapePreview'
 import { screenToWorld, type ScreenPoint, type Viewport } from './viewport'
 
+/** Execution 03, Phase 10, Task 083: how long the pointer must stay down without moving to count as a "hold." */
+const HOLD_DURATION_MS = 500
+
 /**
- * Execution 03, Phase 06, Task 044/046: the transient ink layer
+ * Execution 03, Phase 06/10, Task 044/046: the transient ink layer
  * (Article 16) plus the Pointer Events adapter (Article 15). Captures
  * every sample in screen space for cheap, immediate drawing while the
  * stroke is in progress (Task 044's "appears immediately" -- no
  * transform math on the hot path), then converts the whole stroke to
  * world space and hands it to `onStrokeComplete` on pointerup, which
  * is the only point this component ever touches real document state
- * (via the caller's `CraftLoopSession.submitStroke`).
+ * (via the caller's `CraftLoopSession` calls).
+ *
+ * `previewKind` (Task 078-081): for a Sketch2D shape tool, every
+ * `pointermove` redraws the *actual shape that will be created* (a
+ * straight rubber-band line, a live circle, ...) via `computeShape`,
+ * not a raw trace of the mouse path -- `'freehand'` (Pen) keeps the
+ * original raw-trace behavior, since that trace *is* the real ink.
  *
  * Mouse is the default simulated pen (Article 15) -- `pointerType ===
  * 'mouse'` maps to `SimulatedMouse`, never claimed as real S Pen/Apple
@@ -23,14 +33,16 @@ import { screenToWorld, type ScreenPoint, type Viewport } from './viewport'
 export function InkCanvas({
   viewport,
   active,
+  previewKind,
   onStrokeComplete,
 }: {
   viewport: Viewport
   /** `false` while panning or while a non-drawing tool owns the pointer. */
   active: boolean
+  previewKind: PreviewKind
   onStrokeComplete: (
     samples: PointerSampleInput[],
-    meta: { maxScreenDeviationPx: number },
+    meta: { maxScreenDeviationPx: number; holdDetected: boolean },
   ) => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -42,6 +54,12 @@ export function InkCanvas({
   useEffect(() => {
     viewportRef.current = viewport
   }, [viewport])
+  const previewKindRef = useRef(previewKind)
+  useEffect(() => {
+    previewKindRef.current = previewKind
+  }, [previewKind])
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const holdDetectedRef = useRef(false)
 
   const resizeCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -68,15 +86,41 @@ export function InkCanvas({
     ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr)
     const points = screenPointsRef.current
     if (points.length < 2) return
-    ctx.beginPath()
-    ctx.moveTo(points[0]!.x, points[0]!.y)
-    for (let i = 1; i < points.length; i += 1) {
-      ctx.lineTo(points[i]!.x, points[i]!.y)
-    }
+
     ctx.strokeStyle = '#08060d'
     ctx.lineWidth = 2
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
+
+    const kind = previewKindRef.current
+    if (kind === 'freehand') {
+      ctx.beginPath()
+      ctx.moveTo(points[0]!.x, points[0]!.y)
+      for (let i = 1; i < points.length; i += 1) {
+        ctx.lineTo(points[i]!.x, points[i]!.y)
+      }
+      ctx.stroke()
+      return
+    }
+
+    const shape = computeShape(kind, points[0]!, points[points.length - 1]!)
+    if (!shape) return
+    ctx.beginPath()
+    switch (shape.kind) {
+      case 'line':
+        ctx.moveTo(shape.a.x, shape.a.y)
+        ctx.lineTo(shape.b.x, shape.b.y)
+        break
+      case 'circle':
+        ctx.arc(shape.center.x, shape.center.y, shape.radius, 0, Math.PI * 2)
+        break
+      case 'rectangle':
+        ctx.rect(shape.x, shape.y, shape.width, shape.height)
+        break
+      case 'arc':
+        ctx.arc(shape.center.x, shape.center.y, shape.radius, shape.startAngle, shape.endAngle)
+        break
+    }
     ctx.stroke()
   }, [])
 
@@ -112,29 +156,45 @@ export function InkCanvas({
     }
   }, [])
 
+  /** Task 083: (re)arms the hold-detection timer -- called on pointerdown and every pointermove. */
+  const armHoldTimer = useCallback(() => {
+    if (holdTimerRef.current !== null) clearTimeout(holdTimerRef.current)
+    holdTimerRef.current = setTimeout(() => {
+      holdDetectedRef.current = true
+    }, HOLD_DURATION_MS)
+  }, [])
+
+  const clearHoldTimer = useCallback(() => {
+    if (holdTimerRef.current !== null) clearTimeout(holdTimerRef.current)
+    holdTimerRef.current = null
+  }, [])
+
   const onPointerDown = useCallback(
     (event: React.PointerEvent) => {
       if (!active || event.button !== 0) return
       event.currentTarget.setPointerCapture(event.pointerId)
       drawingRef.current = true
       pointerIdRef.current = event.pointerId
+      holdDetectedRef.current = false
+      armHoldTimer()
       const rect = event.currentTarget.getBoundingClientRect()
       screenPointsRef.current = [{ x: event.clientX - rect.left, y: event.clientY - rect.top }]
       samplesRef.current = [sampleFrom(event)]
       redraw()
     },
-    [active, redraw, sampleFrom],
+    [active, armHoldTimer, redraw, sampleFrom],
   )
 
   const onPointerMove = useCallback(
     (event: React.PointerEvent) => {
       if (!drawingRef.current || event.pointerId !== pointerIdRef.current) return
+      armHoldTimer()
       const rect = event.currentTarget.getBoundingClientRect()
       screenPointsRef.current.push({ x: event.clientX - rect.left, y: event.clientY - rect.top })
       samplesRef.current.push(sampleFrom(event))
       redraw()
     },
-    [redraw, sampleFrom],
+    [armHoldTimer, redraw, sampleFrom],
   )
 
   const finishStroke = useCallback(
@@ -142,6 +202,9 @@ export function InkCanvas({
       if (!drawingRef.current || event.pointerId !== pointerIdRef.current) return
       drawingRef.current = false
       pointerIdRef.current = null
+      clearHoldTimer()
+      const holdDetected = holdDetectedRef.current
+      holdDetectedRef.current = false
       const samples = samplesRef.current
       const points = screenPointsRef.current
       screenPointsRef.current = []
@@ -164,9 +227,9 @@ export function InkCanvas({
       for (const point of points) {
         maxDeviation = Math.max(maxDeviation, Math.hypot(point.x - first.x, point.y - first.y))
       }
-      onStrokeComplete(samples, { maxScreenDeviationPx: maxDeviation })
+      onStrokeComplete(samples, { maxScreenDeviationPx: maxDeviation, holdDetected })
     },
-    [onStrokeComplete, redraw],
+    [clearHoldTimer, onStrokeComplete, redraw],
   )
 
   return (

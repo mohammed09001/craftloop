@@ -18,11 +18,14 @@ export function GeometryLayer({
   primitives,
   strokes,
   selectedIds,
+  candidateId,
 }: {
   viewport: Viewport
   primitives: PrimitiveSummary[]
   strokes: StrokeSummary[]
   selectedIds: ReadonlySet<string>
+  /** Execution 03, Phase 10, Task 084: a Draw-and-Hold candidate awaiting confirm/cancel -- rendered as a dashed "ghost," not yet final. */
+  candidateId?: string | undefined
 }) {
   return (
     <svg
@@ -49,6 +52,7 @@ export function GeometryLayer({
             key={primitive.id}
             primitive={primitive}
             selected={selectedIds.has(primitive.id)}
+            isCandidate={primitive.id === candidateId}
             strokeWidthWorld={2 / viewport.zoom}
           />
         ))}
@@ -60,19 +64,23 @@ export function GeometryLayer({
 function PrimitiveShape({
   primitive,
   selected,
+  isCandidate,
   strokeWidthWorld,
 }: {
   primitive: PrimitiveSummary
   selected: boolean
+  isCandidate: boolean
   strokeWidthWorld: number
 }) {
-  const color = selected ? '#2563eb' : '#08060d'
+  const color = isCandidate ? '#7c3aed' : selected ? '#2563eb' : '#08060d'
   const common = {
     'data-entity-id': primitive.id,
     'data-entity-kind': 'primitive',
+    'data-candidate': isCandidate || undefined,
     fill: 'none',
     stroke: color,
     strokeWidth: strokeWidthWorld,
+    strokeDasharray: isCandidate ? `${strokeWidthWorld * 3} ${strokeWidthWorld * 2}` : undefined,
   } as const
 
   const geometry = primitive.geometry

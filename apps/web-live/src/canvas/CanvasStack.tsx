@@ -1,13 +1,15 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { UseCraftLoopSession } from '../session/useCraftLoopSession'
 import type { PointerSampleInput } from '../session/pointerTypes'
 import type { ToolId } from '../toolbar/toolRegistry'
 import { BackgroundGrid } from './BackgroundGrid'
 import { GeometryLayer } from './GeometryLayer'
 import { InkCanvas } from './InkCanvas'
+import { RefinementBar } from './RefinementBar'
 import { SelectionOverlay } from './SelectionOverlay'
 import { usePanZoom } from './usePanZoom'
 import { hitTestScene } from './hitTest'
+import { computeShape, type PreviewKind } from './shapePreview'
 import { screenToWorld } from './viewport'
 
 /** Below this many screen pixels of travel, a pointer gesture is a tap (select), not a drag (draw). */
@@ -16,6 +18,12 @@ const HIT_TEST_TOLERANCE_SCREEN_PX = 6
 
 /** Execution 03, Phase 09: Sketch2D tools that create a primitive from one drag, not free ink. */
 const SHAPE_TOOLS = new Set<ToolId>(['line', 'arc', 'circle', 'rectangle'])
+
+/** Execution 03, Phase 10: maps the active tool to what `InkCanvas` should live-preview while dragging (Task 078-081). */
+function previewKindFor(tool: ToolId): PreviewKind {
+  if (tool === 'line' || tool === 'arc' || tool === 'circle' || tool === 'rectangle') return tool
+  return 'freehand'
+}
 
 /**
  * Execution 03, Phase 06/07/09: the composition root for the whole
@@ -26,15 +34,27 @@ const SHAPE_TOOLS = new Set<ToolId>(['line', 'arc', 'circle', 'rectangle'])
  * 048).
  *
  * `activeTool` changes real interaction behavior: Pen keeps Phase
- * 06's draw-or-tap-to-select behavior; Select disables drawing so
+ * 06's draw-or-tap-to-select behavior (now with Phase 10's
+ * Draw-and-Hold refinement, see below); Select disables drawing so
  * every click is a selection attempt; Eraser hit-tests a click and
  * deletes what it finds; the Sketch2D shape tools (Line/Arc/Circle/
- * Rectangle, Task 066-069) turn one drag into one real primitive via
- * the matching `CraftLoopSession.createPrimitive*` call, using the
- * drag's start/end world points directly -- no live ghost preview yet
- * (Task 078-080's job, Phase 10). This is deliberately local component
- * state, not the formal `WorkspaceMode` Phase 08 introduces on the
- * session -- see `toolRegistry.ts`'s own doc comment for the reasoning.
+ * Rectangle, Task 066-069) turn one drag into one real primitive,
+ * previewed live while dragging (Task 078-081) via the same
+ * `computeShape` the final creation call uses. This is deliberately
+ * local component state, not the formal `WorkspaceMode` Phase 08
+ * introduces on the session -- see `toolRegistry.ts`'s own doc
+ * comment for the reasoning.
+ *
+ * Draw-and-Hold (Task 083-086): a Pen stroke that pauses for
+ * `HOLD_DURATION_MS` before release is submitted as a real stroke,
+ * then immediately run through the real recognizer/beautifier
+ * (`acceptRecognition`, Task 084) -- the result renders as a dashed
+ * "candidate" primitive (`GeometryLayer`'s `candidateId`) with a
+ * confirm/cancel bar (Task 085). Confirm leaves it; Cancel calls the
+ * real `session.undo()`, reverting exactly that one transaction and
+ * restoring the raw ink (Task 086). A stroke released *without* a
+ * hold, or one recognition finds nothing beautifiable, stays plain ink
+ * with no interruption -- no silent conversion either way.
  */
 export function CanvasStack({
   session,
@@ -46,6 +66,7 @@ export function CanvasStack({
   const containerRef = useRef<HTMLDivElement>(null)
   const { viewport, isPanning, onWheel, beginPan, endPan, panByScreenDelta } = usePanZoom()
   const lastPanPointRef = useRef<{ x: number; y: number } | null>(null)
+  const [pendingCandidateId, setPendingCandidateId] = useState<string | null>(null)
 
   const selectedIds = useMemo(
     () => new Set(session.snapshot.selected_entity_ids),
@@ -94,32 +115,31 @@ export function CanvasStack({
 
   const createShapeFromDrag = useCallback(
     (tool: ToolId, first: { x: number; y: number }, last: { x: number; y: number }) => {
-      switch (tool) {
+      // `computeShape` is coordinate-space-agnostic (pure geometry), so
+      // the same function that drives `InkCanvas`'s live screen-space
+      // preview (Task 078-081) also drives this world-space creation
+      // call -- one source of truth, never two independently-computed
+      // versions of "what shape does this drag define."
+      const shape = computeShape(tool as PreviewKind, first, last)
+      if (!shape) return
+      switch (shape.kind) {
         case 'line':
-          session.createPrimitiveLine(first.x, first.y, last.x, last.y)
+          session.createPrimitiveLine(shape.a.x, shape.a.y, shape.b.x, shape.b.y)
           return
         case 'rectangle':
-          session.createPrimitiveRectangle(first.x, first.y, last.x, last.y)
+          session.createPrimitiveRectangle(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height)
           return
-        case 'circle': {
-          const radius = Math.hypot(last.x - first.x, last.y - first.y)
-          session.createPrimitiveCircle(first.x, first.y, radius)
+        case 'circle':
+          session.createPrimitiveCircle(shape.center.x, shape.center.y, shape.radius)
           return
-        }
-        case 'arc': {
-          // Phase 09's minimal 2-point mapping: center at the drag's
-          // start, radius/start_angle from the drag's end point, and a
-          // fixed quarter-circle sweep -- real Arc2 semantics, just the
-          // simplest honest interpretation of two points. A richer
-          // multi-stage interaction (drag radius, then drag sweep) is
-          // Phase 10's "Direct Geometry Preview" territory, not
-          // invented early here.
-          const radius = Math.hypot(last.x - first.x, last.y - first.y)
-          const startAngle = Math.atan2(last.y - first.y, last.x - first.x)
-          session.createPrimitiveArc(first.x, first.y, radius, startAngle, Math.PI / 2)
-          return
-        }
-        default:
+        case 'arc':
+          session.createPrimitiveArc(
+            shape.center.x,
+            shape.center.y,
+            shape.radius,
+            shape.startAngle,
+            shape.endAngle - shape.startAngle,
+          )
           return
       }
     },
@@ -127,7 +147,10 @@ export function CanvasStack({
   )
 
   const handleStrokeComplete = useCallback(
-    (samples: PointerSampleInput[], meta: { maxScreenDeviationPx: number }) => {
+    (
+      samples: PointerSampleInput[],
+      meta: { maxScreenDeviationPx: number; holdDetected: boolean },
+    ) => {
       const first = samples[0]
       if (!first) return
 
@@ -150,10 +173,32 @@ export function CanvasStack({
         }
         return
       }
-      session.submitStroke(samples)
+
+      const outcome = session.submitStroke(samples)
+      // Task 083/084: only a held stroke (paused before release) gets a
+      // refinement attempt -- a quick stroke stays plain ink with no
+      // interruption, matching Draw-and-Hold's own name. `outcome` is
+      // `undefined` if the stroke itself failed validation, in which
+      // case there is nothing to refine either.
+      if (meta.holdDetected && outcome?.eligible_for_recognition) {
+        const primitiveId = session.acceptRecognition(outcome.stroke_id)
+        if (primitiveId) setPendingCandidateId(primitiveId)
+      }
     },
     [activeTool, createShapeFromDrag, session, viewport.zoom],
   )
+
+  const handleConfirmCandidate = useCallback(() => {
+    setPendingCandidateId(null)
+  }, [])
+
+  const handleCancelCandidate = useCallback(() => {
+    // Reverts exactly the one `acceptRecognition` transaction (Task
+    // 086) -- the same real undo Undo/Redo already use, not a
+    // client-side pretend-rollback.
+    session.undo()
+    setPendingCandidateId(null)
+  }, [session])
 
   /** Select/Eraser modes: InkCanvas is inactive, so a plain click reaches here directly. */
   const handleContainerClick = useCallback(
@@ -200,9 +245,18 @@ export function CanvasStack({
         primitives={session.snapshot.primitives}
         strokes={session.snapshot.strokes}
         selectedIds={selectedIds}
+        candidateId={pendingCandidateId ?? undefined}
       />
       <SelectionOverlay viewport={viewport} selectedPrimitives={selectedPrimitives} />
-      <InkCanvas viewport={viewport} active={inkCanvasActive} onStrokeComplete={handleStrokeComplete} />
+      <InkCanvas
+        viewport={viewport}
+        active={inkCanvasActive}
+        previewKind={previewKindFor(activeTool)}
+        onStrokeComplete={handleStrokeComplete}
+      />
+      {pendingCandidateId && (
+        <RefinementBar onConfirm={handleConfirmCandidate} onCancel={handleCancelCandidate} />
+      )}
     </div>
   )
 }
