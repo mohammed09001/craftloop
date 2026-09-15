@@ -264,10 +264,18 @@ pub enum WebPrimitiveKind {
     Rectangle,
 }
 
+/// Execution 03, Phase 06, Task 045: `points` (each sample's real
+/// `Point2` position) was added alongside the original `sample_count`
+/// so the structured SVG layer can actually render a committed stroke
+/// -- without it, a submitted stroke would visibly vanish the instant
+/// the transient ink Canvas stopped drawing it, which is not "mouse/
+/// pen drawing appears immediately" (Task 044), it is drawing that
+/// disappears.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct WebStrokeSummary {
     pub id: String,
     pub sample_count: u32,
+    pub points: Vec<craftloop_geometry::Point2>,
 }
 
 /// Execution 03, Phase 05, Task 036: `min_*`/`max_*` (Phase 04's

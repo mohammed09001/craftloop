@@ -10,13 +10,29 @@ describe('Workspace', () => {
     expect(screen.getByTestId('toolbar-host')).toBeInTheDocument()
   })
 
-  it('renders no fake engineering objects (Task 015 invariant)', () => {
+  it('renders the real Phase 06 canvas stack inside the canvas area', () => {
     render(<Workspace />)
 
-    // The canvas area must be empty until Phase 06 wires a real
-    // CraftLoopSession scene snapshot into it -- no placeholder
-    // geometry, no demo content.
-    expect(screen.getByTestId('canvas-area')).toBeEmptyDOMElement()
+    expect(screen.getByTestId('canvas-stack')).toBeInTheDocument()
+    expect(screen.getByTestId('background-grid')).toBeInTheDocument()
+    expect(screen.getByTestId('geometry-layer')).toBeInTheDocument()
+    expect(screen.getByTestId('ink-canvas')).toBeInTheDocument()
+  })
+
+  it('keeps the toolbar host empty (Task 016 invariant, until Phase 07)', () => {
+    render(<Workspace />)
+
     expect(screen.getByTestId('toolbar-host')).toBeEmptyDOMElement()
+  })
+
+  it('renders no fake engineering geometry before a real session is ready', () => {
+    render(<Workspace />)
+
+    // useCraftLoopSession starts from EMPTY_SNAPSHOT until the real
+    // Wasm module resolves -- the geometry/selection layers must not
+    // show anything invented in the meantime.
+    expect(screen.getByTestId('geometry-layer').querySelectorAll('line, circle, polygon, path'))
+      .toHaveLength(0)
+    expect(screen.queryByTestId('selection-overlay')).not.toBeInTheDocument()
   })
 })

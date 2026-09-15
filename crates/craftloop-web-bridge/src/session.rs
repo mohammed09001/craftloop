@@ -313,6 +313,7 @@ impl CraftLoopSession {
                         SemanticEntity::Stroke(stroke) => strokes.push(WebStrokeSummary {
                             id: stroke.id.to_string(),
                             sample_count: stroke.len() as u32,
+                            points: stroke.samples().iter().map(|s| s.position).collect(),
                         }),
                         SemanticEntity::Primitive { id, beautified } => {
                             let (kind, bounds) = match &beautified.primitive {
@@ -1547,6 +1548,53 @@ mod tests {
         let fresh = snapshot(&session);
         assert_eq!(fresh["primitives"].as_array().unwrap().len(), 1);
         assert_ne!(fresh["revision"], 999);
+    }
+
+    /// Execution 03, Phase 06, Task 044/045: a submitted stroke must
+    /// still carry its real points in the next snapshot, or the
+    /// structured SVG layer has nothing to render once the transient
+    /// ink Canvas stops drawing it.
+    #[test]
+    fn submitted_stroke_carries_its_real_points_in_the_snapshot() {
+        let mut session = CraftLoopSession::new();
+        let samples = json!([
+            {
+                "x": 0.0, "y": 0.0, "timestamp_seconds": 0.0,
+                "pressure": null, "tilt_x_deg": null, "tilt_y_deg": null,
+                "source": "SimulatedMouse",
+                "button_primary": true, "button_secondary": false, "button_barrel": false,
+                "capability_pressure": false, "capability_tilt": false,
+                "capability_hover": false, "capability_palm_rejection": false,
+                "capability_eraser": false
+            },
+            {
+                "x": 3.0, "y": 4.0, "timestamp_seconds": 0.05,
+                "pressure": null, "tilt_x_deg": null, "tilt_y_deg": null,
+                "source": "SimulatedMouse",
+                "button_primary": true, "button_secondary": false, "button_barrel": false,
+                "capability_pressure": false, "capability_tilt": false,
+                "capability_hover": false, "capability_palm_rejection": false,
+                "capability_eraser": false
+            }
+        ])
+        .to_string();
+
+        let outcome: Value =
+            serde_json::from_str(&session.submit_stroke(&samples).unwrap()).unwrap();
+        let stroke_id = outcome["stroke_id"].as_str().unwrap().to_string();
+
+        let snap = snapshot(&session);
+        let stroke = snap["strokes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|s| s["id"] == stroke_id)
+            .expect("submitted stroke must appear in the next snapshot");
+        assert_eq!(stroke["sample_count"], 2);
+        assert_eq!(
+            stroke["points"],
+            json!([{"x": 0.0, "y": 0.0}, {"x": 3.0, "y": 4.0}])
+        );
     }
 
     #[test]
