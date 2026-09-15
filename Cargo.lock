@@ -1154,6 +1154,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "craftloop-web-bridge"
+version = "0.1.0"
+dependencies = [
+ "craftloop-geometry",
+ "craftloop-ids",
+ "craftloop-recognition",
+ "craftloop-serialization",
+ "craftloop-sketch",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

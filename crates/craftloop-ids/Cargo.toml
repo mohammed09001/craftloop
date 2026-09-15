@@ -11,6 +11,17 @@ description = "Stable, strongly typed domain identifiers for the Craft Loop shar
 serde.workspace = true
 uuid.workspace = true
 
+# Execution 03, Phase 03, Task 021: `Uuid::new_v4()` needs an explicit
+# randomness source on `wasm32-unknown-unknown` (uuid 1.26 refuses to
+# compile there otherwise -- confirmed by trying). The `js` feature reads
+# entropy through the browser's `crypto.getRandomValues`/Node's `crypto`
+# via `getrandom`'s own wasm backend. This is additive per-target Cargo
+# config, not a semantic fork: native targets (Android/Windows/iOS) are
+# untouched, and the same `Uuid::new_v4()` call site in this crate is used
+# unchanged on every platform.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+uuid = { workspace = true, features = ["js"] }
+
 [dev-dependencies]
 serde_json.workspace = true
 

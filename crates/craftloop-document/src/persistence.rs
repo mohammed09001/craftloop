@@ -16,6 +16,16 @@
 //! **Load with recovery (Task 053):** parse and validate the primary file;
 //! if that fails (missing, malformed JSON, or `Document::validate` fails),
 //! fall back to the `.bak` snapshot before giving up.
+//!
+//! **`wasm32-unknown-unknown` note (Execution 03, Phase 03, Task 021):**
+//! this module compiles cleanly there -- `std::fs` exists as a stub on
+//! that target -- but every call returns an IO error at runtime, since
+//! `wasm32-unknown-unknown` has no filesystem. This is deliberately not
+//! `cfg`-gated out: doing so would fork the engine's public surface per
+//! platform for no compile-time benefit. `craftloop-web-bridge` must
+//! simply never call [`save_document_atomically`] or [`load_document`];
+//! it persists through [`craftloop_serialization::to_canonical_json`]
+//! directly plus a browser storage adapter instead (Article 42-43).
 
 use std::fs;
 use std::path::{Path, PathBuf};

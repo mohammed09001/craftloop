@@ -13,6 +13,12 @@
 //! scheduling is Android/iPad adapter work, Phases 28-29) that this
 //! platform-independent crate does not fabricate a threading model for.
 
+// wasm32-unknown-unknown note (Execution 03, Phase 03, Task 021): same
+// as `persistence`'s module doc -- this compiles there (std::fs is
+// stubbed) but every call errors at runtime with no filesystem.
+// `craftloop-web-bridge` must not use `AutosaveJournal`; the browser's
+// own autosave path (Phase 14) uses a storage adapter instead.
+
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};

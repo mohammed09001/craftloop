@@ -23,6 +23,7 @@ members = [
     "crates/craftloop-export",
     "crates/craftloop-mobile-ffi",
     "crates/craftloop-scenarios",
+    "crates/craftloop-web-bridge",
     "apps/windows-harness",
 ]
 
