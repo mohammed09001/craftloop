@@ -131,6 +131,17 @@ pub enum DocumentChange {
         previous: Option<(SketchConstraintKind, ConstraintProvenance)>,
         new: Option<(SketchConstraintKind, ConstraintProvenance)>,
     },
+    /// Execution 03, Phase 11, Task 090: mark/unmark one primitive as
+    /// construction (reference-only) geometry. `bool`, not `Option<T>`,
+    /// since there is no third "unset" state to distinguish here (an
+    /// unmarked primitive and one explicitly unmarked are the same
+    /// thing) -- unlike `SetProvenance`'s real "never classified" vs.
+    /// "classified" distinction.
+    SetConstructionFlag {
+        id: PrimitiveId,
+        previous: bool,
+        new: bool,
+    },
 }
 
 impl DocumentChange {
@@ -224,6 +235,10 @@ impl DocumentChange {
                 }
                 Ok(())
             }
+            DocumentChange::SetConstructionFlag { id, new, .. } => {
+                document.set_construction(*id, *new);
+                Ok(())
+            }
         }
     }
 
@@ -289,6 +304,13 @@ impl DocumentChange {
             }
             DocumentChange::SetSketchConstraint { id, previous, new } => {
                 DocumentChange::SetSketchConstraint {
+                    id: *id,
+                    previous: *new,
+                    new: *previous,
+                }
+            }
+            DocumentChange::SetConstructionFlag { id, previous, new } => {
+                DocumentChange::SetConstructionFlag {
                     id: *id,
                     previous: *new,
                     new: *previous,
@@ -470,6 +492,49 @@ mod tests {
         history.redo(&mut document).unwrap();
 
         assert!(document.page(page_id).unwrap().get(id).is_some());
+    }
+
+    /// Execution 03, Phase 11, Task 090: the construction flag is real,
+    /// undoable/redoable backend state through the same one mutation
+    /// path every other `Document` field uses -- not a second
+    /// mechanism, and not just a rendering hint.
+    #[test]
+    fn set_construction_flag_is_real_undoable_redoable_state() {
+        use craftloop_ids::PrimitiveId;
+
+        let mut document = Document::new("Untitled", 0.0);
+        let mut history = DocumentHistory::new();
+        let primitive_id = PrimitiveId::new();
+        assert!(!document.is_construction(primitive_id));
+
+        history
+            .commit(
+                &mut document,
+                vec![DocumentChange::SetConstructionFlag {
+                    id: primitive_id,
+                    previous: false,
+                    new: true,
+                }],
+            )
+            .unwrap();
+        assert!(document.is_construction(primitive_id));
+        assert_eq!(
+            document.construction_primitives().collect::<Vec<_>>(),
+            vec![primitive_id]
+        );
+
+        history.undo(&mut document).unwrap();
+        assert!(!document.is_construction(primitive_id));
+
+        history.redo(&mut document).unwrap();
+        assert!(document.is_construction(primitive_id));
+
+        // Real persistence, not just in-memory: round-trips through the
+        // same canonical JSON `craftloop_serialization` (and therefore
+        // `save_document_atomically`) uses.
+        let json = craftloop_serialization::to_canonical_json(&document).unwrap();
+        let reloaded: Document = serde_json::from_str(&json).unwrap();
+        assert!(reloaded.is_construction(primitive_id));
     }
 
     #[test]

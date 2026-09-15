@@ -297,6 +297,9 @@ pub struct WebPrimitiveSummary {
     pub max_x: f64,
     pub max_y: f64,
     pub geometry: craftloop_recognition::BeautifiedPrimitive,
+    /// Execution 03, Phase 11, Task 090: real, persisted
+    /// `Document::is_construction` state -- not a rendering-only flag.
+    pub is_construction: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

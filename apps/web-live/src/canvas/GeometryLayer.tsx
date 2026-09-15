@@ -72,15 +72,33 @@ function PrimitiveShape({
   isCandidate: boolean
   strokeWidthWorld: number
 }) {
-  const color = isCandidate ? '#7c3aed' : selected ? '#2563eb' : '#08060d'
+  // Execution 03, Phase 11, Task 091: construction geometry gets a
+  // quieter but clear treatment -- muted gray, more loosely dashed than
+  // a Draw-and-Hold candidate -- so it reads as "reference," not
+  // "pending." Selection/candidate states still take visual priority
+  // over it (a selected or pending-confirm primitive should never look
+  // like inert reference geometry).
+  const color = isCandidate
+    ? '#7c3aed'
+    : selected
+      ? '#2563eb'
+      : primitive.is_construction
+        ? '#9c9c98'
+        : '#08060d'
+  const dasharray = isCandidate
+    ? `${strokeWidthWorld * 3} ${strokeWidthWorld * 2}`
+    : primitive.is_construction
+      ? `${strokeWidthWorld * 1.5} ${strokeWidthWorld * 3}`
+      : undefined
   const common = {
     'data-entity-id': primitive.id,
     'data-entity-kind': 'primitive',
     'data-candidate': isCandidate || undefined,
+    'data-construction': primitive.is_construction || undefined,
     fill: 'none',
     stroke: color,
     strokeWidth: strokeWidthWorld,
-    strokeDasharray: isCandidate ? `${strokeWidthWorld * 3} ${strokeWidthWorld * 2}` : undefined,
+    strokeDasharray: dasharray,
   } as const
 
   const geometry = primitive.geometry

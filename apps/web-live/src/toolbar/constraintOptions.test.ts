@@ -11,6 +11,7 @@ function line(id: string): PrimitiveSummary {
     max_x: 1,
     max_y: 1,
     geometry: { Line: { a: { x: 0, y: 0 }, b: { x: 1, y: 1 } } },
+    is_construction: false,
   }
 }
 
@@ -23,6 +24,7 @@ function circle(id: string): PrimitiveSummary {
     max_x: 1,
     max_y: 1,
     geometry: { Circle: { center: { x: 0, y: 0 }, radius: 1 } },
+    is_construction: false,
   }
 }
 
@@ -44,6 +46,7 @@ function rectangle(id: string): PrimitiveSummary {
         ],
       },
     },
+    is_construction: false,
   }
 }
 

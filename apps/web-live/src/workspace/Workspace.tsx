@@ -20,11 +20,17 @@ import styles from './Workspace.module.css'
  * button is pressed) and the canvas (what a click/drag actually does)
  * need to agree on it. Dimension/Constraint eligibility (Task 072/073)
  * is derived directly from the real selected primitives, never a
- * separate guess about what is selected.
+ * separate guess about what is selected. Construction (Task 090/091)
+ * and Snap (Task 092/093) follow the same pattern: `constructionEnabled`
+ * is derived from the real selection, and `snapEnabled` is the one
+ * piece of state both `CanvasStack` (drag snapping + grid visibility)
+ * and `Toolbar` (the pressed state of the Snap button) need to agree
+ * on, so it lives here rather than duplicated in either.
  */
 export function Workspace() {
   const session = useCraftLoopSession()
   const [activeTool, setActiveTool] = useState<ToolId>('pen')
+  const [snapEnabled, setSnapEnabled] = useState(true)
 
   const enterSketchMode = useCallback(() => {
     session.enterSketchMode()
@@ -77,10 +83,30 @@ export function Workspace() {
     [session],
   )
 
+  const constructionEnabled = selectedPrimitives.length > 0
+
+  const handleToggleConstruction = useCallback(() => {
+    if (selectedPrimitives.length === 0) return
+    // Task 090/091: one action toggling every selected primitive to
+    // the opposite of the *first* selected one's current state -- a
+    // mixed selection (some construction, some not) becomes uniformly
+    // construction on one click, matching what most drawing tools do
+    // with a mixed-state toggle rather than leaving the selection in a
+    // now-ambiguous mixed state.
+    const next = !selectedPrimitives[0]!.is_construction
+    for (const primitive of selectedPrimitives) {
+      session.setConstruction(primitive.id, next)
+    }
+  }, [selectedPrimitives, session])
+
+  const handleToggleSnap = useCallback(() => {
+    setSnapEnabled((enabled) => !enabled)
+  }, [])
+
   return (
     <div className={styles.workspace} data-session-ready={session.ready}>
       <div className={styles.canvasArea} data-testid="canvas-area">
-        <CanvasStack session={session} activeTool={activeTool} />
+        <CanvasStack session={session} activeTool={activeTool} snapEnabled={snapEnabled} />
       </div>
       <div className={styles.toolbarHost} data-testid="toolbar-host">
         <Toolbar
@@ -97,6 +123,10 @@ export function Workspace() {
           onDimension={handleDimension}
           constraintOptions={constraintOptions}
           onApplyConstraint={handleApplyConstraint}
+          constructionEnabled={constructionEnabled}
+          onToggleConstruction={handleToggleConstruction}
+          snapEnabled={snapEnabled}
+          onToggleSnap={handleToggleSnap}
         />
       </div>
     </div>

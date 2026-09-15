@@ -11,6 +11,7 @@ function line(id: string, a: { x: number; y: number }, b: { x: number; y: number
     max_x: Math.max(a.x, b.x),
     max_y: Math.max(a.y, b.y),
     geometry: { Line: { a, b } },
+    is_construction: false,
   }
 }
 
@@ -23,6 +24,7 @@ function circle(id: string, center: { x: number; y: number }, radius: number): P
     max_x: center.x + radius,
     max_y: center.y + radius,
     geometry: { Circle: { center, radius } },
+    is_construction: false,
   }
 }
 
@@ -45,6 +47,7 @@ function rectangle(
     max_x: Math.max(...xs),
     max_y: Math.max(...ys),
     geometry: { Rectangle: { corners } },
+    is_construction: false,
   }
 }
 

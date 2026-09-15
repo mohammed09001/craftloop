@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { PointerSampleInput, PointerSourceName } from '../session/pointerTypes'
+import type { PrimitiveSummary } from '../session/sceneTypes'
+import { SNAP_TOLERANCE_SCREEN_PX, snapPoint } from './inference'
 import { computeShape, type PreviewKind } from './shapePreview'
-import { screenToWorld, type ScreenPoint, type Viewport } from './viewport'
+import { screenToWorld, worldToScreen, type ScreenPoint, type Viewport } from './viewport'
 
 /** Execution 03, Phase 10, Task 083: how long the pointer must stay down without moving to count as a "hold." */
 const HOLD_DURATION_MS = 500
@@ -34,12 +36,18 @@ export function InkCanvas({
   viewport,
   active,
   previewKind,
+  snapEnabled,
+  primitives,
   onStrokeComplete,
 }: {
   viewport: Viewport
   /** `false` while panning or while a non-drawing tool owns the pointer. */
   active: boolean
   previewKind: PreviewKind
+  /** Execution 03, Phase 11, Task 087/093: when on, a shape tool's live-preview endpoint snaps to nearby real geometry or the grid. */
+  snapEnabled: boolean
+  /** The real primitives already on the page -- candidates for snapping. */
+  primitives: readonly PrimitiveSummary[]
   onStrokeComplete: (
     samples: PointerSampleInput[],
     meta: { maxScreenDeviationPx: number; holdDetected: boolean },
@@ -58,6 +66,14 @@ export function InkCanvas({
   useEffect(() => {
     previewKindRef.current = previewKind
   }, [previewKind])
+  const snapEnabledRef = useRef(snapEnabled)
+  useEffect(() => {
+    snapEnabledRef.current = snapEnabled
+  }, [snapEnabled])
+  const primitivesRef = useRef(primitives)
+  useEffect(() => {
+    primitivesRef.current = primitives
+  }, [primitives])
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const holdDetectedRef = useRef(false)
 
@@ -103,7 +119,17 @@ export function InkCanvas({
       return
     }
 
-    const shape = computeShape(kind, points[0]!, points[points.length - 1]!)
+    let last = points[points.length - 1]!
+    let guideScreen: ScreenPoint | null = null
+    if (snapEnabledRef.current) {
+      const worldLast = screenToWorld(viewportRef.current, last)
+      const toleranceWorld = SNAP_TOLERANCE_SCREEN_PX / viewportRef.current.zoom
+      const { point: snappedWorld, guide } = snapPoint(worldLast, primitivesRef.current, toleranceWorld)
+      last = worldToScreen(viewportRef.current, snappedWorld)
+      if (guide) guideScreen = worldToScreen(viewportRef.current, guide.point)
+    }
+
+    const shape = computeShape(kind, points[0]!, last)
     if (!shape) return
     ctx.beginPath()
     switch (shape.kind) {
@@ -122,6 +148,20 @@ export function InkCanvas({
         break
     }
     ctx.stroke()
+
+    // Task 088: an ephemeral guide indicator at the snapped point --
+    // present only while it is relevant (this drag, this frame) and
+    // never persisted or added to the geometry layer.
+    if (guideScreen) {
+      ctx.save()
+      ctx.strokeStyle = '#7c3aed'
+      ctx.lineWidth = 1.5
+      ctx.setLineDash([3, 3])
+      ctx.beginPath()
+      ctx.arc(guideScreen.x, guideScreen.y, 6, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+    }
   }, [])
 
   const sourceFor = (pointerType: string): PointerSourceName => {

@@ -123,6 +123,12 @@ export function useCraftLoopSession() {
     [guard],
   )
 
+  const setConstruction = useCallback(
+    (primitiveId: string, flag: boolean) =>
+      guard((session) => session.setConstruction(primitiveId, flag)),
+    [guard],
+  )
+
   const createDimension = useCallback(
     (kind: WebDimensionKind, targetIds: string[], value: number) =>
       guard((session) => session.createDimension(kind, targetIds, value)),
@@ -180,6 +186,7 @@ export function useCraftLoopSession() {
     createDimension,
     applyConstraint,
     solveConstraints,
+    setConstruction,
     select,
     clearSelection,
     deleteSelected,

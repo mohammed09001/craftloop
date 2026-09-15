@@ -4,15 +4,22 @@ const WORLD_GRID_SPACING = 50
 
 /**
  * Article 16's "background layer: paper/grid." Purely decorative --
- * never a source of snap/precision data (that is Article 33/Task 092's
- * job, later). Shares the same viewport transform as every other
- * layer so the grid stays visually locked to world space while
- * panning/zooming.
+ * never a source of snap/precision data itself (`src/canvas/inference.ts`
+ * computes snap points independently from the real scene). Shares the
+ * same viewport transform as every other layer so the grid stays
+ * visually locked to world space while panning/zooming.
+ *
+ * Execution 03, Phase 11, Task 092: `visible` defaults to `true`
+ * (Creative mode always shows it, as before); Sketch2D ties it to the
+ * real Snap/Guide toggle so the grid reads as part of the precision
+ * feature, not a separate always-on decoration.
  */
-export function BackgroundGrid({ viewport }: { viewport: Viewport }) {
+export function BackgroundGrid({ viewport, visible = true }: { viewport: Viewport; visible?: boolean }) {
   const tile = WORLD_GRID_SPACING * viewport.zoom
   const offsetX = viewport.panX % tile
   const offsetY = viewport.panY % tile
+
+  if (!visible) return null
 
   return (
     <svg

@@ -21,6 +21,10 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof Toolbar>> 
     onDimension: vi.fn(),
     constraintOptions: [],
     onApplyConstraint: vi.fn(),
+    constructionEnabled: false,
+    onToggleConstruction: vi.fn(),
+    snapEnabled: false,
+    onToggleSnap: vi.fn(),
     ...overrides,
   }
   render(<Toolbar {...props} />)
@@ -155,5 +159,30 @@ describe('Toolbar', () => {
     await user.click(screen.getByTestId('constraint-option-horizontal'))
     expect(props.onApplyConstraint).toHaveBeenCalledWith({ Horizontal: { line: 'a' } })
     expect(screen.queryByTestId('constraint-menu')).not.toBeInTheDocument()
+  })
+
+  it('Construction is disabled with nothing selected, and calls onToggleConstruction when clicked (Task 090/091)', async () => {
+    const user = userEvent.setup()
+    renderToolbar({ workspaceMode: 'Sketch2D', constructionEnabled: false })
+    expect(screen.getByTestId('tool-construction')).toBeDisabled()
+
+    const props = renderToolbar({ workspaceMode: 'Sketch2D', constructionEnabled: true })
+    const button = screen.getAllByTestId('tool-construction').at(-1)!
+    expect(button).toBeEnabled()
+    await user.click(button)
+    expect(props.onToggleConstruction).toHaveBeenCalledTimes(1)
+  })
+
+  it('Snap is a real independent toggle -- pressed state follows snapEnabled, not activeTool (Task 092/093)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar({ workspaceMode: 'Sketch2D', activeTool: 'line', snapEnabled: true })
+    expect(screen.getByTestId('tool-snap')).toHaveAttribute('aria-pressed', 'true')
+    // Snap is enabled regardless of which drawing tool owns the canvas.
+    expect(screen.getByTestId('tool-snap')).toBeEnabled()
+
+    await user.click(screen.getByTestId('tool-snap'))
+    expect(props.onToggleSnap).toHaveBeenCalledTimes(1)
+    // Toggling Snap must never also select it as the active drawing tool.
+    expect(props.onSelectTool).not.toHaveBeenCalledWith('snap')
   })
 })

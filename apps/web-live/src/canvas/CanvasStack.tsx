@@ -9,6 +9,7 @@ import { RefinementBar } from './RefinementBar'
 import { SelectionOverlay } from './SelectionOverlay'
 import { usePanZoom } from './usePanZoom'
 import { hitTestScene } from './hitTest'
+import { SNAP_TOLERANCE_SCREEN_PX, snapPoint } from './inference'
 import { computeShape, type PreviewKind } from './shapePreview'
 import { screenToWorld } from './viewport'
 
@@ -55,13 +56,22 @@ function previewKindFor(tool: ToolId): PreviewKind {
  * restoring the raw ink (Task 086). A stroke released *without* a
  * hold, or one recognition finds nothing beautifiable, stays plain ink
  * with no interruption -- no silent conversion either way.
+ *
+ * Precision inference (Task 087/093): when `snapEnabled`, a shape
+ * tool's defining drag point snaps to nearby real geometry (or the
+ * grid) via `src/canvas/inference.ts`'s pure `snapPoint` -- the exact
+ * same call `InkCanvas`'s live preview already made, so the created
+ * primitive never differs from what was shown while dragging.
  */
 export function CanvasStack({
   session,
   activeTool,
+  snapEnabled,
 }: {
   session: UseCraftLoopSession
   activeTool: ToolId
+  /** Execution 03, Phase 11, Task 093: when on, shape-tool drags snap their defining point to nearby real geometry or the grid, and the final created primitive matches what was previewed. */
+  snapEnabled: boolean
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { viewport, isPanning, onWheel, beginPan, endPan, panByScreenDelta } = usePanZoom()
@@ -155,7 +165,14 @@ export function CanvasStack({
       if (!first) return
 
       if (SHAPE_TOOLS.has(activeTool)) {
-        const last = samples[samples.length - 1] ?? first
+        const rawLast = samples[samples.length - 1] ?? first
+        // Samples are already world-space (Task 093): snap the same
+        // defining point `InkCanvas`'s live preview snapped, so the
+        // primitive that actually gets created matches what was shown
+        // while dragging -- never a preview that lied about the result.
+        const last = snapEnabled
+          ? snapPoint(rawLast, session.snapshot.primitives, SNAP_TOLERANCE_SCREEN_PX / viewport.zoom).point
+          : rawLast
         createShapeFromDrag(activeTool, first, last)
         return
       }
@@ -185,7 +202,7 @@ export function CanvasStack({
         if (primitiveId) setPendingCandidateId(primitiveId)
       }
     },
-    [activeTool, createShapeFromDrag, session, viewport.zoom],
+    [activeTool, createShapeFromDrag, session, snapEnabled, viewport.zoom],
   )
 
   const handleConfirmCandidate = useCallback(() => {
@@ -239,7 +256,7 @@ export function CanvasStack({
       onPointerCancel={handlePanUp}
       onClick={handleContainerClick}
     >
-      <BackgroundGrid viewport={viewport} />
+      <BackgroundGrid viewport={viewport} visible={snapEnabled} />
       <GeometryLayer
         viewport={viewport}
         primitives={session.snapshot.primitives}
@@ -252,6 +269,8 @@ export function CanvasStack({
         viewport={viewport}
         active={inkCanvasActive}
         previewKind={previewKindFor(activeTool)}
+        snapEnabled={snapEnabled}
+        primitives={session.snapshot.primitives}
         onStrokeComplete={handleStrokeComplete}
       />
       {pendingCandidateId && (

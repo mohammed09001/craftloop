@@ -19,6 +19,12 @@ export interface ToolbarProps {
   onDimension: () => void
   constraintOptions: ConstraintOption[]
   onApplyConstraint: (payload: ConstraintOption['payload']) => void
+  /** Execution 03, Phase 11, Task 090/091: whether any real primitive is selected for Construction to act on. */
+  constructionEnabled: boolean
+  onToggleConstruction: () => void
+  /** Task 092/093: independent of `activeTool` -- stays on/off across every drawing tool. */
+  snapEnabled: boolean
+  onToggleSnap: () => void
 }
 
 /**
@@ -48,6 +54,10 @@ export function Toolbar({
   onDimension,
   constraintOptions,
   onApplyConstraint,
+  constructionEnabled,
+  onToggleConstruction,
+  snapEnabled,
+  onToggleSnap,
 }: ToolbarProps) {
   const [constraintMenuOpen, setConstraintMenuOpen] = useState(false)
   const modeFilter: WorkspaceModeFilter = workspaceMode === 'Sketch2D' ? 'sketch' : 'creative'
@@ -70,6 +80,14 @@ export function Toolbar({
     }
     if (id === 'constraint') {
       setConstraintMenuOpen((open) => !open)
+      return
+    }
+    if (id === 'construction') {
+      onToggleConstruction()
+      return
+    }
+    if (id === 'snap') {
+      onToggleSnap()
       return
     }
     onSelectTool(id)
@@ -147,6 +165,29 @@ export function Toolbar({
                     </div>
                   )}
                 </div>
+              )
+            }
+            if (tool.id === 'construction') {
+              return (
+                <ToolButton
+                  key="construction"
+                  id="construction"
+                  label="Construction"
+                  disabled={!constructionEnabled}
+                  titleOverride={constructionEnabled ? undefined : 'Construction (select a shape first)'}
+                  onClick={() => handlePrimaryClick('construction')}
+                />
+              )
+            }
+            if (tool.id === 'snap') {
+              return (
+                <ToolButton
+                  key="snap"
+                  id="snap"
+                  label="Snap/Guide"
+                  pressed={snapEnabled}
+                  onClick={() => handlePrimaryClick('snap')}
+                />
               )
             }
             const pressed =

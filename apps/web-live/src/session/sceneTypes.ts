@@ -53,6 +53,8 @@ export interface PrimitiveSummary {
   max_x: number
   max_y: number
   geometry: BeautifiedPrimitive
+  /** Execution 03, Phase 11, Task 090: real, persisted backend state. */
+  is_construction: boolean
 }
 
 export type DimensionKind = 'Linear' | 'Angular' | 'Radius' | 'Diameter'

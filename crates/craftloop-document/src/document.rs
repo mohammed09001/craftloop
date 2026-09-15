@@ -35,11 +35,11 @@
 //! responsible for keeping the two in sync, always inside one atomic
 //! `DocumentHistory::commit` transaction -- see its module doc.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use craftloop_dimension::DimensionStore;
 use craftloop_errors::{DocumentErrorKind, DomainError, DomainResult};
-use craftloop_ids::{CraftLoopId, OrthographicSetId, PageId, ViewId};
+use craftloop_ids::{CraftLoopId, OrthographicSetId, PageId, PrimitiveId, ViewId};
 use craftloop_serialization::SchemaVersion;
 use craftloop_sketch::Sketch;
 use serde::{Deserialize, Serialize};
@@ -96,6 +96,16 @@ pub struct Document {
     /// `Sketch` for Execution 02's Alpha scope -- no task before this one
     /// asks for more than one constrainable geometry set per document.
     sketch: Sketch,
+    /// Execution 03, Phase 11, Task 090: which primitives are
+    /// "construction" (reference-only) geometry -- real, persisted
+    /// backend state (survives serialize/deserialize, undoable through
+    /// `DocumentChange::SetConstructionFlag`), not merely a dashed CSS
+    /// class a renderer invents. `#[serde(default)]` so a document saved
+    /// before this field existed still deserializes (an empty set,
+    /// i.e. "nothing marked construction yet," is exactly correct for
+    /// that case).
+    #[serde(default)]
+    construction_primitives: BTreeSet<PrimitiveId>,
 }
 
 impl Document {
@@ -119,6 +129,35 @@ impl Document {
             multiview_graph: MultiviewGraph::new(),
             dimension_store: DimensionStore::new(),
             sketch: Sketch::new(),
+            construction_primitives: BTreeSet::new(),
+        }
+    }
+
+    /// Task 090: is `id` currently marked construction (reference-only)
+    /// geometry? `false` for any primitive never explicitly marked --
+    /// the same "absent means not yet classified" convention
+    /// `provenance` already uses.
+    pub fn is_construction(&self, id: PrimitiveId) -> bool {
+        self.construction_primitives.contains(&id)
+    }
+
+    /// Every primitive currently marked construction, for a caller
+    /// (the scene snapshot) building a full read model rather than
+    /// checking one id at a time.
+    pub fn construction_primitives(&self) -> impl Iterator<Item = PrimitiveId> + '_ {
+        self.construction_primitives.iter().copied()
+    }
+
+    /// Only `DocumentChange::SetConstructionFlag`'s own `apply`/`invert`
+    /// should call this -- direct mutation outside a commit is exactly
+    /// what this crate's own mutation discipline forbids (see this
+    /// module's own doc comment on `DocumentChange` as the only mutation
+    /// path).
+    pub(crate) fn set_construction(&mut self, id: PrimitiveId, flag: bool) {
+        if flag {
+            self.construction_primitives.insert(id);
+        } else {
+            self.construction_primitives.remove(&id);
         }
     }
 

@@ -22,15 +22,18 @@
  * constraint kinds the current selection can actually take, then
  * calls the real `applyConstraint`.
  *
- * `View`, `Save`, `Construction`, `Snap`, and `More` stay deliberately
- * disabled -- their real behavior depends on infrastructure later
- * phases build (Orthographic View Block rendering: Phase 13; browser
- * persistence: Phase 14; construction-geometry semantic state: Phase
- * 11 Task 090; grid/snap controls: Phase 11 Tasks 092-093; an overflow
- * menu with real contents: not needed yet since nothing is currently
- * being hidden from either toolbar). Registering them now (rather
- * than omitting them) keeps the registry complete and honest about
- * what exists versus what is coming.
+ * `Construction` and `Snap` are real as of Phase 11: `Construction`
+ * (Task 090/091) toggles real, persisted `is_construction` state on
+ * the current selection via `session.setConstruction`; `Snap`
+ * (Task 092/093) toggles grid visibility plus geometry/grid snapping
+ * for shape-tool drags (`src/canvas/inference.ts`). `View`, `Save`,
+ * and `More` stay deliberately disabled -- their real behavior
+ * depends on infrastructure later phases build (Orthographic View
+ * Block rendering: Phase 13; browser persistence: Phase 14; an
+ * overflow menu with real contents: not needed yet since nothing is
+ * currently being hidden from either toolbar). Registering them now
+ * (rather than omitting them) keeps the registry complete and honest
+ * about what exists versus what is coming.
  *
  * No `Ellipse` tool, despite `craftloop-geometry::Ellipse2` existing
  * as a real, tested kernel (Task 070's own premise). Repository
@@ -107,22 +110,18 @@ export const TOOL_REGISTRY: readonly ToolDefinition[] = [
   { id: 'rectangle', label: 'Rectangle', group: 'primary', kind: 'toggle', modes: ['sketch'] },
   { id: 'dimension', label: 'Dimension', group: 'primary', kind: 'action', modes: ['sketch'] },
   { id: 'constraint', label: 'Constraint', group: 'primary', kind: 'action', modes: ['sketch'] },
-  {
-    id: 'construction',
-    label: 'Construction',
-    group: 'primary',
-    kind: 'toggle',
-    modes: ['sketch'],
-    deferredUntil: 'Phase 11 (construction geometry semantic state)',
-  },
-  {
-    id: 'snap',
-    label: 'Snap/Guide',
-    group: 'primary',
-    kind: 'toggle',
-    modes: ['sketch'],
-    deferredUntil: 'Phase 11 (grid and snap controls)',
-  },
+  // Construction (Task 090/091): an action applied to the current
+  // selection (like Dimension/Constraint), not a persistent drawing
+  // mode -- it toggles real `is_construction` state on already-drawn
+  // primitives via `session.setConstruction`.
+  { id: 'construction', label: 'Construction', group: 'primary', kind: 'action', modes: ['sketch'] },
+  // Snap/Guide (Task 092/093): a real but *independent* boolean toggle
+  // -- Toolbar/CanvasStack special-case it outside the mutually-
+  // exclusive `activeTool` radio group, since snapping stays on (or
+  // off) regardless of which drawing tool is active. "Compact
+  // precision options" (Task 075's own wording) is why grid visibility
+  // and geometry/grid snap share this one control rather than three.
+  { id: 'snap', label: 'Snap/Guide', group: 'primary', kind: 'toggle', modes: ['sketch'] },
   // -- Shared groups -------------------------------------------------------
   { id: 'undo', label: 'Undo', group: 'history', kind: 'action', modes: ['creative', 'sketch'] },
   { id: 'redo', label: 'Redo', group: 'history', kind: 'action', modes: ['creative', 'sketch'] },

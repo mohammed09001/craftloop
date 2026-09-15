@@ -345,6 +345,7 @@ impl CraftLoopSession {
                                 max_x: bounds.max.x,
                                 max_y: bounds.max.y,
                                 geometry: beautified.primitive.clone(),
+                                is_construction: document.is_construction(*id),
                             });
                             geometry_by_id.insert(*id, beautified.primitive.clone());
                         }
@@ -902,6 +903,36 @@ impl CraftLoopSession {
             id: constraint_id,
             previous: Some((kind, provenance)),
             new: None,
+        }])?;
+        Ok(())
+    }
+
+    // -- Construction geometry (Task 090) ----------------------------------
+
+    /// Marks/unmarks a primitive as construction (reference-only)
+    /// geometry -- real, undoable, persisted state
+    /// (`Document::set_construction`), not a rendering-only flag. Not
+    /// routed through `submit`/the Command Bus: `craftloop_command`'s
+    /// `CommandAction` is a curated vocabulary Article 237 names
+    /// explicitly (Phase 09's own Ellipse decision applied the same
+    /// reasoning), and it has no "Construction" word -- adding one
+    /// speculatively for this crate's own convenience would be exactly
+    /// the un-curated expansion that crate's docs warn against.
+    #[wasm_bindgen(js_name = setConstruction)]
+    pub fn set_construction(
+        &mut self,
+        primitive_id: &str,
+        flag: bool,
+    ) -> Result<(), WebSessionError> {
+        let id: PrimitiveId = parse_id(primitive_id)?;
+        if self.document.sketch().primitive(id).is_none() {
+            return Err(missing("primitive", primitive_id));
+        }
+        let previous = self.document.is_construction(id);
+        self.commit(vec![DocumentChange::SetConstructionFlag {
+            id,
+            previous,
+            new: flag,
         }])?;
         Ok(())
     }
@@ -1554,6 +1585,36 @@ mod tests {
         assert!(session
             .create_primitive_arc(0.0, 0.0, 5.0, 0.0, 0.0)
             .is_err());
+    }
+
+    /// Execution 03, Phase 11, Task 090: the construction flag is real
+    /// session state -- toggled through `set_construction`, visible in
+    /// the snapshot, undoable, and rejected for an id that does not
+    /// name a real stored primitive.
+    #[test]
+    fn set_construction_marks_a_real_primitive_and_is_undoable() {
+        let mut session = CraftLoopSession::new();
+        let line_id = session.create_primitive_line(0.0, 0.0, 1.0, 0.0).unwrap();
+
+        let find = |session: &CraftLoopSession| -> Value {
+            snapshot(session)["primitives"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|p| p["id"] == line_id)
+                .unwrap()
+                .clone()
+        };
+        assert_eq!(find(&session)["is_construction"], false);
+
+        session.set_construction(&line_id, true).unwrap();
+        assert_eq!(find(&session)["is_construction"], true);
+
+        session.undo().unwrap();
+        assert_eq!(find(&session)["is_construction"], false);
+
+        let bogus = "00000000-0000-0000-0000-000000000001";
+        assert!(session.set_construction(bogus, true).is_err());
     }
 
     /// Task 037: "anchors" -- which primitive(s) a dimension targets.
