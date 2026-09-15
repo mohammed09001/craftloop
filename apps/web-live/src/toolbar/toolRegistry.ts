@@ -1,34 +1,74 @@
 /**
- * Execution 03, Phase 07, Task 052: the main tool registry -- Pen,
- * Sketch, Select, Eraser, View, Undo, Redo, Save, More, exactly the
- * task's own named set. Data only, no rendering here.
+ * Execution 03, Phase 07/09: the main tool registry. Phase 07 built
+ * the Creative/Notebook tool set (Pen, Sketch, Select, Eraser, View,
+ * Undo, Redo, Save, More); Phase 09 adds the Sketch2D tool set (Line,
+ * Arc, Circle, Rectangle, Dimension, Constraint, Construction, Snap)
+ * Task 052/064 name. Data only, no rendering here -- `Toolbar.tsx`
+ * filters this one array by `modes` to morph between the two
+ * (Task 064: "Replace Main tools in the same top-center anchor").
  *
- * `kind: 'toggle'` tools are mutually exclusive (only one active at
- * once, like a radio group); `kind: 'action'` tools fire once and
- * don't stay "on."
+ * `kind: 'toggle'` tools are mutually exclusive within their mode
+ * (only one active at once, like a radio group); `kind: 'action'`
+ * tools fire once and don't stay "on."
  *
- * Which tools are real yet: `Pen`/`Select`/`Eraser` change real
- * `CanvasStack` interaction behavior (Phase 06/07). `Undo`/`Redo` call
- * the real `CraftLoopSession` methods Phase 04 already exposed.
- * `Sketch` is real as of Phase 08 (`enterSketchMode`, the same session
- * method the `S` keyboard shortcut calls) -- clicking it toggles real
- * `WorkspaceMode`, even though Phase 09's dedicated Sketch toolbar
- * (Line/Arc/Circle/... tools) does not exist yet, so entering Sketch
- * today only changes which Notebook-only tools (Select/Eraser) are
- * available; Pen keeps working, per Article 26. `View`, `Save`, and
- * `More` are still deliberately disabled -- their real behavior
- * depends on infrastructure later phases build (Orthographic View
- * Block rendering: Phase 13; browser persistence: Phase 14; an
- * overflow menu with real contents: Phase 09's "Keep history actions
- * reachable"/Article 76). Registering them now (rather than omitting
- * them) keeps Task 052's registry complete and honest about what
- * exists versus what is coming, instead of a toolbar that silently
- * grows extra buttons every later phase.
+ * Which tools are real yet: `Pen`/`Select`/`Eraser` (Creative) and
+ * `Line`/`Arc`/`Circle`/`Rectangle` (Sketch) change real
+ * `CanvasStack` interaction behavior. `Undo`/`Redo` call the real
+ * `CraftLoopSession` methods Phase 04 already exposed, in both modes
+ * (Task 077). `Sketch` is real as of Phase 08. `Dimension`/
+ * `Constraint` are real as of Phase 09: `Dimension` (Task 072) calls
+ * the real `createDimension` once 1-2 primitives are selected;
+ * `Constraint` (Task 073) opens a selection-adaptive list of only the
+ * constraint kinds the current selection can actually take, then
+ * calls the real `applyConstraint`.
+ *
+ * `View`, `Save`, `Construction`, `Snap`, and `More` stay deliberately
+ * disabled -- their real behavior depends on infrastructure later
+ * phases build (Orthographic View Block rendering: Phase 13; browser
+ * persistence: Phase 14; construction-geometry semantic state: Phase
+ * 11 Task 090; grid/snap controls: Phase 11 Tasks 092-093; an overflow
+ * menu with real contents: not needed yet since nothing is currently
+ * being hidden from either toolbar). Registering them now (rather
+ * than omitting them) keeps the registry complete and honest about
+ * what exists versus what is coming.
+ *
+ * No `Ellipse` tool, despite `craftloop-geometry::Ellipse2` existing
+ * as a real, tested kernel (Task 070's own premise). Repository
+ * evidence changed the plan (Article 3): `BeautifiedPrimitive` (the
+ * type every primitive actually flows through -- scene snapshot,
+ * dimension association, consistency validation, PDF/SVG export,
+ * constraint point references) has exactly four variants, and adding
+ * a fifth is a real, invasive change across seven-plus crates
+ * including native `craftloop-mobile-ffi`'s own exhaustive matches --
+ * disproportionate to "add a toolbar button" and indistinguishable in
+ * spirit from Task 071's own Spline precedent ("do not show it unless
+ * a tested kernel is added" -- read as "unless the *pipeline*
+ * supports it," not just the bare geometry struct). Deferred to a
+ * dedicated future task with its own cross-crate test coverage.
  */
 
-export type ToolId = 'pen' | 'select' | 'eraser' | 'sketch' | 'view' | 'undo' | 'redo' | 'save' | 'more'
+export type ToolId =
+  | 'pen'
+  | 'select'
+  | 'eraser'
+  | 'sketch'
+  | 'view'
+  | 'undo'
+  | 'redo'
+  | 'save'
+  | 'more'
+  | 'line'
+  | 'arc'
+  | 'circle'
+  | 'rectangle'
+  | 'dimension'
+  | 'constraint'
+  | 'construction'
+  | 'snap'
 
 export type ToolGroup = 'primary' | 'history' | 'document' | 'overflow'
+
+export type WorkspaceModeFilter = 'creative' | 'sketch'
 
 export interface ToolDefinition {
   id: ToolId
@@ -36,29 +76,62 @@ export interface ToolDefinition {
   label: string
   group: ToolGroup
   kind: 'toggle' | 'action'
+  /** Which toolbar(s) show this tool (Task 064's morph). */
+  modes: WorkspaceModeFilter[]
   /** Set only for tools this phase does not yet make functional. */
   deferredUntil?: string
 }
 
 export const TOOL_REGISTRY: readonly ToolDefinition[] = [
-  { id: 'pen', label: 'Pen', group: 'primary', kind: 'toggle' },
-  { id: 'select', label: 'Select', group: 'primary', kind: 'toggle' },
-  { id: 'eraser', label: 'Eraser', group: 'primary', kind: 'toggle' },
-  { id: 'sketch', label: 'Sketch', group: 'primary', kind: 'toggle' },
+  // -- Creative (Notebook) tools ----------------------------------------
+  { id: 'pen', label: 'Pen', group: 'primary', kind: 'toggle', modes: ['creative', 'sketch'] },
+  // Select is also available in Sketch2D (not just Notebook): Task
+  // 072/073's Dimension/Constraint are selection-adaptive, so without
+  // a way to select an existing primitive while a shape tool owns the
+  // canvas drag gesture, neither could ever have anything to act on.
+  { id: 'select', label: 'Select', group: 'primary', kind: 'toggle', modes: ['creative', 'sketch'] },
+  { id: 'eraser', label: 'Eraser', group: 'primary', kind: 'toggle', modes: ['creative'] },
+  { id: 'sketch', label: 'Sketch', group: 'primary', kind: 'toggle', modes: ['creative'] },
   {
     id: 'view',
     label: 'View',
     group: 'primary',
     kind: 'action',
+    modes: ['creative'],
     deferredUntil: 'Phase 13 (Orthographic Linked-View Completion)',
   },
-  { id: 'undo', label: 'Undo', group: 'history', kind: 'action' },
-  { id: 'redo', label: 'Redo', group: 'history', kind: 'action' },
+  // -- Sketch2D tools ----------------------------------------------------
+  { id: 'line', label: 'Line', group: 'primary', kind: 'toggle', modes: ['sketch'] },
+  { id: 'arc', label: 'Arc', group: 'primary', kind: 'toggle', modes: ['sketch'] },
+  { id: 'circle', label: 'Circle', group: 'primary', kind: 'toggle', modes: ['sketch'] },
+  { id: 'rectangle', label: 'Rectangle', group: 'primary', kind: 'toggle', modes: ['sketch'] },
+  { id: 'dimension', label: 'Dimension', group: 'primary', kind: 'action', modes: ['sketch'] },
+  { id: 'constraint', label: 'Constraint', group: 'primary', kind: 'action', modes: ['sketch'] },
+  {
+    id: 'construction',
+    label: 'Construction',
+    group: 'primary',
+    kind: 'toggle',
+    modes: ['sketch'],
+    deferredUntil: 'Phase 11 (construction geometry semantic state)',
+  },
+  {
+    id: 'snap',
+    label: 'Snap/Guide',
+    group: 'primary',
+    kind: 'toggle',
+    modes: ['sketch'],
+    deferredUntil: 'Phase 11 (grid and snap controls)',
+  },
+  // -- Shared groups -------------------------------------------------------
+  { id: 'undo', label: 'Undo', group: 'history', kind: 'action', modes: ['creative', 'sketch'] },
+  { id: 'redo', label: 'Redo', group: 'history', kind: 'action', modes: ['creative', 'sketch'] },
   {
     id: 'save',
     label: 'Save',
     group: 'document',
     kind: 'action',
+    modes: ['creative'],
     deferredUntil: 'Phase 14 (Persistence and Reload)',
   },
   {
@@ -66,6 +139,7 @@ export const TOOL_REGISTRY: readonly ToolDefinition[] = [
     label: 'More',
     group: 'overflow',
     kind: 'action',
-    deferredUntil: 'Phase 09 (overflow menu contents)',
+    modes: ['creative', 'sketch'],
+    deferredUntil: 'no overflow content exists yet',
   },
 ] as const

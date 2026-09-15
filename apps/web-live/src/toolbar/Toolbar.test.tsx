@@ -1,10 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { Toolbar } from './Toolbar'
 import { TOOL_REGISTRY } from './toolRegistry'
 
+/** Unmounts any previous render first, so re-rendering with new props in the same test doesn't leave two toolbars mounted at once. */
 function renderToolbar(overrides: Partial<React.ComponentProps<typeof Toolbar>> = {}) {
+  cleanup()
   const props = {
     activeTool: 'pen' as const,
     onSelectTool: vi.fn(),
@@ -15,23 +17,42 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof Toolbar>> 
     canRedo: false,
     onUndo: vi.fn(),
     onRedo: vi.fn(),
+    dimensionEnabled: false,
+    onDimension: vi.fn(),
+    constraintOptions: [],
+    onApplyConstraint: vi.fn(),
     ...overrides,
   }
   render(<Toolbar {...props} />)
   return props
 }
 
+const CREATIVE_TOOLS = TOOL_REGISTRY.filter((t) => t.modes.includes('creative'))
+const SKETCH_TOOLS = TOOL_REGISTRY.filter((t) => t.modes.includes('sketch'))
+
 describe('Toolbar', () => {
-  it('renders every tool in the registry (Task 052)', () => {
+  it('renders every Creative-mode tool from the registry (Task 052)', () => {
     renderToolbar()
-    for (const tool of TOOL_REGISTRY) {
+    for (const tool of CREATIVE_TOOLS) {
       expect(screen.getByTestId(`tool-${tool.id}`)).toBeInTheDocument()
     }
   })
 
+  it('renders every Sketch2D-mode tool from the registry, replacing the Creative-only set (Task 064)', () => {
+    renderToolbar({ workspaceMode: 'Sketch2D' })
+    for (const tool of SKETCH_TOOLS) {
+      expect(screen.getByTestId(`tool-${tool.id}`)).toBeInTheDocument()
+    }
+    // Notebook-only tools are gone, not just disabled -- a real morph.
+    // Select stays (Dimension/Constraint need a way to select a
+    // primitive), Eraser does not.
+    expect(screen.getByTestId('tool-select')).toBeInTheDocument()
+    expect(screen.queryByTestId('tool-eraser')).not.toBeInTheDocument()
+  })
+
   it('renders icon-first: no visible text label on any button (Task 053)', () => {
     renderToolbar()
-    for (const tool of TOOL_REGISTRY) {
+    for (const tool of CREATIVE_TOOLS) {
       const button = screen.getByTestId(`tool-${tool.id}`)
       expect(button.textContent).toBe('')
       expect(button).toHaveAccessibleName(tool.label)
@@ -63,29 +84,25 @@ describe('Toolbar', () => {
 
   it('keeps deferred tools disabled with a title explaining when they activate', () => {
     renderToolbar()
-    for (const tool of TOOL_REGISTRY.filter((t) => t.deferredUntil)) {
+    for (const tool of CREATIVE_TOOLS.filter((t) => t.deferredUntil)) {
       const button = screen.getByTestId(`tool-${tool.id}`)
       expect(button).toBeDisabled()
       expect(button).toHaveAttribute('title', expect.stringContaining(tool.deferredUntil!))
     }
   })
 
-  it('calls onEnterSketchMode when Sketch is clicked, and shows it pressed once in Sketch2D (Task 061)', async () => {
+  it('calls onEnterSketchMode when Sketch is clicked (Task 061)', async () => {
     const user = userEvent.setup()
     const props = renderToolbar()
     expect(screen.getByTestId('tool-sketch')).toBeEnabled()
     await user.click(screen.getByTestId('tool-sketch'))
     expect(props.onEnterSketchMode).toHaveBeenCalledTimes(1)
 
+    // The real morph (Task 064) replaces the Sketch button with the
+    // Sketch2D tool set entirely -- there is no "Sketch" button to
+    // show pressed once already inside Sketch2D.
     renderToolbar({ workspaceMode: 'Sketch2D' })
-    expect(screen.getAllByTestId('tool-sketch').at(-1)).toHaveAttribute('aria-pressed', 'true')
-  })
-
-  it('pauses Select/Eraser while in Sketch2D, and keeps Pen available (Article 26)', () => {
-    renderToolbar({ workspaceMode: 'Sketch2D' })
-    expect(screen.getByTestId('tool-select')).toBeDisabled()
-    expect(screen.getByTestId('tool-eraser')).toBeDisabled()
-    expect(screen.getByTestId('tool-pen')).toBeEnabled()
+    expect(screen.queryAllByTestId('tool-sketch')).toHaveLength(0)
   })
 
   it('clicking Pen while in Sketch2D calls onEnterCreativePenMode', async () => {
@@ -93,5 +110,50 @@ describe('Toolbar', () => {
     const props = renderToolbar({ workspaceMode: 'Sketch2D' })
     await user.click(screen.getByTestId('tool-pen'))
     expect(props.onEnterCreativePenMode).toHaveBeenCalledTimes(1)
+  })
+
+  it('Pen stays enabled in Sketch2D and Line/Arc/Circle/Rectangle are real toggle tools (Task 065-069)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar({ workspaceMode: 'Sketch2D' })
+    expect(screen.getByTestId('tool-pen')).toBeEnabled()
+    for (const id of ['line', 'arc', 'circle', 'rectangle']) {
+      expect(screen.getByTestId(`tool-${id}`)).toBeEnabled()
+    }
+    await user.click(screen.getByTestId('tool-circle'))
+    expect(props.onSelectTool).toHaveBeenCalledWith('circle')
+  })
+
+  it('Dimension is disabled until dimensionEnabled is true, and calls onDimension when clicked (Task 072)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar({ workspaceMode: 'Sketch2D', dimensionEnabled: true })
+    expect(screen.getByTestId('tool-dimension')).toBeEnabled()
+    await user.click(screen.getByTestId('tool-dimension'))
+    expect(props.onDimension).toHaveBeenCalledTimes(1)
+
+    renderToolbar({ workspaceMode: 'Sketch2D', dimensionEnabled: false })
+    expect(screen.getAllByTestId('tool-dimension').at(-1)).toBeDisabled()
+  })
+
+  it('Constraint is disabled with no options, and opens a menu of only the eligible kinds (Task 073)', async () => {
+    const user = userEvent.setup()
+    renderToolbar({ workspaceMode: 'Sketch2D', constraintOptions: [] })
+    expect(screen.getByTestId('tool-constraint')).toBeDisabled()
+
+    const props = renderToolbar({
+      workspaceMode: 'Sketch2D',
+      constraintOptions: [
+        { label: 'Horizontal', payload: { Horizontal: { line: 'a' } } },
+        { label: 'Vertical', payload: { Vertical: { line: 'a' } } },
+      ],
+    })
+    const constraintButton = screen.getAllByTestId('tool-constraint').at(-1)!
+    expect(constraintButton).toBeEnabled()
+    await user.click(constraintButton)
+    expect(screen.getByTestId('constraint-menu')).toBeInTheDocument()
+    expect(screen.getByTestId('constraint-option-horizontal')).toBeInTheDocument()
+
+    await user.click(screen.getByTestId('constraint-option-horizontal'))
+    expect(props.onApplyConstraint).toHaveBeenCalledWith({ Horizontal: { line: 'a' } })
+    expect(screen.queryByTestId('constraint-menu')).not.toBeInTheDocument()
   })
 })

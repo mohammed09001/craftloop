@@ -42,7 +42,7 @@ use craftloop_document::{
     ViewBlock,
 };
 use craftloop_errors::{DomainError, Severity};
-use craftloop_geometry::{Circle2, Point2, RelationalRectangle, Segment2};
+use craftloop_geometry::{Arc2, Circle2, Point2, RelationalRectangle, Segment2};
 use craftloop_ids::{
     ConflictId, ConstraintId, CraftLoopId, DimensionId, NoteId, OrthographicSetId, PrimitiveId,
     StrokeId, ViewId,
@@ -623,6 +623,42 @@ impl CraftLoopSession {
         let circle = Circle2::new(Point2::new(center_x, center_y), radius)?;
         let beautified = craftloop_recognition::Beautified {
             primitive: craftloop_recognition::BeautifiedPrimitive::Circle(circle),
+            displacement: 0.0,
+        };
+        self.insert_primitive(beautified)
+    }
+
+    /// Execution 03, Phase 09, Task 067: native `CraftLoopSession` has
+    /// no arc-creation method either -- `BeautifiedPrimitive::Arc`
+    /// already flows through every part of the pipeline that matters
+    /// (scene snapshot, dimension association, export, constraint
+    /// eligibility), only the explicit-tool creation entry point was
+    /// missing. Mirrors `create_primitive_circle`'s shape exactly, and
+    /// `Arc2::new`'s own real validation (`radius > 0`, `sweep_angle`
+    /// finite and nonzero) is what actually rejects a degenerate arc,
+    /// not a check reimplemented here.
+    #[wasm_bindgen(js_name = createPrimitiveArc)]
+    pub fn create_primitive_arc(
+        &mut self,
+        center_x: f64,
+        center_y: f64,
+        radius: f64,
+        start_angle: f64,
+        sweep_angle: f64,
+    ) -> Result<String, WebSessionError> {
+        self.submit(
+            CommandAction::Arc,
+            craftloop_command::CommandNamespace::Sketch,
+            "Created arc",
+        )?;
+        let arc = Arc2::new(
+            Point2::new(center_x, center_y),
+            radius,
+            start_angle,
+            sweep_angle,
+        )?;
+        let beautified = craftloop_recognition::Beautified {
+            primitive: craftloop_recognition::BeautifiedPrimitive::Arc(arc),
             displacement: 0.0,
         };
         self.insert_primitive(beautified)
@@ -1484,6 +1520,40 @@ mod tests {
             json!({"x": 10.0, "y": 10.0})
         );
         assert_eq!(circle["geometry"]["Circle"]["radius"], 3.0);
+    }
+
+    /// Execution 03, Phase 09, Task 067: the new arc-creation entry
+    /// point, real geometry validation, and a degenerate arc rejected
+    /// by the real `Arc2::new`, not a check reimplemented at this
+    /// boundary.
+    #[test]
+    fn create_primitive_arc_stores_real_arc_geometry_and_rejects_a_degenerate_one() {
+        use std::f64::consts::PI;
+        let mut session = CraftLoopSession::new();
+        let arc_id = session
+            .create_primitive_arc(0.0, 0.0, 5.0, 0.0, PI / 2.0)
+            .unwrap();
+
+        let snap = snapshot(&session);
+        let arc = snap["primitives"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["id"] == arc_id)
+            .unwrap();
+        assert_eq!(arc["kind"], "Arc");
+        assert_eq!(
+            arc["geometry"]["Arc"]["center"],
+            json!({"x": 0.0, "y": 0.0})
+        );
+        assert_eq!(arc["geometry"]["Arc"]["radius"], 5.0);
+        assert_eq!(arc["geometry"]["Arc"]["sweep_angle"], PI / 2.0);
+
+        // A zero sweep is a degenerate point, not an arc -- Arc2::new's
+        // own real validation rejects it.
+        assert!(session
+            .create_primitive_arc(0.0, 0.0, 5.0, 0.0, 0.0)
+            .is_err());
     }
 
     /// Task 037: "anchors" -- which primitive(s) a dimension targets.

@@ -77,6 +77,48 @@ const ICONS: Record<ToolId, React.ReactNode> = {
       <circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none" />
     </Svg>
   ),
+  line: (
+    <Svg>
+      <path d="M4 20L20 4" />
+    </Svg>
+  ),
+  arc: (
+    <Svg>
+      <path d="M4 18a14 14 0 0116-14" />
+    </Svg>
+  ),
+  circle: (
+    <Svg>
+      <circle cx="12" cy="12" r="8" />
+    </Svg>
+  ),
+  rectangle: (
+    <Svg>
+      <rect x="4" y="6" width="16" height="12" rx="1" />
+    </Svg>
+  ),
+  dimension: (
+    <Svg>
+      <path d="M4 8v8M20 8v8M4 12h16" />
+      <path d="M7 9.5L4 12l3 2.5M17 9.5L20 12l-3 2.5" />
+    </Svg>
+  ),
+  constraint: (
+    <Svg>
+      <path d="M4 6h16M4 12h16M4 18h10" />
+    </Svg>
+  ),
+  construction: (
+    <Svg>
+      <path d="M4 20L20 4" strokeDasharray="3 3" />
+    </Svg>
+  ),
+  snap: (
+    <Svg>
+      <path d="M4 4v4M4 4h4M20 4v4M20 4h-4M4 20v-4M4 20h4M20 20v-4M20 20h-4" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    </Svg>
+  ),
 }
 
 export function ToolIcon({ id }: { id: ToolId }) {

@@ -21,7 +21,10 @@ test('pressing S enters Sketch2D and pressing B returns to Creative (Task 059/06
 
   await page.keyboard.press('s')
   await expect(toolbar).toHaveAttribute('data-workspace-mode', 'Sketch2D')
-  await expect(page.getByTestId('tool-sketch')).toHaveAttribute('aria-pressed', 'true')
+  // Task 064's real morph: the Sketch2D tool set (Line, etc.) replaces
+  // the Sketch button entirely, rather than the button staying and
+  // showing pressed.
+  await expect(page.getByTestId('tool-line')).toBeVisible()
 
   await page.keyboard.press('b')
   await expect(toolbar).toHaveAttribute('data-workspace-mode', 'Creative')
@@ -52,11 +55,18 @@ test('S/B are ignored while a text input is focused (Task 060)', async ({ page }
   await expect(page.getByTestId('main-toolbar')).toHaveAttribute('data-workspace-mode', 'Creative')
 })
 
-test('Select/Eraser pause in Sketch2D and Pen stays available (Article 26)', async ({ page }) => {
+test('Eraser is replaced by the Sketch2D tool set; Pen and Select stay available (Article 26, Task 064)', async ({
+  page,
+}) => {
   await page.keyboard.press('s')
-  await expect(page.getByTestId('tool-select')).toBeDisabled()
-  await expect(page.getByTestId('tool-eraser')).toBeDisabled()
+  // Task 064: a real morph, not a disable -- Eraser (Notebook-only) is
+  // gone from the DOM entirely, superseding Phase 08's earlier
+  // disabled-button stopgap. Select stays: Dimension/Constraint need
+  // it to have anything to act on.
+  await expect(page.getByTestId('tool-eraser')).toHaveCount(0)
+  await expect(page.getByTestId('tool-select')).toBeEnabled()
   await expect(page.getByTestId('tool-pen')).toBeEnabled()
+  await expect(page.getByTestId('tool-line')).toBeEnabled()
 })
 
 test('mode switching never touches document history (Task 063)', async ({ page }) => {

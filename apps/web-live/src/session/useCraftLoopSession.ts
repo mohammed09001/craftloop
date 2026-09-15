@@ -93,6 +93,24 @@ export function useCraftLoopSession() {
     [guard],
   )
 
+  const createPrimitiveArc = useCallback(
+    (centerX: number, centerY: number, radius: number, startAngle: number, sweepAngle: number) =>
+      guard((session) =>
+        session.createPrimitiveArc(centerX, centerY, radius, startAngle, sweepAngle),
+      ),
+    [guard],
+  )
+
+  const applyConstraint = useCallback(
+    (kindJson: string) => guard((session) => JSON.parse(session.applyConstraint(kindJson))),
+    [guard],
+  )
+
+  const solveConstraints = useCallback(
+    () => guard((session) => JSON.parse(session.solveConstraints())),
+    [guard],
+  )
+
   const createDimension = useCallback(
     (kind: WebDimensionKind, targetIds: string[], value: number) =>
       guard((session) => session.createDimension(kind, targetIds, value)),
@@ -145,7 +163,10 @@ export function useCraftLoopSession() {
     createPrimitiveLine,
     createPrimitiveCircle,
     createPrimitiveRectangle,
+    createPrimitiveArc,
     createDimension,
+    applyConstraint,
+    solveConstraints,
     select,
     clearSelection,
     deleteSelected,

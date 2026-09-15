@@ -14,22 +14,27 @@ import { screenToWorld } from './viewport'
 const TAP_THRESHOLD_PX = 4
 const HIT_TEST_TOLERANCE_SCREEN_PX = 6
 
+/** Execution 03, Phase 09: Sketch2D tools that create a primitive from one drag, not free ink. */
+const SHAPE_TOOLS = new Set<ToolId>(['line', 'arc', 'circle', 'rectangle'])
+
 /**
- * Execution 03, Phase 06/07: the composition root for the whole canvas
- * stack (Article 16's five layers, minus the toolbar layer). Owns the
- * one shared viewport transform (Task 043) and wires every layer to
- * it, wires the Pointer Events adapter to real `CraftLoopSession`
- * calls (`submitStroke`/`select`/`deleteSelected`), and performs
- * semantic hit testing (Task 048).
+ * Execution 03, Phase 06/07/09: the composition root for the whole
+ * canvas stack (Article 16's five layers, minus the toolbar layer).
+ * Owns the one shared viewport transform (Task 043) and wires every
+ * layer to it, wires the Pointer Events adapter to real
+ * `CraftLoopSession` calls, and performs semantic hit testing (Task
+ * 048).
  *
- * `activeTool` (Phase 07's Pen/Select/Eraser toggle) changes real
- * interaction behavior: Pen keeps Phase 06's draw-or-tap-to-select
- * behavior; Select disables drawing so every click is a selection
- * attempt; Eraser hit-tests a click and deletes what it finds. This is
- * deliberately local component state, not the formal `WorkspaceMode`
- * Phase 08 introduces -- see `toolRegistry.ts`'s own doc comment for
- * why Sketch/View/Save/More stay disabled rather than reaching ahead
- * into that phase's job.
+ * `activeTool` changes real interaction behavior: Pen keeps Phase
+ * 06's draw-or-tap-to-select behavior; Select disables drawing so
+ * every click is a selection attempt; Eraser hit-tests a click and
+ * deletes what it finds; the Sketch2D shape tools (Line/Arc/Circle/
+ * Rectangle, Task 066-069) turn one drag into one real primitive via
+ * the matching `CraftLoopSession.createPrimitive*` call, using the
+ * drag's start/end world points directly -- no live ghost preview yet
+ * (Task 078-080's job, Phase 10). This is deliberately local component
+ * state, not the formal `WorkspaceMode` Phase 08 introduces on the
+ * session -- see `toolRegistry.ts`'s own doc comment for the reasoning.
  */
 export function CanvasStack({
   session,
@@ -87,10 +92,50 @@ export function CanvasStack({
     lastPanPointRef.current = null
   }, [endPan])
 
+  const createShapeFromDrag = useCallback(
+    (tool: ToolId, first: { x: number; y: number }, last: { x: number; y: number }) => {
+      switch (tool) {
+        case 'line':
+          session.createPrimitiveLine(first.x, first.y, last.x, last.y)
+          return
+        case 'rectangle':
+          session.createPrimitiveRectangle(first.x, first.y, last.x, last.y)
+          return
+        case 'circle': {
+          const radius = Math.hypot(last.x - first.x, last.y - first.y)
+          session.createPrimitiveCircle(first.x, first.y, radius)
+          return
+        }
+        case 'arc': {
+          // Phase 09's minimal 2-point mapping: center at the drag's
+          // start, radius/start_angle from the drag's end point, and a
+          // fixed quarter-circle sweep -- real Arc2 semantics, just the
+          // simplest honest interpretation of two points. A richer
+          // multi-stage interaction (drag radius, then drag sweep) is
+          // Phase 10's "Direct Geometry Preview" territory, not
+          // invented early here.
+          const radius = Math.hypot(last.x - first.x, last.y - first.y)
+          const startAngle = Math.atan2(last.y - first.y, last.x - first.x)
+          session.createPrimitiveArc(first.x, first.y, radius, startAngle, Math.PI / 2)
+          return
+        }
+        default:
+          return
+      }
+    },
+    [session],
+  )
+
   const handleStrokeComplete = useCallback(
     (samples: PointerSampleInput[], meta: { maxScreenDeviationPx: number }) => {
       const first = samples[0]
       if (!first) return
+
+      if (SHAPE_TOOLS.has(activeTool)) {
+        const last = samples[samples.length - 1] ?? first
+        createShapeFromDrag(activeTool, first, last)
+        return
+      }
 
       if (meta.maxScreenDeviationPx < TAP_THRESHOLD_PX) {
         // `InkCanvas` already converted every sample to world space
@@ -107,7 +152,7 @@ export function CanvasStack({
       }
       session.submitStroke(samples)
     },
-    [session, viewport.zoom],
+    [activeTool, createShapeFromDrag, session, viewport.zoom],
   )
 
   /** Select/Eraser modes: InkCanvas is inactive, so a plain click reaches here directly. */
@@ -133,6 +178,8 @@ export function CanvasStack({
     [activeTool, session, viewport],
   )
 
+  const inkCanvasActive = !isPanning && (activeTool === 'pen' || SHAPE_TOOLS.has(activeTool))
+
   return (
     <div
       ref={containerRef}
@@ -155,11 +202,7 @@ export function CanvasStack({
         selectedIds={selectedIds}
       />
       <SelectionOverlay viewport={viewport} selectedPrimitives={selectedPrimitives} />
-      <InkCanvas
-        viewport={viewport}
-        active={!isPanning && activeTool === 'pen'}
-        onStrokeComplete={handleStrokeComplete}
-      />
+      <InkCanvas viewport={viewport} active={inkCanvasActive} onStrokeComplete={handleStrokeComplete} />
     </div>
   )
 }

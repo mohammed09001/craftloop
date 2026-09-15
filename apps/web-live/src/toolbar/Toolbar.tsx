@@ -1,5 +1,7 @@
-import { TOOL_REGISTRY, type ToolId } from './toolRegistry'
+import { useState } from 'react'
+import { TOOL_REGISTRY, type ToolId, type WorkspaceModeFilter } from './toolRegistry'
 import { ToolIcon } from './icons'
+import type { ConstraintOption } from './constraintOptions'
 import type { WorkspaceModeName } from '../session/sceneTypes'
 import styles from './Toolbar.module.css'
 
@@ -13,20 +15,24 @@ export interface ToolbarProps {
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
+  dimensionEnabled: boolean
+  onDimension: () => void
+  constraintOptions: ConstraintOption[]
+  onApplyConstraint: (payload: ConstraintOption['payload']) => void
 }
 
 /**
- * Execution 03, Phase 07, Task 050: the floating top-center toolbar
- * surface, rendered inside `Workspace`'s reserved anchor (Task 016).
- * Task 051: this is the *only* toolbar `apps/web-live` renders --
- * there is no bottom or side counterpart anywhere in this app, unlike
- * the native Android layout Phase 00's audit found
- * (`MainActivity`'s `Column { InkCanvas; PrimaryToolbar }`).
+ * Execution 03, Phase 07/09: the floating top-center toolbar surface,
+ * rendered inside `Workspace`'s reserved anchor (Task 016). Task 051:
+ * this is the *only* toolbar `apps/web-live` renders.
  *
- * Phase 08, Task 061: Sketch/Pen dispatch the exact same
- * `session.enterSketchMode`/`enterCreativePenMode` calls the `S`/`B`
- * keyboard shortcuts use (`useKeyboardShortcuts.ts`) -- one semantic
- * action per transition, not a button-only code path.
+ * Task 064 (Phase 09): a real morph, not a disable -- the primary
+ * group's tool list is filtered by `workspaceMode` from the one shared
+ * `TOOL_REGISTRY`, so Sketch2D genuinely shows a different button set
+ * (Line/Arc/Circle/Rectangle/Dimension/Constraint/...) rather than the
+ * Creative set with some buttons grayed out (Phase 08's stopgap,
+ * superseded here). History (Task 077) and Pen (Task 065, Article 26)
+ * stay present in both.
  */
 export function Toolbar({
   activeTool,
@@ -38,8 +44,15 @@ export function Toolbar({
   canRedo,
   onUndo,
   onRedo,
+  dimensionEnabled,
+  onDimension,
+  constraintOptions,
+  onApplyConstraint,
 }: ToolbarProps) {
-  const inSketch = workspaceMode === 'Sketch2D'
+  const [constraintMenuOpen, setConstraintMenuOpen] = useState(false)
+  const modeFilter: WorkspaceModeFilter = workspaceMode === 'Sketch2D' ? 'sketch' : 'creative'
+  const forMode = (tools: readonly (typeof TOOL_REGISTRY)[number][]) =>
+    tools.filter((t) => t.modes.includes(modeFilter))
 
   const handlePrimaryClick = (id: ToolId) => {
     if (id === 'sketch') {
@@ -47,82 +60,27 @@ export function Toolbar({
       return
     }
     if (id === 'pen') {
-      if (inSketch) onEnterCreativePenMode()
+      if (modeFilter === 'sketch') onEnterCreativePenMode()
       onSelectTool('pen')
+      return
+    }
+    if (id === 'dimension') {
+      onDimension()
+      return
+    }
+    if (id === 'constraint') {
+      setConstraintMenuOpen((open) => !open)
       return
     }
     onSelectTool(id)
   }
 
-  const groups: Array<{ key: string; render: () => React.ReactNode }> = [
-    {
-      key: 'primary',
-      render: () =>
-        TOOL_REGISTRY.filter((t) => t.group === 'primary').map((tool) => {
-          const pressed =
-            tool.id === 'sketch'
-              ? inSketch
-              : tool.kind === 'toggle'
-                ? activeTool === tool.id
-                : undefined
-          // Article 26: Pen stays available in Sketch Mode. Select/
-          // Eraser are Notebook-only concepts (CommandAction validity)
-          // and pause while Sketch2D is active, until Phase 09 gives
-          // Sketch its own dedicated tool set.
-          const pausedInSketch = inSketch && (tool.id === 'select' || tool.id === 'eraser')
-          const disabled = tool.deferredUntil !== undefined || pausedInSketch
-          return (
-            <ToolButton
-              key={tool.id}
-              id={tool.id}
-              label={tool.label}
-              pressed={pressed}
-              disabled={disabled}
-              deferredUntil={tool.deferredUntil}
-              titleOverride={pausedInSketch ? `${tool.label} (back in Creative Mode -- press B)` : undefined}
-              onClick={() => handlePrimaryClick(tool.id)}
-            />
-          )
-        }),
-    },
-    {
-      key: 'history',
-      render: () => (
-        <>
-          <ToolButton id="undo" label="Undo" disabled={!canUndo} onClick={onUndo} />
-          <ToolButton id="redo" label="Redo" disabled={!canRedo} onClick={onRedo} />
-        </>
-      ),
-    },
-    {
-      key: 'document',
-      render: () =>
-        TOOL_REGISTRY.filter((t) => t.group === 'document').map((tool) => (
-          <ToolButton
-            key={tool.id}
-            id={tool.id}
-            label={tool.label}
-            disabled
-            deferredUntil={tool.deferredUntil}
-            onClick={() => {}}
-          />
-        )),
-    },
-    {
-      key: 'overflow',
-      render: () =>
-        TOOL_REGISTRY.filter((t) => t.group === 'overflow').map((tool) => (
-          <ToolButton
-            key={tool.id}
-            id={tool.id}
-            label={tool.label}
-            disabled
-            deferredUntil={tool.deferredUntil}
-            onClick={() => {}}
-          />
-        )),
-    },
-  ]
+  const groups: Array<{ key: string; tools: (typeof TOOL_REGISTRY)[number][] }> = [
+    { key: 'primary', tools: forMode(TOOL_REGISTRY.filter((t) => t.group === 'primary')) },
+    { key: 'history', tools: forMode(TOOL_REGISTRY.filter((t) => t.group === 'history')) },
+    { key: 'document', tools: forMode(TOOL_REGISTRY.filter((t) => t.group === 'document')) },
+    { key: 'overflow', tools: forMode(TOOL_REGISTRY.filter((t) => t.group === 'overflow')) },
+  ].filter((group) => group.tools.length > 0)
 
   return (
     <div
@@ -135,7 +93,80 @@ export function Toolbar({
       {groups.map((group, i) => (
         <div key={group.key} className={styles.group} data-testid={`toolbar-group-${group.key}`}>
           {i > 0 && <div className={styles.divider} aria-hidden="true" />}
-          {group.render()}
+          {group.tools.map((tool) => {
+            if (tool.id === 'undo') {
+              return <ToolButton key="undo" id="undo" label="Undo" disabled={!canUndo} onClick={onUndo} />
+            }
+            if (tool.id === 'redo') {
+              return <ToolButton key="redo" id="redo" label="Redo" disabled={!canRedo} onClick={onRedo} />
+            }
+            if (tool.id === 'dimension') {
+              return (
+                <ToolButton
+                  key="dimension"
+                  id="dimension"
+                  label="Dimension"
+                  disabled={!dimensionEnabled}
+                  titleOverride={dimensionEnabled ? undefined : 'Dimension (select 1-2 shapes first)'}
+                  onClick={() => handlePrimaryClick('dimension')}
+                />
+              )
+            }
+            if (tool.id === 'constraint') {
+              return (
+                <div key="constraint" className={styles.constraintWrapper}>
+                  <ToolButton
+                    id="constraint"
+                    label="Constraint"
+                    disabled={constraintOptions.length === 0}
+                    pressed={constraintMenuOpen}
+                    titleOverride={
+                      constraintOptions.length === 0
+                        ? 'Constraint (select a shape or pair first)'
+                        : undefined
+                    }
+                    onClick={() => handlePrimaryClick('constraint')}
+                  />
+                  {constraintMenuOpen && constraintOptions.length > 0 && (
+                    <div className={styles.constraintMenu} data-testid="constraint-menu" role="menu">
+                      {constraintOptions.map((option) => (
+                        <button
+                          key={option.label}
+                          type="button"
+                          role="menuitem"
+                          className={styles.constraintMenuItem}
+                          data-testid={`constraint-option-${option.label.replace(/\s+/g, '-').toLowerCase()}`}
+                          onClick={() => {
+                            onApplyConstraint(option.payload)
+                            setConstraintMenuOpen(false)
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+            const pressed =
+              tool.id === 'sketch'
+                ? modeFilter === 'sketch'
+                : tool.kind === 'toggle'
+                  ? activeTool === tool.id
+                  : undefined
+            return (
+              <ToolButton
+                key={tool.id}
+                id={tool.id}
+                label={tool.label}
+                pressed={pressed}
+                disabled={tool.deferredUntil !== undefined}
+                deferredUntil={tool.deferredUntil}
+                onClick={() => handlePrimaryClick(tool.id)}
+              />
+            )
+          })}
         </div>
       ))}
     </div>
