@@ -1,0 +1,83 @@
+# Execution 03, Phase 18, Task 141: "Add web CI: Typecheck, lint, unit
+# tests, Wasm build, production build, Playwright smoke." The Rust
+# workspace (`ci.yml`) and iOS/Android binding gates
+# (`macos-compile-gate.yml`, `android-compile-gate.yml`) already had
+# CI; `apps/web-live` -- real since Phase 02, exercising the real
+# shared Rust core through `craftloop-web-bridge` since Phase 04 --
+# did not.
+#
+# Runs the exact same commands every phase's own evidence doc has been
+# verified with locally throughout this execution, in the same order
+# `npm run build`/`npm run test:e2e` already impose (a strict `tsc -b`
+# typecheck is `npm run build`'s own first step, so it is not a
+# separate command here) -- this job is not a new verification
+# surface, it is the existing one made to run automatically.
+
+name: Web CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  web:
+    name: Web Live View (lint, unit tests, typecheck + production build, Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install wasm-bindgen-cli (pinned to the exact version craftloop-web-bridge resolves)
+        run: cargo install wasm-bindgen-cli --version 0.2.128 --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web-live/package-lock.json
+      - name: npm ci
+        working-directory: apps/web-live
+        run: npm ci
+      - name: Lint
+        working-directory: apps/web-live
+        run: npm run lint
+      - name: Unit tests
+        working-directory: apps/web-live
+        run: npm run test
+      - name: Production build (strict typecheck + release wasm + Vite build)
+        working-directory: apps/web-live
+        run: npm run build
+      - name: Install Playwright browsers
+        working-directory: apps/web-live
+        run: npx playwright install --with-deps chromium
+      - name: Playwright (real Chromium against the production build)
+        working-directory: apps/web-live
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web-live/playwright-report/
+          retention-days: 7
+      # Task 145: the real static site this whole job just proved
+      # builds and passes its own e2e suite -- useful to grab straight
+      # from a CI run without a local rebuild (e.g. to hand-deploy a
+      # preview, Phase 17's own "Deploying a preview" section).
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: web-live-dist
+          path: apps/web-live/dist/
+          retention-days: 14

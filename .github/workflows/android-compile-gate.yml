@@ -1,0 +1,71 @@
+# Execution 03, Phase 18, Task 142: "Complete missing Execution 02
+# Android CI without hardware claims" -- Execution 02 (Phase 03, Tasks
+# 017-021) built the real chain `android/app/build.gradle.kts` already
+# wires end to end (cargo-ndk cross-compiles `craftloop-mobile-ffi` for
+# arm64-v8a, the crate's own `uniffi-bindgen` binary generates its
+# Kotlin bindings, Gradle compiles the shell app against them) and
+# proved it locally (`execution-evidence/execution-02/phase-01-03-toolchain-and-build.md`'s
+# Gate A: `./gradlew clean` then `assembleDebug`, twice, both green) --
+# but, unlike the Rust workspace (`ci.yml`) and iOS binding generation
+# (`macos-compile-gate.yml`), that chain had no CI gate of its own.
+# This is that gate, following the same shape and the same restraint
+# `macos-compile-gate.yml` already established for Swift: a **compile**
+# gate, not a hardware/emulator/instrumented-test gate -- `assembleDebug`
+# never launches an emulator or a real device, so nothing here claims
+# on-device behavior (Article 65).
+#
+# Toolchain versions below are pinned to the exact ones this project
+# was actually built and locally verified against
+# (`execution-evidence/execution-02/phase-01-03-toolchain-and-build.md`'s
+# own table), not "latest," matching Article 37's dependency-pinning
+# policy and `app/build.gradle.kts`'s own `ndkVersion` pin.
+
+name: Android Compile Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  android-compile:
+    name: Android (cargo-ndk cross-compile + Kotlin bindings + assembleDebug)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-android-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --version 4.1.2 --locked
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install pinned Android NDK (27.2.12479018)
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;27.2.12479018"
+      - name: Gradle assembleDebug (cross-compiles the native library, generates Kotlin bindings, builds the shell app -- compile only, no emulator/device)
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      # Task 145: the real debug APK this job just proved builds
+      # cleanly, including the cross-compiled native library and
+      # generated Kotlin bindings -- useful to sideload onto a real
+      # device for the manual validation this compile-only gate
+      # deliberately does not attempt itself.
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: craftloop-android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
