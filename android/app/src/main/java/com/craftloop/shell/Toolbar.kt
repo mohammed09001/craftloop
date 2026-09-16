@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Architecture
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.CropSquare
 import androidx.compose.material.icons.filled.Edit
@@ -61,57 +62,100 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import uniffi.craftloop_mobile_ffi.FfiConstraintKind
 import uniffi.craftloop_mobile_ffi.FfiDimensionKind
 import uniffi.craftloop_mobile_ffi.FfiPrincipalViewIdentity
+import uniffi.craftloop_mobile_ffi.FfiWorkspaceMode
 
 /** One primary toolbar entry: Article 7's fixed icon list.
  * `Constraint`/`ViewIdentity` open popovers; `Dimension` (Phase 10)
  * opens the real numeric-entry dialog; `Orthographic` calls the real,
  * already-built `enterOrthographic` narrowly (see its own doc comment
  * in `CraftLoopViewModel` for exactly what this phase does and does
- * not do with the result). */
+ * not do with the result).
+ *
+ * Execution 03, Phase 19, Task 148/149: `modes` mirrors
+ * `apps/web-live/src/toolbar/toolRegistry.ts`'s own `modes` field --
+ * the same real Creative/Sketch2D split, applied to Android's existing
+ * tool set rather than pixel-matched to web's (Task 149's own
+ * wording: "do not require pixel identity with web"). Android has no
+ * Arc/Construction/Snap/Show-All entries (Phase 09/11/16 web-only
+ * additions never backported to `craftloop-mobile-ffi` -- see
+ * `execution-evidence/execution-03/phase-19-native-parity-compile-patch.md`'s
+ * own "remaining native gaps" section), so Sketch2D here is Line/
+ * Circle/Rectangle/Dimension/Constraint only; View Identity/
+ * Orthographic stay in Creative, mirroring web's Creative-only "View"
+ * button even though Android still exposes them as two separate
+ * buttons rather than web's one merged panel. */
 private data class ToolbarEntry(
     val tool: Tool?,
     val icon: ImageVector,
     val label: String,
+    val modes: Set<FfiWorkspaceMode>,
     val onClick: (CraftLoopViewModel) -> Unit,
 )
 
+private val creativeOnly = setOf(FfiWorkspaceMode.CREATIVE)
+private val sketchOnly = setOf(FfiWorkspaceMode.SKETCH2_D)
+private val bothModes = setOf(FfiWorkspaceMode.CREATIVE, FfiWorkspaceMode.SKETCH2_D)
+
 private val primaryEntries =
     listOf(
-        ToolbarEntry(Tool.PEN, Icons.Filled.Edit, "Pen") { it.setActiveTool(Tool.PEN) },
-        ToolbarEntry(Tool.ERASER, Icons.AutoMirrored.Filled.Backspace, "Eraser") { it.setActiveTool(Tool.ERASER) },
-        ToolbarEntry(Tool.SELECT, Icons.Filled.NearMe, "Select") { it.setActiveTool(Tool.SELECT) },
-        ToolbarEntry(Tool.LINE, Icons.Filled.Timeline, "Line") { it.setActiveTool(Tool.LINE) },
-        ToolbarEntry(Tool.CIRCLE, Icons.Filled.Circle, "Circle") { it.setActiveTool(Tool.CIRCLE) },
-        ToolbarEntry(Tool.RECTANGLE, Icons.Filled.CropSquare, "Rectangle") { it.setActiveTool(Tool.RECTANGLE) },
-        ToolbarEntry(Tool.DIMENSION, Icons.Filled.Straighten, "Dimension") {
-            it.setActiveTool(Tool.DIMENSION)
-            it.openDimensionDialogForCreate()
+        ToolbarEntry(Tool.PEN, Icons.Filled.Edit, "Pen", bothModes) { viewModel ->
+            // Task 126's own real-toolbar-parity pattern, ported: Pen
+            // always sets the active tool, and additionally exits
+            // Sketch2D back to Creative when it was active there --
+            // the exact same dual behavior `apps/web-live`'s own Pen
+            // button has (`Toolbar.tsx`'s `handlePrimaryClick`).
+            if (viewModel.sceneSnapshot.value.workspaceMode == FfiWorkspaceMode.SKETCH2_D) {
+                viewModel.enterCreativePenMode()
+            }
+            viewModel.setActiveTool(Tool.PEN)
         },
-        ToolbarEntry(Tool.CONSTRAINT, Icons.Filled.Link, "Constraint") {
-            it.setActiveTool(Tool.CONSTRAINT)
-            it.setConstraintPopoverVisible(true)
+        ToolbarEntry(Tool.ERASER, Icons.AutoMirrored.Filled.Backspace, "Eraser", creativeOnly) {
+            it.setActiveTool(Tool.ERASER)
         },
-        ToolbarEntry(Tool.VIEW_IDENTITY, Icons.Filled.Visibility, "View Identity") {
+        ToolbarEntry(Tool.SELECT, Icons.Filled.NearMe, "Select", bothModes) { it.setActiveTool(Tool.SELECT) },
+        // Task 148: the real mode-entry action -- not a `Tool`, since
+        // (like web's own "Sketch" entry) it never stays "active" the
+        // way a drawing tool does; it flips the real session mode and
+        // returns to Pen, exactly like `enterSketchMode()` itself does.
+        ToolbarEntry(null, Icons.Filled.Architecture, "Sketch", creativeOnly) { it.enterSketchMode() },
+        ToolbarEntry(Tool.VIEW_IDENTITY, Icons.Filled.Visibility, "View Identity", creativeOnly) {
             it.setActiveTool(Tool.VIEW_IDENTITY)
             it.setViewIdentityPopoverVisible(true)
         },
-        ToolbarEntry(Tool.ORTHOGRAPHIC, Icons.Filled.GridOn, "Orthographic") {
+        ToolbarEntry(Tool.ORTHOGRAPHIC, Icons.Filled.GridOn, "Orthographic", creativeOnly) {
             it.setActiveTool(Tool.ORTHOGRAPHIC)
             it.enterOrthographic()
+        },
+        ToolbarEntry(Tool.LINE, Icons.Filled.Timeline, "Line", sketchOnly) { it.setActiveTool(Tool.LINE) },
+        ToolbarEntry(Tool.CIRCLE, Icons.Filled.Circle, "Circle", sketchOnly) { it.setActiveTool(Tool.CIRCLE) },
+        ToolbarEntry(Tool.RECTANGLE, Icons.Filled.CropSquare, "Rectangle", sketchOnly) {
+            it.setActiveTool(Tool.RECTANGLE)
+        },
+        ToolbarEntry(Tool.DIMENSION, Icons.Filled.Straighten, "Dimension", sketchOnly) {
+            it.setActiveTool(Tool.DIMENSION)
+            it.openDimensionDialogForCreate()
+        },
+        ToolbarEntry(Tool.CONSTRAINT, Icons.Filled.Link, "Constraint", sketchOnly) {
+            it.setActiveTool(Tool.CONSTRAINT)
+            it.setConstraintPopoverVisible(true)
         },
     )
 
 /** Task 058-061: the primary icon-only toolbar (Article 8's Tool
  * Region). Undo/Redo/Save are real one-shot actions, not tools that
- * stay "active" -- they never change [EphemeralUiState.activeTool]. */
+ * stay "active" -- they never change [EphemeralUiState.activeTool].
+ * Task 147/148: filtered by the real `FfiSceneSnapshot.workspaceMode`
+ * -- a genuine morph (entries absent, not merely disabled), the same
+ * real distinction web's own Task 064 established. */
 @Composable
 fun PrimaryToolbar(viewModel: CraftLoopViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val sceneSnapshot by viewModel.sceneSnapshot.collectAsStateWithLifecycle()
     val debugState by viewModel.debugState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     Row(modifier = Modifier.padding(4.dp)) {
-        for (entry in primaryEntries) {
+        for (entry in primaryEntries.filter { sceneSnapshot.workspaceMode in it.modes }) {
             ToolbarIconButton(
                 icon = entry.icon,
                 label = entry.label,

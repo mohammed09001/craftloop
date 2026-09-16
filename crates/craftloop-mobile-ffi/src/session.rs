@@ -203,6 +203,23 @@ fn now_seconds() -> f64 {
 // the domain type re-exported directly).
 // ---------------------------------------------------------------------
 
+/// Execution 03, Phase 19, Task 148: the same ephemeral Creative/
+/// Sketch2D interaction mode `craftloop-web-bridge`'s own
+/// `WebWorkspaceMode` introduced (Execution 03, Phase 08) -- session-
+/// local state, never a `DocumentChange`, never touches
+/// `DocumentHistory` (`enter_sketch_mode`/`enter_creative_pen_mode`
+/// below only flip `SessionState::workspace_mode` after a real
+/// low-risk `Command` submission, exactly mirroring that crate's own
+/// two methods of the same name). Like `WebWorkspaceMode`, this has no
+/// backing conversion to/from a shared domain-crate type: "which tool
+/// group is showing" is a session/presentation concept, not
+/// engineering truth, on either platform.
+#[derive(uniffi::Enum, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FfiWorkspaceMode {
+    Creative,
+    Sketch2D,
+}
+
 #[derive(uniffi::Enum, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FfiPrincipalViewIdentity {
     Front,
@@ -556,6 +573,7 @@ pub struct FfiSceneSnapshot {
     pub revision: u64,
     pub can_undo: bool,
     pub can_redo: bool,
+    pub workspace_mode: FfiWorkspaceMode,
 }
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
@@ -596,6 +614,9 @@ struct SessionState {
     /// Phase 04 evidence file).
     pending_shared_value_proposals:
         std::collections::BTreeMap<ConflictId, (ViewId, SharedAxis, f64)>,
+    /// Execution 03, Phase 19, Task 148: see `FfiWorkspaceMode`'s own
+    /// doc comment.
+    workspace_mode: FfiWorkspaceMode,
 }
 
 impl SessionState {
@@ -699,6 +720,7 @@ impl CraftLoopSession {
                 command_bus: CommandBus::new(),
                 selection: BTreeSet::new(),
                 pending_shared_value_proposals: std::collections::BTreeMap::new(),
+                workspace_mode: FfiWorkspaceMode::Creative,
             }),
         }
     }
@@ -713,6 +735,7 @@ impl CraftLoopSession {
                 command_bus: CommandBus::new(),
                 selection: BTreeSet::new(),
                 pending_shared_value_proposals: std::collections::BTreeMap::new(),
+                workspace_mode: FfiWorkspaceMode::Creative,
             }),
         })
     }
@@ -832,6 +855,7 @@ impl CraftLoopSession {
             revision: document.revision(),
             can_undo: state.history.can_undo(),
             can_redo: state.history.can_redo(),
+            workspace_mode: state.workspace_mode,
         }
     }
 
@@ -1721,6 +1745,45 @@ impl CraftLoopSession {
     pub fn can_redo(&self) -> bool {
         self.lock().history.can_redo()
     }
+
+    // -- Workspace mode (Execution 03, Phase 19, Task 148) -------------------
+
+    /// One semantic action shared by every entry source (toolbar tap,
+    /// keyboard on a hardware-keyboard-equipped device, ...) -- mirrors
+    /// `craftloop-web-bridge::CraftLoopSession::enter_sketch_mode`
+    /// exactly: submits `CommandAction::Sketch` through the real
+    /// Command Bus (same validation every other command goes through)
+    /// before flipping the ephemeral mode; never calls
+    /// `state.commit(...)`, so `DocumentHistory` is untouched.
+    pub fn enter_sketch_mode(&self) -> Result<(), FfiSessionError> {
+        let mut state = self.lock();
+        state.submit(
+            CommandAction::Sketch,
+            craftloop_command::CommandNamespace::Notebook,
+            "Entered Sketch Mode",
+        )?;
+        state.workspace_mode = FfiWorkspaceMode::Sketch2D;
+        Ok(())
+    }
+
+    /// The return-side counterpart. Submits `CommandAction::ExitSketch`
+    /// (the real Sketch-namespace word for this, Article 237) before
+    /// flipping back to `Creative` -- also never touches
+    /// `DocumentHistory`.
+    pub fn enter_creative_pen_mode(&self) -> Result<(), FfiSessionError> {
+        let mut state = self.lock();
+        state.submit(
+            CommandAction::ExitSketch,
+            craftloop_command::CommandNamespace::Sketch,
+            "Returned to Pen",
+        )?;
+        state.workspace_mode = FfiWorkspaceMode::Creative;
+        Ok(())
+    }
+
+    pub fn workspace_mode(&self) -> FfiWorkspaceMode {
+        self.lock().workspace_mode
+    }
 }
 
 impl CraftLoopSession {
@@ -1816,6 +1879,46 @@ mod tests {
         assert!(!snapshot.can_redo);
         assert!(!session.can_undo());
         assert!(!session.can_redo());
+    }
+
+    /// Execution 03, Phase 19, Task 148.
+    #[test]
+    fn a_new_session_starts_in_creative_mode() {
+        let session = CraftLoopSession::new();
+        assert_eq!(session.workspace_mode(), FfiWorkspaceMode::Creative);
+        assert_eq!(
+            session.scene_snapshot().workspace_mode,
+            FfiWorkspaceMode::Creative
+        );
+    }
+
+    #[test]
+    fn enter_sketch_mode_and_back_round_trips_through_the_real_command_bus() {
+        let session = CraftLoopSession::new();
+        session.enter_sketch_mode().unwrap();
+        assert_eq!(session.workspace_mode(), FfiWorkspaceMode::Sketch2D);
+
+        session.enter_creative_pen_mode().unwrap();
+        assert_eq!(session.workspace_mode(), FfiWorkspaceMode::Creative);
+    }
+
+    /// Mirrors `craftloop-web-bridge`'s own test of the same name
+    /// (Execution 03, Phase 08, Task 063): mode switching is real
+    /// session state but must never advance `Document::revision()` or
+    /// touch `DocumentHistory` -- undo/redo stay exactly as they were.
+    #[test]
+    fn mode_switching_does_not_touch_document_history() {
+        let session = CraftLoopSession::new();
+        let before = session.scene_snapshot();
+
+        session.enter_sketch_mode().unwrap();
+        session.enter_creative_pen_mode().unwrap();
+
+        let after = session.scene_snapshot();
+        assert_eq!(before.revision, after.revision);
+        assert_eq!(before.can_undo, after.can_undo);
+        assert_eq!(before.can_redo, after.can_redo);
+        assert!(!session.can_undo());
     }
 
     #[test]

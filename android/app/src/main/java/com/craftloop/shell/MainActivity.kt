@@ -13,7 +13,9 @@ import android.view.ScaleGestureDetector
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -176,8 +179,17 @@ class MainActivity : ComponentActivity() {
         // routes through the same stylus/tool gating below rather than
         // skipping it.
         val bounds = viewModel.canvasBoundsPx
-        val insideCanvas =
-            bounds == null || bounds.contains(androidx.compose.ui.geometry.Offset(ev.x, ev.y))
+        val point = androidx.compose.ui.geometry.Offset(ev.x, ev.y)
+        // Task 147: `InkCanvas` now fills the whole screen (the
+        // toolbar floats over it, top-center, rather than sitting in
+        // a separate `Column` row) -- a touch inside the toolbar's own
+        // real bounds must still reach Compose's normal click handling
+        // via `super.dispatchTouchEvent`, exactly like the pre-Task-147
+        // "outside canvas" case did, or every toolbar button silently
+        // stops working the moment a finger touch starts routing
+        // through the gesture detectors below instead of `super`.
+        val insideToolbar = viewModel.toolbarBoundsPx?.contains(point) == true
+        val insideCanvas = !insideToolbar && (bounds == null || bounds.contains(point))
         if (!insideCanvas) {
             return super.dispatchTouchEvent(ev)
         }
@@ -219,11 +231,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Article 8's screen structure: Canvas Region (most of the screen)
- * plus a collapsible Debug Region and (Phase 08) a temporary control
- * row -- Phase 09 replaces this row with the real icon toolbar; these
- * are plain text buttons only to make Select/Delete/Fit/Undo/Redo
- * exercisable and verifiable on-device before that exists. */
+/** Article 8's screen structure: Canvas Region filling the whole
+ * screen, the real icon toolbar floating top-center over it (Execution
+ * 03, Phase 19, Task 147 -- translates the same top-center placement
+ * `apps/web-live`'s own `Workspace.module.css` `.toolbarHost` already
+ * established, Article 7's accepted interaction placement, into
+ * Compose), and a collapsible Debug Region anchored to the bottom so
+ * it never competes with the toolbar for the same screen region. */
 @Composable
 fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -241,7 +255,7 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
     // dropped or faked with a placeholder shape.
     val committedStrokes = remember { mutableStateListOf<Stroke>() }
 
-    Column {
+    Box(modifier = Modifier.fillMaxSize()) {
         InkCanvas(
             committedStrokes = committedStrokes,
             onStrokeFinished = { samples: List<FfiPointerSample> ->
@@ -249,7 +263,7 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
             },
             viewport = uiState.viewport,
             modifier =
-                Modifier.weight(1f).onGloballyPositioned { coordinates ->
+                Modifier.fillMaxSize().onGloballyPositioned { coordinates ->
                     // `boundsInWindow` matches the coordinate space
                     // `MotionEvent.x`/`.y` arrive in at
                     // `Activity.dispatchTouchEvent` (window-relative,
@@ -260,27 +274,36 @@ fun CraftLoopAlphaScreen(viewModel: CraftLoopViewModel) {
                     viewModel.canvasBoundsPx = coordinates.boundsInWindow()
                 },
         )
-        // Phase 09's real icon-first toolbar (Article 7) replaces
-        // Phase 08's temporary text-button row.
-        PrimaryToolbar(viewModel)
+        Box(
+            modifier =
+                Modifier.align(Alignment.TopCenter).onGloballyPositioned { coordinates ->
+                    // Task 147's own real bug fix -- see
+                    // `CraftLoopViewModel.toolbarBoundsPx`'s doc comment.
+                    viewModel.toolbarBoundsPx = coordinates.boundsInWindow()
+                },
+        ) {
+            PrimaryToolbar(viewModel)
+        }
         if (uiState.debugOverlayVisible) {
-            DebugRegion(
-                lastPointerSource = uiState.lastPointerSource,
-                revision = debugState.revision,
-                canUndo = debugState.canUndo,
-                canRedo = debugState.canRedo,
-                transactionCount = debugState.transactionCount,
-                unresolvedConflictCount = debugState.unresolvedConflictCount,
-                selectedCount = sceneSnapshot.selectedEntityIds.size,
-                primitiveCount = sceneSnapshot.primitives.size,
-                zoom = uiState.viewport.zoom,
-                panX = uiState.viewport.panX,
-                panY = uiState.viewport.panY,
-                activeTool = uiState.activeTool.name,
-                lastActionMessage = uiState.lastActionMessage,
-                onInsertTestLine = { viewModel.debugInsertTestLine() },
-                onSelectFirstPrimitive = { viewModel.debugSelectFirstPrimitive() },
-            )
+            Box(modifier = Modifier.align(Alignment.BottomStart)) {
+                DebugRegion(
+                    lastPointerSource = uiState.lastPointerSource,
+                    revision = debugState.revision,
+                    canUndo = debugState.canUndo,
+                    canRedo = debugState.canRedo,
+                    transactionCount = debugState.transactionCount,
+                    unresolvedConflictCount = debugState.unresolvedConflictCount,
+                    selectedCount = sceneSnapshot.selectedEntityIds.size,
+                    primitiveCount = sceneSnapshot.primitives.size,
+                    zoom = uiState.viewport.zoom,
+                    panX = uiState.viewport.panX,
+                    panY = uiState.viewport.panY,
+                    activeTool = uiState.activeTool.name,
+                    lastActionMessage = uiState.lastActionMessage,
+                    onInsertTestLine = { viewModel.debugInsertTestLine() },
+                    onSelectFirstPrimitive = { viewModel.debugSelectFirstPrimitive() },
+                )
+            }
         }
     }
 }

@@ -19,6 +19,7 @@ import uniffi.craftloop_mobile_ffi.FfiDebugState
 import uniffi.craftloop_mobile_ffi.FfiPointerSample
 import uniffi.craftloop_mobile_ffi.FfiPrincipalViewIdentity
 import uniffi.craftloop_mobile_ffi.FfiSceneSnapshot
+import uniffi.craftloop_mobile_ffi.FfiWorkspaceMode
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
@@ -148,6 +149,35 @@ class CraftLoopViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(activeTool = tool)
     }
 
+    /** Execution 03, Phase 19, Task 148: one semantic action shared by
+     * every entry source (the toolbar's own Sketch button today, a
+     * future keyboard/ink-command source tomorrow -- the same real
+     * shape `apps/web-live`'s `Workspace.tsx` already established),
+     * calling the real `CraftLoopSession.enterSketchMode`
+     * (`FfiWorkspaceMode` mirrors `WebWorkspaceMode`) rather than
+     * inventing a second, Android-local mode concept. `FfiSceneSnapshot
+     * .workspaceMode` -- not a duplicated field on [EphemeralUiState]
+     * -- is the one source of truth [Toolbar] reads to decide which
+     * button set to show, matching engineering-truth-in-one-place even
+     * for this ephemeral, non-persisted concept. */
+    fun enterSketchMode() {
+        viewModelScope.launch {
+            session.enterSketchMode()
+            refreshSnapshots()
+            _uiState.value = _uiState.value.copy(activeTool = Tool.PEN)
+        }
+    }
+
+    /** The return-side counterpart, mirroring
+     * `CraftLoopSession.enterCreativePenMode`. */
+    fun enterCreativePenMode() {
+        viewModelScope.launch {
+            session.enterCreativePenMode()
+            refreshSnapshots()
+            _uiState.value = _uiState.value.copy(activeTool = Tool.PEN)
+        }
+    }
+
     fun setLastPointerSource(source: String) {
         _uiState.value = _uiState.value.copy(lastPointerSource = source)
     }
@@ -158,6 +188,23 @@ class CraftLoopViewModel : ViewModel() {
      * Composable) reads only the current value at each real touch
      * event, and nothing needs to recompose when this changes. */
     var canvasBoundsPx: Rect? = null
+
+    /** Execution 03, Phase 19, Task 147: real bug found and fixed while
+     * moving the toolbar to float top-center over a now full-screen
+     * `InkCanvas` (previously the two were siblings in a `Column`, so
+     * `canvasBoundsPx` already excluded the toolbar's row purely by
+     * layout). With `InkCanvas` filling the whole screen,
+     * `canvasBoundsPx` alone can no longer distinguish "a finger tap on
+     * the floating toolbar" from "a finger tap on the canvas beneath
+     * it" -- without this, `dispatchTouchEvent`'s finger branch
+     * (`scaleGestureDetector`/`gestureDetector`, which always consumes
+     * the event and never forwards to `super`) would swallow every
+     * toolbar button tap before Compose's own click handling ever saw
+     * it. Updated by [PrimaryToolbar]'s own wrapping
+     * `Modifier.onGloballyPositioned`; `null` (its initial value, same
+     * as [canvasBoundsPx]'s) means "no toolbar bounds known yet,"
+     * correctly excluding nothing rather than everything. */
+    var toolbarBoundsPx: Rect? = null
 
     /** Task 053/054: apply one incremental pan/zoom gesture step.
      * `focus` is the screen-space point the zoom should appear to pivot
