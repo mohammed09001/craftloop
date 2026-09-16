@@ -64,8 +64,13 @@ test('Select works inside Sketch2D so Dimension/Constraint have something to act
   await page.mouse.click(box.x + 90, box.y + 40)
   await expect(page.getByTestId('tool-dimension')).toBeEnabled()
 
-  page.once('dialog', (dialog) => dialog.accept('42'))
+  // Execution 03, Phase 12, Task 094: a geometry-adjacent popover, not
+  // a `window.prompt` dialog.
   await page.getByTestId('tool-dimension').click()
+  await expect(page.getByTestId('dimension-input')).toBeVisible()
+  await page.getByTestId('dimension-input-value').fill('42')
+  await page.getByTestId('dimension-input-submit').click()
+  await expect(page.getByTestId('dimension-input')).toHaveCount(0)
   await expect(page.locator('[data-testid="geometry-layer"]')).toBeVisible()
 })
 

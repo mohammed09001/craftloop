@@ -2,16 +2,16 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import type { UseCraftLoopSession } from '../session/useCraftLoopSession'
 import type { PointerSampleInput } from '../session/pointerTypes'
 import type { ToolId } from '../toolbar/toolRegistry'
+import { AnnotationLayer } from './AnnotationLayer'
 import { BackgroundGrid } from './BackgroundGrid'
 import { GeometryLayer } from './GeometryLayer'
 import { InkCanvas } from './InkCanvas'
 import { RefinementBar } from './RefinementBar'
 import { SelectionOverlay } from './SelectionOverlay'
-import { usePanZoom } from './usePanZoom'
 import { hitTestScene } from './hitTest'
 import { SNAP_TOLERANCE_SCREEN_PX, snapPoint } from './inference'
 import { computeShape, type PreviewKind } from './shapePreview'
-import { screenToWorld } from './viewport'
+import { screenToWorld, type WorldPoint, type Viewport } from './viewport'
 
 /** Below this many screen pixels of travel, a pointer gesture is a tap (select), not a drag (draw). */
 const TAP_THRESHOLD_PX = 4
@@ -62,19 +62,42 @@ function previewKindFor(tool: ToolId): PreviewKind {
  * grid) via `src/canvas/inference.ts`'s pure `snapPoint` -- the exact
  * same call `InkCanvas`'s live preview already made, so the created
  * primitive never differs from what was shown while dragging.
+ *
+ * Viewport ownership (Phase 12): `viewport`/pan-zoom handlers are
+ * owned by `Workspace`, not here -- `Workspace`'s geometry-adjacent
+ * Dimension popover (Task 094) needs the same `worldToScreen`
+ * transform this stack's own layers use, to anchor itself next to the
+ * real selection rather than a distant global panel.
  */
 export function CanvasStack({
   session,
   activeTool,
   snapEnabled,
+  showAllAnnotations,
+  viewport,
+  isPanning,
+  onWheel,
+  beginPan,
+  endPan,
+  panByScreenDelta,
+  onEditDimensionRequest,
 }: {
   session: UseCraftLoopSession
   activeTool: ToolId
   /** Execution 03, Phase 11, Task 093: when on, shape-tool drags snap their defining point to nearby real geometry or the grid, and the final created primitive matches what was previewed. */
   snapEnabled: boolean
+  /** Task 101: when off, only dimensions/constraints touching the current selection render -- never a permanent dense overlay. */
+  showAllAnnotations: boolean
+  viewport: Viewport
+  isPanning: boolean
+  onWheel: (event: React.WheelEvent, anchor: { x: number; y: number }) => void
+  beginPan: () => void
+  endPan: () => void
+  panByScreenDelta: (dx: number, dy: number) => void
+  /** Task 096: a real dimension annotation was clicked -- `Workspace` opens the same geometry-adjacent popover Task 094 uses, pre-filled for editing. */
+  onEditDimensionRequest: (dimensionId: string, anchorWorld: WorldPoint) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { viewport, isPanning, onWheel, beginPan, endPan, panByScreenDelta } = usePanZoom()
   const lastPanPointRef = useRef<{ x: number; y: number } | null>(null)
   const [pendingCandidateId, setPendingCandidateId] = useState<string | null>(null)
 
@@ -263,6 +286,17 @@ export function CanvasStack({
         strokes={session.snapshot.strokes}
         selectedIds={selectedIds}
         candidateId={pendingCandidateId ?? undefined}
+      />
+      <AnnotationLayer
+        viewport={viewport}
+        primitives={session.snapshot.primitives}
+        dimensions={session.snapshot.dimensions}
+        constraints={session.snapshot.constraints}
+        selectedIds={selectedIds}
+        showAll={showAllAnnotations}
+        onDimensionClick={(dimensionId, anchorWorld) =>
+          onEditDimensionRequest(dimensionId, anchorWorld)
+        }
       />
       <SelectionOverlay viewport={viewport} selectedPrimitives={selectedPrimitives} />
       <InkCanvas

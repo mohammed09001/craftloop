@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { TOOL_REGISTRY, type ToolId, type WorkspaceModeFilter } from './toolRegistry'
 import { ToolIcon } from './icons'
-import type { ConstraintOption } from './constraintOptions'
+import type { ConstraintOption } from '../session/sceneTypes'
 import type { WorkspaceModeName } from '../session/sceneTypes'
 import styles from './Toolbar.module.css'
 
@@ -25,6 +25,9 @@ export interface ToolbarProps {
   /** Task 092/093: independent of `activeTool` -- stays on/off across every drawing tool. */
   snapEnabled: boolean
   onToggleSnap: () => void
+  /** Task 101: independent of `activeTool`, like Snap -- whether every dimension/constraint annotation is shown, not just ones touching the current selection. */
+  showAllAnnotations: boolean
+  onToggleAnnotations: () => void
 }
 
 /**
@@ -58,6 +61,8 @@ export function Toolbar({
   onToggleConstruction,
   snapEnabled,
   onToggleSnap,
+  showAllAnnotations,
+  onToggleAnnotations,
 }: ToolbarProps) {
   const [constraintMenuOpen, setConstraintMenuOpen] = useState(false)
   const modeFilter: WorkspaceModeFilter = workspaceMode === 'Sketch2D' ? 'sketch' : 'creative'
@@ -88,6 +93,10 @@ export function Toolbar({
     }
     if (id === 'snap') {
       onToggleSnap()
+      return
+    }
+    if (id === 'annotations') {
+      onToggleAnnotations()
       return
     }
     onSelectTool(id)
@@ -187,6 +196,17 @@ export function Toolbar({
                   label="Snap/Guide"
                   pressed={snapEnabled}
                   onClick={() => handlePrimaryClick('snap')}
+                />
+              )
+            }
+            if (tool.id === 'annotations') {
+              return (
+                <ToolButton
+                  key="annotations"
+                  id="annotations"
+                  label="Show All"
+                  pressed={showAllAnnotations}
+                  onClick={() => handlePrimaryClick('annotations')}
                 />
               )
             }

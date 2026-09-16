@@ -74,6 +74,18 @@ export interface ConstraintSummary {
   primitive_ids: string[]
 }
 
+/**
+ * Execution 03, Phase 12, Task 098: mirrors
+ * `craftloop_web_bridge::types::WebConstraintOption` -- one real,
+ * backend-derived entry in `session.eligibleConstraints(...)`'s
+ * result. `payload` matches `WebConstraintKind`'s exact JSON shape,
+ * ready for `JSON.stringify` + `session.applyConstraint`.
+ */
+export interface ConstraintOption {
+  label: string
+  payload: Record<string, { line: string } | { a: string; b: string }>
+}
+
 export type ConflictKind =
   | 'DegenerateGeometry'
   | 'DimensionConstraintMismatch'

@@ -36,6 +36,14 @@ test('Snap is on by default and pulls a new endpoint exactly onto an existing on
   await page.getByTestId('tool-line').click()
   await drag(page, box.x + 40, box.y + 140, box.x + 140, box.y + 140)
   await expect(page.locator('[data-testid="geometry-layer"] line')).toHaveCount(1)
+  // `session.snapshot.primitives` is a `BTreeMap<PrimitiveId, _>`
+  // (sorted by id, not creation order) -- identify the just-created
+  // second line by excluding the first one's real id, never by DOM
+  // position among same-tag elements.
+  const firstLineId = await page
+    .locator('[data-testid="geometry-layer"] line')
+    .first()
+    .getAttribute('data-entity-id')
 
   // The second line's end point (145, 143 relative to the box) lands
   // within snap tolerance of the first line's real endpoint -- with
@@ -45,7 +53,9 @@ test('Snap is on by default and pulls a new endpoint exactly onto an existing on
   await drag(page, box.x + 300, box.y + 300, box.x + 145, box.y + 143)
   await expect(page.locator('[data-testid="geometry-layer"] line')).toHaveCount(2)
 
-  const secondLine = page.locator('[data-testid="geometry-layer"] line').nth(1)
+  const secondLine = page.locator(
+    `[data-testid="geometry-layer"] line:not([data-entity-id="${firstLineId}"])`,
+  )
   await expect(secondLine).toHaveAttribute('x2', '140')
   await expect(secondLine).toHaveAttribute('y2', '140')
 })
@@ -60,6 +70,10 @@ test('turning Snap off leaves a new endpoint at the raw drag coordinate, even ne
   await page.getByTestId('tool-line').click()
   await drag(page, box.x + 40, box.y + 140, box.x + 140, box.y + 140)
   await expect(page.locator('[data-testid="geometry-layer"] line')).toHaveCount(1)
+  const firstLineId = await page
+    .locator('[data-testid="geometry-layer"] line')
+    .first()
+    .getAttribute('data-entity-id')
 
   await page.getByTestId('tool-snap').click()
   await expect(page.getByTestId('tool-snap')).toHaveAttribute('aria-pressed', 'false')
@@ -71,7 +85,9 @@ test('turning Snap off leaves a new endpoint at the raw drag coordinate, even ne
   await drag(page, box.x + 300, box.y + 300, box.x + 145, box.y + 143)
   await expect(page.locator('[data-testid="geometry-layer"] line')).toHaveCount(2)
 
-  const secondLine = page.locator('[data-testid="geometry-layer"] line').nth(1)
+  const secondLine = page.locator(
+    `[data-testid="geometry-layer"] line:not([data-entity-id="${firstLineId}"])`,
+  )
   await expect(secondLine).toHaveAttribute('x2', '145')
   await expect(secondLine).toHaveAttribute('y2', '143')
 })

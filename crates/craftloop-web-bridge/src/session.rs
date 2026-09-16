@@ -859,6 +859,99 @@ impl CraftLoopSession {
 
     // -- Constraints ----------------------------------------------------------
 
+    /// Execution 03, Phase 12, Task 098: which of Article 17's stable
+    /// eight `WebConstraintKind`s a real selection can actually take,
+    /// derived from the real primitive kinds stored in the document --
+    /// never a second, hand-maintained copy of the arity/primitive-kind
+    /// rules `WebConstraintKind::into_domain`/`SketchConstraintKind`'s
+    /// own `expect_line`/`expect_circle` validation already encode. An
+    /// unknown id, or a selection this vocabulary has no relationship
+    /// for, simply yields an empty list -- not an error, since "nothing
+    /// is eligible yet" is a normal state while the user is still
+    /// selecting.
+    #[wasm_bindgen(js_name = eligibleConstraints)]
+    pub fn eligible_constraints(
+        &self,
+        selected_ids: Vec<String>,
+    ) -> Result<String, WebSessionError> {
+        use craftloop_recognition::BeautifiedPrimitive as BP;
+
+        let ids = selected_ids
+            .iter()
+            .map(|raw| parse_id::<PrimitiveId>(raw))
+            .collect::<Result<Vec<_>, _>>()?;
+        let kinds: Vec<Option<BP>> = ids
+            .iter()
+            .map(|id| {
+                self.document
+                    .sketch()
+                    .primitive(*id)
+                    .map(|b| b.primitive.clone())
+            })
+            .collect();
+
+        let option = |label: &str, payload: WebConstraintKind| WebConstraintOption {
+            label: label.to_string(),
+            payload,
+        };
+
+        let options: Vec<WebConstraintOption> = match (ids.as_slice(), kinds.as_slice()) {
+            ([a], [Some(BP::Line(_))]) => {
+                let line = a.to_string();
+                vec![
+                    option(
+                        "Horizontal",
+                        WebConstraintKind::Horizontal { line: line.clone() },
+                    ),
+                    option("Vertical", WebConstraintKind::Vertical { line }),
+                ]
+            }
+            ([a, b], [Some(BP::Line(_)), Some(BP::Line(_))]) => {
+                let (a, b) = (a.to_string(), b.to_string());
+                vec![
+                    option(
+                        "Parallel",
+                        WebConstraintKind::Parallel {
+                            a: a.clone(),
+                            b: b.clone(),
+                        },
+                    ),
+                    option(
+                        "Perpendicular",
+                        WebConstraintKind::Perpendicular {
+                            a: a.clone(),
+                            b: b.clone(),
+                        },
+                    ),
+                    option(
+                        "Equal Length",
+                        WebConstraintKind::EqualLength {
+                            a: a.clone(),
+                            b: b.clone(),
+                        },
+                    ),
+                    option("Coincident", WebConstraintKind::Coincident { a, b }),
+                ]
+            }
+            ([a, b], [Some(BP::Circle(_)), Some(BP::Circle(_))]) => {
+                let (a, b) = (a.to_string(), b.to_string());
+                vec![
+                    option(
+                        "Equal Radius",
+                        WebConstraintKind::EqualRadius {
+                            a: a.clone(),
+                            b: b.clone(),
+                        },
+                    ),
+                    option("Concentric", WebConstraintKind::Concentric { a, b }),
+                ]
+            }
+            _ => vec![],
+        };
+
+        to_json(&options)
+    }
+
     /// `kind_json`: a JSON-encoded [`WebConstraintKind`].
     #[wasm_bindgen(js_name = applyConstraint)]
     pub fn apply_constraint(&mut self, kind_json: &str) -> Result<String, WebSessionError> {
@@ -1902,6 +1995,84 @@ mod tests {
         session.remove_constraint(&constraint_id).unwrap();
         let dangling = "00000000-0000-0000-0000-000000000001";
         assert!(session.remove_constraint(dangling).is_err());
+    }
+
+    /// Execution 03, Phase 12, Task 098: the eligible-constraints list
+    /// is derived from real primitive kinds, not a frontend-side
+    /// arity/type guess -- one Line offers Horizontal/Vertical, two
+    /// Lines offer the pair relationships, two Circles offer the
+    /// circle-only ones, and a Line/Circle mix (or an unknown id)
+    /// offers nothing.
+    #[test]
+    fn eligible_constraints_is_derived_from_real_primitive_kinds() {
+        let mut session = CraftLoopSession::new();
+        let line_a = session.create_primitive_line(0.0, 0.0, 4.0, 3.0).unwrap();
+        let line_b = session.create_primitive_line(1.0, 1.0, 5.0, 5.0).unwrap();
+        let circle_a = session.create_primitive_circle(0.0, 0.0, 2.0).unwrap();
+        let circle_b = session.create_primitive_circle(5.0, 5.0, 3.0).unwrap();
+
+        let one_line: Value =
+            serde_json::from_str(&session.eligible_constraints(vec![line_a.clone()]).unwrap())
+                .unwrap();
+        let one_line_labels: Vec<&str> = one_line
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|o| o["label"].as_str().unwrap())
+            .collect();
+        assert_eq!(one_line_labels, vec!["Horizontal", "Vertical"]);
+
+        let two_lines: Value = serde_json::from_str(
+            &session
+                .eligible_constraints(vec![line_a.clone(), line_b.clone()])
+                .unwrap(),
+        )
+        .unwrap();
+        let two_line_labels: Vec<&str> = two_lines
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|o| o["label"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            two_line_labels,
+            vec!["Parallel", "Perpendicular", "Equal Length", "Coincident"]
+        );
+        assert_eq!(
+            two_lines[0]["payload"],
+            json!({"Parallel": {"a": line_a, "b": line_b}})
+        );
+
+        let two_circles: Value = serde_json::from_str(
+            &session
+                .eligible_constraints(vec![circle_a.clone(), circle_b.clone()])
+                .unwrap(),
+        )
+        .unwrap();
+        let two_circle_labels: Vec<&str> = two_circles
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|o| o["label"].as_str().unwrap())
+            .collect();
+        assert_eq!(two_circle_labels, vec!["Equal Radius", "Concentric"]);
+
+        let mixed: Value = serde_json::from_str(
+            &session
+                .eligible_constraints(vec![line_a, circle_a])
+                .unwrap(),
+        )
+        .unwrap();
+        assert!(mixed.as_array().unwrap().is_empty());
+
+        let unknown = "00000000-0000-0000-0000-000000000001";
+        let for_unknown: Value = serde_json::from_str(
+            &session
+                .eligible_constraints(vec![unknown.to_string()])
+                .unwrap(),
+        )
+        .unwrap();
+        assert!(for_unknown.as_array().unwrap().is_empty());
     }
 
     #[test]

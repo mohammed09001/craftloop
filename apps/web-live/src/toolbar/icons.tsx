@@ -119,6 +119,13 @@ const ICONS: Record<ToolId, React.ReactNode> = {
       <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
     </Svg>
   ),
+  annotations: (
+    <Svg>
+      <circle cx="5.5" cy="12" r="2" />
+      <circle cx="18.5" cy="12" r="2" />
+      <path d="M7.5 12h9M9 9l1.5-3M15 9l-1.5-3" />
+    </Svg>
+  ),
 }
 
 export function ToolIcon({ id }: { id: ToolId }) {

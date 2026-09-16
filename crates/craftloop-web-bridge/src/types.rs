@@ -492,6 +492,20 @@ pub enum WebConstraintKind {
     Concentric { a: String, b: String },
 }
 
+/// Execution 03, Phase 12, Task 098: one entry in the real,
+/// backend-derived list of constraint kinds a given selection can
+/// actually take -- `label` for display, `payload` ready to
+/// `JSON.stringify` straight into `applyConstraint`. Exists so the
+/// frontend never re-derives arity/primitive-kind eligibility rules
+/// itself (`session::eligible_constraints` builds this list from the
+/// same real primitive kinds `WebConstraintKind::into_domain`/
+/// `SketchConstraintKind::validate` already require).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct WebConstraintOption {
+    pub label: String,
+    pub payload: WebConstraintKind,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum WebConstraintOutcome {
     Added { constraint_id: String },

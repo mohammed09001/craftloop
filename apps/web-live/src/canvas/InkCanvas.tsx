@@ -284,6 +284,12 @@ export function InkCanvas({
         height: '100%',
         touchAction: 'none',
         cursor: active ? 'crosshair' : 'default',
+        // Execution 03, Phase 12: this canvas always spans the full
+        // stack, so while inactive (Select/Eraser) it must let clicks
+        // pass through to whatever real content sits beneath it --
+        // `AnnotationLayer`'s dimension annotations (Task 096), most
+        // concretely -- rather than silently swallowing them.
+        pointerEvents: active ? 'auto' : 'none',
       }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

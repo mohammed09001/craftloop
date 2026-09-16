@@ -25,6 +25,8 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof Toolbar>> 
     onToggleConstruction: vi.fn(),
     snapEnabled: false,
     onToggleSnap: vi.fn(),
+    showAllAnnotations: false,
+    onToggleAnnotations: vi.fn(),
     ...overrides,
   }
   render(<Toolbar {...props} />)
@@ -184,5 +186,15 @@ describe('Toolbar', () => {
     expect(props.onToggleSnap).toHaveBeenCalledTimes(1)
     // Toggling Snap must never also select it as the active drawing tool.
     expect(props.onSelectTool).not.toHaveBeenCalledWith('snap')
+  })
+
+  it('Show All is a real independent toggle for dimension/constraint annotations (Task 101)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar({ workspaceMode: 'Sketch2D', showAllAnnotations: true })
+    expect(screen.getByTestId('tool-annotations')).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByTestId('tool-annotations'))
+    expect(props.onToggleAnnotations).toHaveBeenCalledTimes(1)
+    expect(props.onSelectTool).not.toHaveBeenCalledWith('annotations')
   })
 })

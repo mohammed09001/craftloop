@@ -68,6 +68,7 @@ export type ToolId =
   | 'constraint'
   | 'construction'
   | 'snap'
+  | 'annotations'
 
 export type ToolGroup = 'primary' | 'history' | 'document' | 'overflow'
 
@@ -122,6 +123,12 @@ export const TOOL_REGISTRY: readonly ToolDefinition[] = [
   // precision options" (Task 075's own wording) is why grid visibility
   // and geometry/grid snap share this one control rather than three.
   { id: 'snap', label: 'Snap/Guide', group: 'primary', kind: 'toggle', modes: ['sketch'] },
+  // Show All Dimensions/Constraints (Task 101): another independent
+  // toggle, same reasoning as Snap -- default off ("on demand," the
+  // task's own wording), so the canvas only shows annotations that
+  // touch the current selection until explicitly asked to reveal
+  // every dimension/constraint in the document at once.
+  { id: 'annotations', label: 'Show All', group: 'primary', kind: 'toggle', modes: ['sketch'] },
   // -- Shared groups -------------------------------------------------------
   { id: 'undo', label: 'Undo', group: 'history', kind: 'action', modes: ['creative', 'sketch'] },
   { id: 'redo', label: 'Redo', group: 'history', kind: 'action', modes: ['creative', 'sketch'] },

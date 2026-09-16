@@ -5,9 +5,10 @@ import {
   type CraftLoopSession,
   type WebCommandNamespace,
   type WebDimensionKind,
+  type WebResolutionChoice,
 } from './craftLoopSession'
 import type { GrammarMatch } from './commandTypes'
-import { EMPTY_SNAPSHOT, type SceneSnapshot } from './sceneTypes'
+import { EMPTY_SNAPSHOT, type ConstraintOption, type SceneSnapshot } from './sceneTypes'
 import type { PointerSampleInput } from './pointerTypes'
 
 /**
@@ -135,6 +136,26 @@ export function useCraftLoopSession() {
     [guard],
   )
 
+  const editDimension = useCallback(
+    (id: string, newValue: number) => guard((session) => session.editDimension(id, newValue)),
+    [guard],
+  )
+
+  const resolveConflict = useCallback(
+    (id: string, choice: WebResolutionChoice) =>
+      guard((session) => session.resolveConflict(id, choice)),
+    [guard],
+  )
+
+  /**
+   * Task 098: a real, backend-derived read -- no mutation, so (like
+   * `resolveCommand`) it bypasses `guard`/`refresh`.
+   */
+  const eligibleConstraints = useCallback((selectedIds: string[]): ConstraintOption[] => {
+    if (!sessionRef.current) return []
+    return JSON.parse(sessionRef.current.eligibleConstraints(selectedIds)) as ConstraintOption[]
+  }, [])
+
   const select = useCallback(
     (ids: string[]) => guard((session) => session.select(ids)),
     [guard],
@@ -184,7 +205,10 @@ export function useCraftLoopSession() {
     createPrimitiveRectangle,
     createPrimitiveArc,
     createDimension,
+    editDimension,
+    resolveConflict,
     applyConstraint,
+    eligibleConstraints,
     solveConstraints,
     setConstruction,
     select,
