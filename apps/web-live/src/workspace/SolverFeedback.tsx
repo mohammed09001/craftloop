@@ -6,6 +6,11 @@
  * so explicitly (the geometry may not visibly move at all), and an
  * unsatisfied/failed solve is reported as such rather than left to be
  * inferred from "the shape didn't move."
+ *
+ * Task 133 (accessibility audit): `role="status"`/`aria-live="polite"`
+ * so a screen reader announces this real transient result on its own
+ * -- without it, a non-visual user gets no signal at all that a
+ * solve just happened, since nothing else changes focus.
  */
 export type SolverFeedbackTone = 'success' | 'warning' | 'error'
 
@@ -17,6 +22,8 @@ export function SolverFeedback({ tone, message }: { tone: SolverFeedbackTone; me
     <div
       data-testid="solver-feedback"
       data-tone={tone}
+      role="status"
+      aria-live="polite"
       style={{
         position: 'absolute',
         top: 72,

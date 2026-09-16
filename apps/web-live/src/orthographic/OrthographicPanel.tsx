@@ -142,7 +142,11 @@ export function OrthographicPanel({
               maxWidth: 420,
             }}
           >
-            <div data-testid="orthographic-conflict-evidence" style={{ fontSize: 12, color: '#7c2d12' }}>
+            <div
+              data-testid="orthographic-conflict-evidence"
+              role="alert"
+              style={{ fontSize: 12, color: '#7c2d12' }}
+            >
               {conflict.evidence}
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

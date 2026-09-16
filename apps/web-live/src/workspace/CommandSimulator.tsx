@@ -200,7 +200,7 @@ export function CommandSimulator({
       </button>
 
       {result && (
-        <div data-testid="command-simulator-result" style={{ paddingTop: 4 }}>
+        <div data-testid="command-simulator-result" role="status" aria-live="polite" style={{ paddingTop: 4 }}>
           {result.kind === 'executed' &&
             `Executed ${result.action} (${result.via === 'reserved-alias' ? 'reserved alias' : 'grammar'}) -- same real session call the toolbar uses.`}
           {result.kind === 'ambiguous' &&

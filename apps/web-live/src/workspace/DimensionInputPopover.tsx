@@ -81,6 +81,7 @@ export function DimensionInputPopover({
         <>
           <div
             data-testid="dimension-conflict-evidence"
+            role="alert"
             style={{ fontSize: 12, color: '#7c2d12', wordBreak: 'break-word' }}
           >
             {conflict.evidence}
@@ -124,7 +125,11 @@ export function DimensionInputPopover({
             </button>
           </form>
           {errorMessage && (
-            <div data-testid="dimension-input-error" style={{ fontSize: 12, color: '#b91c1c' }}>
+            <div
+              data-testid="dimension-input-error"
+              role="alert"
+              style={{ fontSize: 12, color: '#b91c1c' }}
+            >
               {errorMessage}
             </div>
           )}
