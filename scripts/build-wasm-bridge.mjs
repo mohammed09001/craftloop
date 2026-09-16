@@ -42,7 +42,17 @@ const wasmPath = join(
 
 function run(command, args) {
   console.log(`> ${command} ${args.join(' ')}`)
-  execFileSync(command, args, { cwd: repoRoot, stdio: 'inherit' })
+  try {
+    execFileSync(command, args, { cwd: repoRoot, stdio: 'inherit' })
+  } catch {
+    // `stdio: 'inherit'` already streamed the real, useful error
+    // (cargo's compiler diagnostics, wasm-bindgen's own message) to
+    // the terminal -- a Node stack trace on top of that is noise, not
+    // signal (Task 136: "surface build failures clearly"). The
+    // nonzero exit code below is what callers (`dev-live.mjs`'s
+    // watch loop, npm's own script chaining) actually act on.
+    process.exit(1)
+  }
 }
 
 const cargoArgs = ['build', '--target', 'wasm32-unknown-unknown', '-p', 'craftloop-web-bridge']
