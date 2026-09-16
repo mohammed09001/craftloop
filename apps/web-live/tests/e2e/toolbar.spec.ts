@@ -91,10 +91,11 @@ test('Undo/Redo are disabled until there is real history, then work', async ({ p
   await expect(page.locator('[data-testid="geometry-layer"] polyline')).toHaveCount(1)
 })
 
-test('deferred tools (View/Save/More) are disabled, not fake-functional', async ({ page }) => {
-  // Sketch became real in Phase 08 (Execution 03, Task 057) -- see
-  // workspace-mode.spec.ts for its coverage.
-  for (const id of ['view', 'save', 'more']) {
+test('deferred tools (Save/More) are disabled, not fake-functional', async ({ page }) => {
+  // Sketch became real in Phase 08 (Execution 03, Task 057), View in
+  // Phase 13 (see orthographic-views.spec.ts for its coverage).
+  for (const id of ['save', 'more']) {
     await expect(page.getByTestId(`tool-${id}`)).toBeDisabled()
   }
+  await expect(page.getByTestId('tool-view')).toBeEnabled()
 })

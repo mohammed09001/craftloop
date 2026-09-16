@@ -26,10 +26,14 @@
  * (Task 090/091) toggles real, persisted `is_construction` state on
  * the current selection via `session.setConstruction`; `Snap`
  * (Task 092/093) toggles grid visibility plus geometry/grid snapping
- * for shape-tool drags (`src/canvas/inference.ts`). `View`, `Save`,
- * and `More` stay deliberately disabled -- their real behavior
- * depends on infrastructure later phases build (Orthographic View
- * Block rendering: Phase 13; browser persistence: Phase 14; an
+ * for shape-tool drags (`src/canvas/inference.ts`). `View` is real as
+ * of Phase 13: an independent toggle (same "outside the `activeTool`
+ * radio group" pattern as Snap/Show All) opening the real Orthographic
+ * View Block panel (`src/orthographic/OrthographicPanel.tsx`), which
+ * assigns/reads real `ViewBlock`/`OrthographicSet`/`MultiviewGraph`
+ * state through `CraftLoopSession`. `Save` and `More` stay
+ * deliberately disabled -- their real behavior depends on
+ * infrastructure later phases build (browser persistence: Phase 14; an
  * overflow menu with real contents: not needed yet since nothing is
  * currently being hidden from either toolbar). Registering them now
  * (rather than omitting them) keeps the registry complete and honest
@@ -96,14 +100,12 @@ export const TOOL_REGISTRY: readonly ToolDefinition[] = [
   { id: 'select', label: 'Select', group: 'primary', kind: 'toggle', modes: ['creative', 'sketch'] },
   { id: 'eraser', label: 'Eraser', group: 'primary', kind: 'toggle', modes: ['creative'] },
   { id: 'sketch', label: 'Sketch', group: 'primary', kind: 'toggle', modes: ['creative'] },
-  {
-    id: 'view',
-    label: 'View',
-    group: 'primary',
-    kind: 'action',
-    modes: ['creative'],
-    deferredUntil: 'Phase 13 (Orthographic Linked-View Completion)',
-  },
+  // View (Task 102-112): an independent toggle -- opens/closes the
+  // real Orthographic View Block panel, which replaces the canvas
+  // area's content while open (Task 106's "2D engineering regions,"
+  // not a 3D viewport) but never becomes part of the `activeTool`
+  // radio group, since it is not a drawing tool.
+  { id: 'view', label: 'View', group: 'primary', kind: 'toggle', modes: ['creative'] },
   // -- Sketch2D tools ----------------------------------------------------
   { id: 'line', label: 'Line', group: 'primary', kind: 'toggle', modes: ['sketch'] },
   { id: 'arc', label: 'Arc', group: 'primary', kind: 'toggle', modes: ['sketch'] },

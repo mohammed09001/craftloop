@@ -27,6 +27,8 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof Toolbar>> 
     onToggleSnap: vi.fn(),
     showAllAnnotations: false,
     onToggleAnnotations: vi.fn(),
+    viewOpen: false,
+    onToggleView: vi.fn(),
     ...overrides,
   }
   render(<Toolbar {...props} />)
@@ -196,5 +198,16 @@ describe('Toolbar', () => {
     await user.click(screen.getByTestId('tool-annotations'))
     expect(props.onToggleAnnotations).toHaveBeenCalledTimes(1)
     expect(props.onSelectTool).not.toHaveBeenCalledWith('annotations')
+  })
+
+  it('View is a real, enabled independent toggle for the Orthographic panel (Task 102-112)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar({ viewOpen: true })
+    expect(screen.getByTestId('tool-view')).toBeEnabled()
+    expect(screen.getByTestId('tool-view')).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByTestId('tool-view'))
+    expect(props.onToggleView).toHaveBeenCalledTimes(1)
+    expect(props.onSelectTool).not.toHaveBeenCalledWith('view')
   })
 })

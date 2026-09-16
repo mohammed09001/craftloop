@@ -28,6 +28,9 @@ export interface ToolbarProps {
   /** Task 101: independent of `activeTool`, like Snap -- whether every dimension/constraint annotation is shown, not just ones touching the current selection. */
   showAllAnnotations: boolean
   onToggleAnnotations: () => void
+  /** Task 102-112: independent of `activeTool` -- whether the real Orthographic View Block panel is open. */
+  viewOpen: boolean
+  onToggleView: () => void
 }
 
 /**
@@ -63,6 +66,8 @@ export function Toolbar({
   onToggleSnap,
   showAllAnnotations,
   onToggleAnnotations,
+  viewOpen,
+  onToggleView,
 }: ToolbarProps) {
   const [constraintMenuOpen, setConstraintMenuOpen] = useState(false)
   const modeFilter: WorkspaceModeFilter = workspaceMode === 'Sketch2D' ? 'sketch' : 'creative'
@@ -97,6 +102,10 @@ export function Toolbar({
     }
     if (id === 'annotations') {
       onToggleAnnotations()
+      return
+    }
+    if (id === 'view') {
+      onToggleView()
       return
     }
     onSelectTool(id)
@@ -207,6 +216,17 @@ export function Toolbar({
                   label="Show All"
                   pressed={showAllAnnotations}
                   onClick={() => handlePrimaryClick('annotations')}
+                />
+              )
+            }
+            if (tool.id === 'view') {
+              return (
+                <ToolButton
+                  key="view"
+                  id="view"
+                  label="View"
+                  pressed={viewOpen}
+                  onClick={() => handlePrimaryClick('view')}
                 />
               )
             }

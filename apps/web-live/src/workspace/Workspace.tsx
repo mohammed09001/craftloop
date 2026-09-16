@@ -8,6 +8,7 @@ import { WebDimensionKind, WebResolutionChoice } from '../session/craftLoopSessi
 import type { ConflictSummary, ConstraintOption } from '../session/sceneTypes'
 import { Toolbar } from '../toolbar/Toolbar'
 import type { ToolId } from '../toolbar/toolRegistry'
+import { OrthographicPanel } from '../orthographic/OrthographicPanel'
 import { DimensionInputPopover } from './DimensionInputPopover'
 import { SolverFeedback, type SolverFeedbackTone } from './SolverFeedback'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
@@ -46,6 +47,7 @@ export function Workspace() {
   const [activeTool, setActiveTool] = useState<ToolId>('pen')
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [showAllAnnotations, setShowAllAnnotations] = useState(false)
+  const [orthographicOpen, setOrthographicOpen] = useState(false)
   const { viewport, isPanning, onWheel, beginPan, endPan, panByScreenDelta } = usePanZoom()
 
   const enterSketchMode = useCallback(() => {
@@ -246,6 +248,10 @@ export function Workspace() {
     setShowAllAnnotations((shown) => !shown)
   }, [])
 
+  const handleToggleView = useCallback(() => {
+    setOrthographicOpen((open) => !open)
+  }, [])
+
   const dimensionAnchorScreen = dimensionPopover
     ? worldToScreen(viewport, dimensionPopover.anchorWorld)
     : null
@@ -253,32 +259,46 @@ export function Workspace() {
   return (
     <div className={styles.workspace} data-session-ready={session.ready}>
       <div className={styles.canvasArea} data-testid="canvas-area">
-        <CanvasStack
-          session={session}
-          activeTool={activeTool}
-          snapEnabled={snapEnabled}
-          showAllAnnotations={showAllAnnotations}
-          viewport={viewport}
-          isPanning={isPanning}
-          onWheel={onWheel}
-          beginPan={beginPan}
-          endPan={endPan}
-          panByScreenDelta={panByScreenDelta}
-          onEditDimensionRequest={handleEditDimensionRequest}
-        />
-        {dimensionPopover && dimensionAnchorScreen && (
-          <DimensionInputPopover
-            mode={dimensionPopover.mode}
-            anchorScreen={dimensionAnchorScreen}
-            initialValue={dimensionPopover.mode === 'edit' ? dimensionPopover.initialValue : undefined}
-            errorMessage={dimensionError}
-            conflict={dimensionConflict}
-            onSubmit={handleDimensionSubmit}
-            onCancel={closeDimensionPopover}
-            onResolve={handleResolveDimensionConflict}
+        {orthographicOpen ? (
+          <OrthographicPanel
+            session={session}
+            selectedPrimitiveIds={selectedPrimitives.map((p) => p.id)}
+            onClose={handleToggleView}
           />
+        ) : (
+          <>
+            <CanvasStack
+              session={session}
+              activeTool={activeTool}
+              snapEnabled={snapEnabled}
+              showAllAnnotations={showAllAnnotations}
+              viewport={viewport}
+              isPanning={isPanning}
+              onWheel={onWheel}
+              beginPan={beginPan}
+              endPan={endPan}
+              panByScreenDelta={panByScreenDelta}
+              onEditDimensionRequest={handleEditDimensionRequest}
+            />
+            {dimensionPopover && dimensionAnchorScreen && (
+              <DimensionInputPopover
+                mode={dimensionPopover.mode}
+                anchorScreen={dimensionAnchorScreen}
+                initialValue={
+                  dimensionPopover.mode === 'edit' ? dimensionPopover.initialValue : undefined
+                }
+                errorMessage={dimensionError}
+                conflict={dimensionConflict}
+                onSubmit={handleDimensionSubmit}
+                onCancel={closeDimensionPopover}
+                onResolve={handleResolveDimensionConflict}
+              />
+            )}
+            {solverFeedback && (
+              <SolverFeedback tone={solverFeedback.tone} message={solverFeedback.message} />
+            )}
+          </>
         )}
-        {solverFeedback && <SolverFeedback tone={solverFeedback.tone} message={solverFeedback.message} />}
       </div>
       <div className={styles.toolbarHost} data-testid="toolbar-host">
         <Toolbar
@@ -301,6 +321,8 @@ export function Workspace() {
           onToggleSnap={handleToggleSnap}
           showAllAnnotations={showAllAnnotations}
           onToggleAnnotations={handleToggleAnnotations}
+          viewOpen={orthographicOpen}
+          onToggleView={handleToggleView}
         />
       </div>
     </div>

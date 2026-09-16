@@ -5,7 +5,9 @@ import {
   type CraftLoopSession,
   type WebCommandNamespace,
   type WebDimensionKind,
+  type WebPrincipalViewIdentity,
   type WebResolutionChoice,
+  type WebSharedAxis,
 } from './craftLoopSession'
 import type { GrammarMatch } from './commandTypes'
 import { EMPTY_SNAPSHOT, type ConstraintOption, type SceneSnapshot } from './sceneTypes'
@@ -147,6 +149,34 @@ export function useCraftLoopSession() {
     [guard],
   )
 
+  const assignViewIdentity = useCallback(
+    (viewId: string | undefined, identity: WebPrincipalViewIdentity) =>
+      guard((session) => session.assignViewIdentity(viewId, identity)),
+    [guard],
+  )
+
+  const addGeometryToView = useCallback(
+    (viewId: string, primitiveIds: string[]) =>
+      guard((session) => session.addGeometryToView(viewId, primitiveIds)),
+    [guard],
+  )
+
+  const enterOrthographic = useCallback(
+    (viewId: string) => guard((session) => session.enterOrthographic(viewId)),
+    [guard],
+  )
+
+  const propagateSharedValue = useCallback(
+    (viewId: string, axis: WebSharedAxis, value: number) =>
+      guard(
+        (session) =>
+          JSON.parse(session.propagateSharedValue(viewId, axis, value)) as
+            | { Propagated: { affected_views: string[] } }
+            | { Conflict: { conflict_id: string } },
+      ),
+    [guard],
+  )
+
   /**
    * Task 098: a real, backend-derived read -- no mutation, so (like
    * `resolveCommand`) it bypasses `guard`/`refresh`.
@@ -211,6 +241,10 @@ export function useCraftLoopSession() {
     eligibleConstraints,
     solveConstraints,
     setConstruction,
+    assignViewIdentity,
+    addGeometryToView,
+    enterOrthographic,
+    propagateSharedValue,
     select,
     clearSelection,
     deleteSelected,
