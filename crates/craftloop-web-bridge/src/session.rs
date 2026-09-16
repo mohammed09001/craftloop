@@ -1545,6 +1545,28 @@ pub fn resolve_command(input: &str, namespace: WebCommandNamespace) -> String {
     to_json(&result).unwrap_or_else(|_| "\"NoMatch\"".to_string())
 }
 
+/// Task 119/124: exposes the real `craftloop_command::risk` gate --
+/// `requires_confirmation`/`may_execute`, unchanged, not reimplemented
+/// -- so the command simulator can demonstrate the actual Medium/High
+/// confirmation policy. Every action this browser harness dispatches
+/// today (`enterSketchMode`'s `Sketch`, `enterCreativePenMode`'s
+/// `ExitSketch`) is real `Low` risk, which never requires confirmation
+/// -- these free functions let the simulator show what the *same real
+/// policy engine* would require for a higher-risk command, using an
+/// explicit, clearly-labeled risk override rather than fabricating a
+/// risk level for an action that has none in this codebase (`risk` is
+/// always caller-chosen here, never action-intrinsic -- see
+/// `low_risk_command`'s own doc comment).
+#[wasm_bindgen(js_name = commandRequiresConfirmation)]
+pub fn command_requires_confirmation(risk: WebRiskLevel) -> bool {
+    craftloop_command::requires_confirmation(risk.into())
+}
+
+#[wasm_bindgen(js_name = commandMayExecute)]
+pub fn command_may_execute(risk: WebRiskLevel, confirmation: WebConfirmationOutcome) -> bool {
+    craftloop_command::may_execute(risk.into(), confirmation.into())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1967,6 +1989,47 @@ mod tests {
         let no_match: Value =
             serde_json::from_str(&resolve_command("zzz", WebCommandNamespace::Notebook)).unwrap();
         assert_eq!(no_match, json!("NoMatch"));
+    }
+
+    /// Execution 03, Phase 15, Task 119/124: the command simulator's
+    /// confirmation gate is the real, unmodified
+    /// `craftloop_command::risk` policy -- Low never requires
+    /// confirmation, Medium/High require at least `Preview`, and only
+    /// `Execute` satisfies either.
+    #[test]
+    fn command_confirmation_gate_matches_the_real_risk_policy() {
+        assert!(!command_requires_confirmation(WebRiskLevel::Low));
+        assert!(command_may_execute(
+            WebRiskLevel::Low,
+            WebConfirmationOutcome::Execute
+        ));
+        // Low risk still never executes ink that evidence says was
+        // never a command at all, even though confirmation was not
+        // *required* for it.
+        assert!(!command_may_execute(
+            WebRiskLevel::Low,
+            WebConfirmationOutcome::RemainsInk
+        ));
+
+        assert!(command_requires_confirmation(WebRiskLevel::Medium));
+        assert!(!command_may_execute(
+            WebRiskLevel::Medium,
+            WebConfirmationOutcome::RemainsInk
+        ));
+        assert!(command_may_execute(
+            WebRiskLevel::Medium,
+            WebConfirmationOutcome::Preview
+        ));
+
+        assert!(command_requires_confirmation(WebRiskLevel::High));
+        assert!(!command_may_execute(
+            WebRiskLevel::High,
+            WebConfirmationOutcome::Preview
+        ));
+        assert!(command_may_execute(
+            WebRiskLevel::High,
+            WebConfirmationOutcome::Execute
+        ));
     }
 
     #[test]

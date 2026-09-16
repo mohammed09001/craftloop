@@ -37,10 +37,14 @@ export async function createSession(): Promise<CraftLoopSession> {
 export type { CraftLoopSession }
 export {
   WebCommandNamespace,
+  WebConfirmationOutcome,
   WebDimensionKind,
   WebPrincipalViewIdentity,
   WebResolutionChoice,
+  WebRiskLevel,
   WebSharedAxis,
+  commandMayExecute,
+  commandRequiresConfirmation,
   resolveCommand,
 } from '../wasm-bridge/craftloop_web_bridge.js'
 

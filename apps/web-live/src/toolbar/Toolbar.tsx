@@ -36,6 +36,8 @@ export interface ToolbarProps {
   onSave: () => void
   onNewDocument: () => void
   onOpenLastSaved: () => void
+  /** Task 119: developer-only, tucked into More rather than a primary-group button. */
+  onOpenCommandSimulator: () => void
 }
 
 /**
@@ -77,6 +79,7 @@ export function Toolbar({
   onSave,
   onNewDocument,
   onOpenLastSaved,
+  onOpenCommandSimulator,
 }: ToolbarProps) {
   const [constraintMenuOpen, setConstraintMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
@@ -297,6 +300,18 @@ export function Toolbar({
                         }}
                       >
                         Open Last Saved
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={styles.constraintMenuItem}
+                        data-testid="more-command-simulator"
+                        onClick={() => {
+                          onOpenCommandSimulator()
+                          setMoreMenuOpen(false)
+                        }}
+                      >
+                        Command Simulator (Dev)
                       </button>
                     </div>
                   )}

@@ -180,6 +180,50 @@ impl From<craftloop_consistency::ResolutionChoice> for WebResolutionChoice {
     }
 }
 
+/// Execution 03, Phase 15, Task 119/124: Article 141/236's risk policy
+/// tiers, exposed only for the developer-only command simulator to
+/// demonstrate the real `craftloop_command::risk` gate against an
+/// action outside the two the browser harness actually dispatches
+/// today (`Sketch`/`Pen`, both real `Low`) -- see
+/// `session::command_may_execute`'s own doc comment.
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WebRiskLevel {
+    Low,
+    Medium,
+    High,
+}
+
+impl From<WebRiskLevel> for craftloop_command::RiskLevel {
+    fn from(risk: WebRiskLevel) -> Self {
+        match risk {
+            WebRiskLevel::Low => craftloop_command::RiskLevel::Low,
+            WebRiskLevel::Medium => craftloop_command::RiskLevel::Medium,
+            WebRiskLevel::High => craftloop_command::RiskLevel::High,
+        }
+    }
+}
+
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WebConfirmationOutcome {
+    RemainsInk,
+    Preview,
+    Execute,
+}
+
+impl From<WebConfirmationOutcome> for craftloop_command::ConfirmationOutcome {
+    fn from(outcome: WebConfirmationOutcome) -> Self {
+        match outcome {
+            WebConfirmationOutcome::RemainsInk => {
+                craftloop_command::ConfirmationOutcome::RemainsInk
+            }
+            WebConfirmationOutcome::Preview => craftloop_command::ConfirmationOutcome::Preview,
+            WebConfirmationOutcome::Execute => craftloop_command::ConfirmationOutcome::Execute,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WebPointerSource {
     SimulatedMouse,

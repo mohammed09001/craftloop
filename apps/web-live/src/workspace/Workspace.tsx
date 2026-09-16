@@ -9,6 +9,7 @@ import type { ConflictSummary, ConstraintOption } from '../session/sceneTypes'
 import { Toolbar } from '../toolbar/Toolbar'
 import type { ToolId } from '../toolbar/toolRegistry'
 import { OrthographicPanel } from '../orthographic/OrthographicPanel'
+import { CommandSimulator } from './CommandSimulator'
 import { DimensionInputPopover } from './DimensionInputPopover'
 import { SolverFeedback, type SolverFeedbackTone } from './SolverFeedback'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
@@ -48,6 +49,7 @@ export function Workspace() {
   const [snapEnabled, setSnapEnabled] = useState(true)
   const [showAllAnnotations, setShowAllAnnotations] = useState(false)
   const [orthographicOpen, setOrthographicOpen] = useState(false)
+  const [commandSimulatorOpen, setCommandSimulatorOpen] = useState(false)
   const { viewport, isPanning, onWheel, beginPan, endPan, panByScreenDelta } = usePanZoom()
 
   const enterSketchMode = useCallback(() => {
@@ -297,6 +299,14 @@ export function Workspace() {
             {solverFeedback && (
               <SolverFeedback tone={solverFeedback.tone} message={solverFeedback.message} />
             )}
+            {commandSimulatorOpen && (
+              <CommandSimulator
+                session={session}
+                onEnterSketchMode={enterSketchMode}
+                onEnterCreativePenMode={enterCreativePenMode}
+                onClose={() => setCommandSimulatorOpen(false)}
+              />
+            )}
           </>
         )}
       </div>
@@ -327,6 +337,7 @@ export function Workspace() {
           onSave={session.saveNow}
           onNewDocument={session.newDocument}
           onOpenLastSaved={session.openLastSaved}
+          onOpenCommandSimulator={() => setCommandSimulatorOpen(true)}
         />
       </div>
     </div>

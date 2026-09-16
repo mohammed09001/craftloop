@@ -33,6 +33,7 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof Toolbar>> 
     onSave: vi.fn(),
     onNewDocument: vi.fn(),
     onOpenLastSaved: vi.fn(),
+    onOpenCommandSimulator: vi.fn(),
     ...overrides,
   }
   render(<Toolbar {...props} />)
@@ -237,5 +238,13 @@ describe('Toolbar', () => {
     await user.click(screen.getByTestId('tool-more'))
     await user.click(screen.getByTestId('more-open-last-saved'))
     expect(props.onOpenLastSaved).toHaveBeenCalledTimes(1)
+  })
+
+  it('More also offers the developer-only Command Simulator (Task 119)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar()
+    await user.click(screen.getByTestId('tool-more'))
+    await user.click(screen.getByTestId('more-command-simulator'))
+    expect(props.onOpenCommandSimulator).toHaveBeenCalledTimes(1)
   })
 })
