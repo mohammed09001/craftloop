@@ -29,6 +29,10 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof Toolbar>> 
     onToggleAnnotations: vi.fn(),
     viewOpen: false,
     onToggleView: vi.fn(),
+    lastSavedAt: null,
+    onSave: vi.fn(),
+    onNewDocument: vi.fn(),
+    onOpenLastSaved: vi.fn(),
     ...overrides,
   }
   render(<Toolbar {...props} />)
@@ -90,12 +94,12 @@ describe('Toolbar', () => {
     expect(props.onUndo).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps deferred tools disabled with a title explaining when they activate', () => {
-    renderToolbar()
-    for (const tool of CREATIVE_TOOLS.filter((t) => t.deferredUntil)) {
-      const button = screen.getByTestId(`tool-${tool.id}`)
-      expect(button).toBeDisabled()
-      expect(button).toHaveAttribute('title', expect.stringContaining(tool.deferredUntil!))
+  it('every registered tool is real as of Phase 14 -- none deferred', () => {
+    // The registry still supports `deferredUntil` for a genuinely
+    // not-yet-functional future tool, but nothing currently in it
+    // uses that escape hatch -- a regression guard, not a no-op.
+    for (const tool of TOOL_REGISTRY) {
+      expect(tool.deferredUntil, `${tool.id} is deferred`).toBeUndefined()
     }
   })
 
@@ -209,5 +213,29 @@ describe('Toolbar', () => {
     await user.click(screen.getByTestId('tool-view'))
     expect(props.onToggleView).toHaveBeenCalledTimes(1)
     expect(props.onSelectTool).not.toHaveBeenCalledWith('view')
+  })
+
+  it('Save is enabled and calls onSave (Task 116)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar()
+    expect(screen.getByTestId('tool-save')).toBeEnabled()
+    await user.click(screen.getByTestId('tool-save'))
+    expect(props.onSave).toHaveBeenCalledTimes(1)
+  })
+
+  it('More opens a real menu with New Document and Open Last Saved (Task 115)', async () => {
+    const user = userEvent.setup()
+    const props = renderToolbar()
+    expect(screen.getByTestId('tool-more')).toBeEnabled()
+    await user.click(screen.getByTestId('tool-more'))
+    expect(screen.getByTestId('more-menu')).toBeVisible()
+
+    await user.click(screen.getByTestId('more-new-document'))
+    expect(props.onNewDocument).toHaveBeenCalledTimes(1)
+    expect(screen.queryByTestId('more-menu')).not.toBeInTheDocument()
+
+    await user.click(screen.getByTestId('tool-more'))
+    await user.click(screen.getByTestId('more-open-last-saved'))
+    expect(props.onOpenLastSaved).toHaveBeenCalledTimes(1)
   })
 })

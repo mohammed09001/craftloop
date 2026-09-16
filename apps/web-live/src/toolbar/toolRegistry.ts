@@ -31,13 +31,13 @@
  * radio group" pattern as Snap/Show All) opening the real Orthographic
  * View Block panel (`src/orthographic/OrthographicPanel.tsx`), which
  * assigns/reads real `ViewBlock`/`OrthographicSet`/`MultiviewGraph`
- * state through `CraftLoopSession`. `Save` and `More` stay
- * deliberately disabled -- their real behavior depends on
- * infrastructure later phases build (browser persistence: Phase 14; an
- * overflow menu with real contents: not needed yet since nothing is
- * currently being hidden from either toolbar). Registering them now
- * (rather than omitting them) keeps the registry complete and honest
- * about what exists versus what is coming.
+ * state through `CraftLoopSession`. `Save` and `More` are real as of
+ * Phase 14: the document already autosaves to IndexedDB after every
+ * committed change (Task 116), so `Save` is an explicit, immediate
+ * flush of that same real `session.toJson()` payload; `More` opens a
+ * small menu with the document's other two real actions, New and Open
+ * Last Saved (Task 115) -- the first real content that overflow menu
+ * has ever had.
  *
  * No `Ellipse` tool, despite `craftloop-geometry::Ellipse2` existing
  * as a real, tested kernel (Task 070's own premise). Repository
@@ -134,20 +134,6 @@ export const TOOL_REGISTRY: readonly ToolDefinition[] = [
   // -- Shared groups -------------------------------------------------------
   { id: 'undo', label: 'Undo', group: 'history', kind: 'action', modes: ['creative', 'sketch'] },
   { id: 'redo', label: 'Redo', group: 'history', kind: 'action', modes: ['creative', 'sketch'] },
-  {
-    id: 'save',
-    label: 'Save',
-    group: 'document',
-    kind: 'action',
-    modes: ['creative'],
-    deferredUntil: 'Phase 14 (Persistence and Reload)',
-  },
-  {
-    id: 'more',
-    label: 'More',
-    group: 'overflow',
-    kind: 'action',
-    modes: ['creative', 'sketch'],
-    deferredUntil: 'no overflow content exists yet',
-  },
+  { id: 'save', label: 'Save', group: 'document', kind: 'action', modes: ['creative', 'sketch'] },
+  { id: 'more', label: 'More', group: 'overflow', kind: 'action', modes: ['creative', 'sketch'] },
 ] as const

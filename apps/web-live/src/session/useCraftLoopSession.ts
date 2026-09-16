@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  createSession,
   getCraftLoopSession,
   resolveCommand as resolveCommandWasm,
+  sessionFromJson,
   type CraftLoopSession,
   type WebCommandNamespace,
   type WebDimensionKind,
@@ -12,6 +14,10 @@ import {
 import type { GrammarMatch } from './commandTypes'
 import { EMPTY_SNAPSHOT, type ConstraintOption, type SceneSnapshot } from './sceneTypes'
 import type { PointerSampleInput } from './pointerTypes'
+import { loadDocumentJson, saveDocumentJson } from '../persistence/documentStore'
+
+/** Task 116: debounce after a committed transaction settles, never on every keystroke/pointer move within it. */
+const AUTOSAVE_DEBOUNCE_MS = 800
 
 /**
  * Owns the one `CraftLoopSession` for this tab (Article 8) and exposes
@@ -35,7 +41,24 @@ export function useCraftLoopSession() {
   useEffect(() => {
     let cancelled = false
     getCraftLoopSession()
-      .then((session) => {
+      .then(async (freshSession) => {
+        if (cancelled) return
+        // Task 113/117: `getCraftLoopSession()` always hands back a
+        // brand-new empty session -- if a real document was persisted
+        // from an earlier visit, replace it with the real path-
+        // independent round trip (`CraftLoopSession.fromJson`, the
+        // same one `craftloop-web-bridge`'s own tests already cover)
+        // rather than silently starting over.
+        let session = freshSession
+        try {
+          const saved = await loadDocumentJson()
+          if (saved) session = sessionFromJson(saved)
+        } catch (err) {
+          // A corrupt/unreadable saved document must not block the
+          // workspace from opening -- fall back to the fresh session
+          // and surface the problem, rather than getting stuck.
+          setLastError(err instanceof Error ? err.message : String(err))
+        }
         if (cancelled) return
         sessionRef.current = session
         setReady(true)
@@ -52,6 +75,57 @@ export function useCraftLoopSession() {
     return () => {
       cancelled = true
     }
+  }, [])
+
+  // -- Persistence (Phase 14, Tasks 114-118) ------------------------------
+
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const saveNow = useCallback(async () => {
+    const session = sessionRef.current
+    if (!session) return
+    await saveDocumentJson(session.toJson())
+    setLastSavedAt(Date.now())
+  }, [])
+
+  // Task 116: fires only when `snapshot.revision` -- the real
+  // `Document::revision()`, which advances only on a committed
+  // `DocumentChange`, never on ephemeral selection/workspace-mode/UI
+  // state (Task 118) or a raw pointer move -- actually changes.
+  useEffect(() => {
+    if (!ready) return
+    if (autosaveTimerRef.current !== null) clearTimeout(autosaveTimerRef.current)
+    autosaveTimerRef.current = setTimeout(() => {
+      void saveNow()
+    }, AUTOSAVE_DEBOUNCE_MS)
+    return () => {
+      if (autosaveTimerRef.current !== null) clearTimeout(autosaveTimerRef.current)
+    }
+  }, [ready, snapshot.revision, saveNow])
+
+  /**
+   * Task 115's "New": a fresh, empty in-memory session -- like most
+   * document apps' New, this does not delete the last real saved
+   * document (`Open Last Saved` can still recover it); the fresh
+   * empty document simply becomes what autosave persists from here on
+   * once the user commits something.
+   */
+  const newDocument = useCallback(async () => {
+    const session = await createSession()
+    sessionRef.current = session
+    setLastError(null)
+    setSnapshot(JSON.parse(session.sceneSnapshot()) as SceneSnapshot)
+  }, [])
+
+  /** Task 115's "Open": discards any unsaved in-memory changes and reloads the last real saved document. */
+  const openLastSaved = useCallback(async () => {
+    const saved = await loadDocumentJson()
+    if (!saved) return
+    const session = sessionFromJson(saved)
+    sessionRef.current = session
+    setLastError(null)
+    setSnapshot(JSON.parse(session.sceneSnapshot()) as SceneSnapshot)
   }, [])
 
   const guard = useCallback(
@@ -228,6 +302,10 @@ export function useCraftLoopSession() {
     ready,
     snapshot,
     lastError,
+    lastSavedAt,
+    saveNow,
+    newDocument,
+    openLastSaved,
     submitStroke,
     acceptRecognition,
     createPrimitiveLine,

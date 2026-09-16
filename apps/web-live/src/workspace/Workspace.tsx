@@ -323,6 +323,10 @@ export function Workspace() {
           onToggleAnnotations={handleToggleAnnotations}
           viewOpen={orthographicOpen}
           onToggleView={handleToggleView}
+          lastSavedAt={session.lastSavedAt}
+          onSave={session.saveNow}
+          onNewDocument={session.newDocument}
+          onOpenLastSaved={session.openLastSaved}
         />
       </div>
     </div>

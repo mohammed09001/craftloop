@@ -31,6 +31,11 @@ export interface ToolbarProps {
   /** Task 102-112: independent of `activeTool` -- whether the real Orthographic View Block panel is open. */
   viewOpen: boolean
   onToggleView: () => void
+  /** Task 116: when the real autosave last actually wrote to IndexedDB, or `null` before the first one. */
+  lastSavedAt: number | null
+  onSave: () => void
+  onNewDocument: () => void
+  onOpenLastSaved: () => void
 }
 
 /**
@@ -68,8 +73,13 @@ export function Toolbar({
   onToggleAnnotations,
   viewOpen,
   onToggleView,
+  lastSavedAt,
+  onSave,
+  onNewDocument,
+  onOpenLastSaved,
 }: ToolbarProps) {
   const [constraintMenuOpen, setConstraintMenuOpen] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const modeFilter: WorkspaceModeFilter = workspaceMode === 'Sketch2D' ? 'sketch' : 'creative'
   const forMode = (tools: readonly (typeof TOOL_REGISTRY)[number][]) =>
     tools.filter((t) => t.modes.includes(modeFilter))
@@ -106,6 +116,14 @@ export function Toolbar({
     }
     if (id === 'view') {
       onToggleView()
+      return
+    }
+    if (id === 'save') {
+      onSave()
+      return
+    }
+    if (id === 'more') {
+      setMoreMenuOpen((open) => !open)
       return
     }
     onSelectTool(id)
@@ -228,6 +246,61 @@ export function Toolbar({
                   pressed={viewOpen}
                   onClick={() => handlePrimaryClick('view')}
                 />
+              )
+            }
+            if (tool.id === 'save') {
+              return (
+                <ToolButton
+                  key="save"
+                  id="save"
+                  label="Save"
+                  titleOverride={
+                    lastSavedAt
+                      ? `Save (last saved ${new Date(lastSavedAt).toLocaleTimeString()})`
+                      : 'Save'
+                  }
+                  onClick={() => handlePrimaryClick('save')}
+                />
+              )
+            }
+            if (tool.id === 'more') {
+              return (
+                <div key="more" className={styles.constraintWrapper}>
+                  <ToolButton
+                    id="more"
+                    label="More"
+                    pressed={moreMenuOpen}
+                    onClick={() => handlePrimaryClick('more')}
+                  />
+                  {moreMenuOpen && (
+                    <div className={styles.constraintMenu} data-testid="more-menu" role="menu">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={styles.constraintMenuItem}
+                        data-testid="more-new-document"
+                        onClick={() => {
+                          onNewDocument()
+                          setMoreMenuOpen(false)
+                        }}
+                      >
+                        New Document
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={styles.constraintMenuItem}
+                        data-testid="more-open-last-saved"
+                        onClick={() => {
+                          onOpenLastSaved()
+                          setMoreMenuOpen(false)
+                        }}
+                      >
+                        Open Last Saved
+                      </button>
+                    </div>
+                  )}
+                </div>
               )
             }
             const pressed =

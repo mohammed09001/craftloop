@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { GeometryLayer } from '../canvas/GeometryLayer'
 import { fitToBounds } from '../canvas/viewport'
 import type { PrimitiveSummary, DimensionSummary, SharedAxisName, ViewBlockSummary } from '../session/sceneTypes'
@@ -133,15 +133,25 @@ export function ViewBlockCard({
         </ul>
       )}
 
-      {axes.map((axis) => (
-        <AxisField
-          key={axis}
-          axis={axis}
-          value={axisValue(view, axis, dimensions)}
-          unresolved={isAxisUnresolved(view, axis)}
-          onCommit={(value) => onCommitAxis(axis, value)}
-        />
-      ))}
+      {axes.map((axis) => {
+        const value = axisValue(view, axis, dimensions)
+        return (
+          // Keyed on the real bound value, not just the axis: Task
+          // 109's whole point is that propagating from one view
+          // updates another view's own field without that field
+          // having been touched itself, so when the real value
+          // changes from *outside* this field, React should remount
+          // it fresh (the standard "reset state when a prop changes"
+          // pattern) rather than needing an effect to resync it.
+          <AxisField
+            key={`${axis}:${value ?? 'unresolved'}`}
+            axis={axis}
+            value={value}
+            unresolved={isAxisUnresolved(view, axis)}
+            onCommit={(v) => onCommitAxis(axis, v)}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -158,14 +168,6 @@ function AxisField({
   onCommit: (value: number) => void
 }) {
   const [raw, setRaw] = useState(value !== null ? String(value) : '')
-  // The real bound value can change from *outside* this field -- Task
-  // 109's whole point is that propagating from one view updates
-  // another view's own field without that field having been touched
-  // itself -- so it has to stay synced to the real snapshot, not just
-  // seeded once at mount.
-  useEffect(() => {
-    setRaw(value !== null ? String(value) : '')
-  }, [value])
 
   return (
     <form
